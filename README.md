@@ -1,16 +1,21 @@
 # 🇬🇭 GhaNight — Accra Nightlife Guide
 
-GhaNight is Ghana's #1 digital guide for discovering the best clubs, bars, and lounges in Accra. 
+**GhaNight** is the ultimate digital companion for exploring the vibrant nightlife of Accra, Ghana. From the high-energy clubs of Osu to the sophisticated rooftop bars of Airport Hills, we bring the city to your fingertips.
 
-## 🚀 Features
-- **Live Crowd Updates:** Real-time "heat" levels for popular venues.
-- **Venue Directory:** Explore top spots in Osu, East Legon, Cantonments, and more.
-- **Supabase Integration:** Real-time data syncing for accurate nightlife info.
+## 🚀 Key Features
+- **Live Crowd Tracking:** Real-time "heat" levels to see how busy a venue is before you leave the house.
+- **Venue Discovery:** Filter by type (Clubs, Lounges, Beach Bars, Rooftops) and area.
+- **Event Listings:** Stay updated on the hottest parties and guest appearances tonight.
+- **Live Feeds:** Access real-time updates directly from the venues.
 
-## 🛠️ Built With
-- HTML5 / CSS3 / JavaScript
-- [Supabase](https://supabase.com/) (Backend & Database)
-- GitHub Pages (Hosting)
+## 🛠️ Technical Stack
+- **Frontend:** HTML5, CSS3 (Custom Glassmorphism UI), and Vanilla JavaScript.
+- **Backend:** [Supabase](https://supabase.com/) for real-time database management and authentication.
+- **Hosting:** Proudly hosted on GitHub Pages.
 
-## 🌐 Live Site
-Check out the live guide here: [https://kenpatsi-Tech.github.io/Ghnightlife-guide/](https://kenpatsi-Tech.github.io/Ghnightlife-guide/)
+## 🌐 Experience It Live
+Check out the live deployment here: 
+👉 [https://kenpatsi-Tech.github.io/Ghnightlife-guide/](https://kenpatsi-Tech.github.io/Ghnightlife-guide/)
+
+---
+*Created with ❤️ for the Accra Nightlife Scene.*
