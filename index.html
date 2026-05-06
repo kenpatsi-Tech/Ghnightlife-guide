@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GhaNight — Ghana's #1 Nightlife Guide</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root { --bg: #080810; --gold: #f5c542; --orange: #ff6b35; --text: #f0f0f8; --card: #14142a; }
+  body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; text-align: center; }
+  nav { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+  .logo { font-weight: bold; font-size: 24px; color: var(--gold); }
+  .hero { padding: 60px 20px; }
+  h1 { font-size: 3rem; margin-bottom: 10px; background: linear-gradient(to right, var(--gold), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
+  .card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
+</style>
+</head>
+<body>
+<nav><div class="logo">GHANIGHT</div></nav>
+<div class="hero">
+  <h1>GHANIGHT</h1>
+  <p>Accra's clubs, bars, and lounges—live.</p>
+</div>
+<div class="grid" id="venueGrid"></div>
+
+<script>
+  const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+  const supabase = lib.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const venues = [
+    { name: "Onyx Nightclub", area: "East Legon", heat: "98%" },
+    { name: "Sky+ Rooftop", area: "Airport Hills", heat: "85%" },
+    { name: "Twist Lounge", area: "Osu", heat: "72%" }
+  ];
+
+  const grid = document.getElementById('venueGrid');
+  grid.innerHTML = venues.map(v => `
+    <div class="card">
+      <h3>${v.name}</h3>
+      <p>📍 ${v.area}</p>
+      <div style="color:var(--gold)">🔥 ${v.heat} Capacity</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>
