@@ -27,7 +27,7 @@
 <script>
   const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
-  const supabase = lib.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const supabase =  supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const venues = [
     { name: "Onyx Nightclub", area: "East Legon", heat: "98%" },
