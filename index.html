@@ -531,119 +531,141 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ── Supabase setup ──
+// ── Supabase ──
 const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let db = null;
+try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) {}
 
-// Live data arrays (populated from Supabase)
 let venues = [];
 let events = [];
+let userLat = null, userLng = null;
 
-// Normalise DB row → same shape the UI already expects
-function normaliseVenue(r) {
-  return {
-    id: r.id,
-    name: r.name,
-    area: r.area,
-    type: r.type,
-    heat: r.heat,
-    crowd: r.crowd,
-    tags: r.tags || [],
-    entry: r.entry,
-    time: r.time,
-    color: r.color,
-    premium: r.premium,
-    camOn: r.cam_on,
-  };
+// Venue coordinates for distance matching (lat, lng)
+const VENUE_COORDS = {
+  'Onyx Nightclub':   { lat: 5.6361, lng: -0.1569 },
+  'Sky+ Rooftop Bar': { lat: 5.6050, lng: -0.1717 },
+  'Twist Lounge':     { lat: 5.5560, lng: -0.1969 },
+  'La Palm Beach Bar':{ lat: 5.5490, lng: -0.1340 },
+  'Firefly Lounge':   { lat: 5.5720, lng: -0.1850 },
+  'Rhapsodys Accra':  { lat: 5.6145, lng: -0.1780 },
+};
+const CHECKIN_RADIUS_KM = 0.5; // must be within 500m to check in
+
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+// Ask for location silently on load
+function requestLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => { userLat = pos.coords.latitude; userLng = pos.coords.longitude; },
+      () => {}
+    );
+  }
+}
+
+// Check in at a venue using real location
+async function checkInAtVenue(venueIdx) {
+  const v = venues[venueIdx];
+  const coords = VENUE_COORDS[v.name];
+  if (!coords) { showToast('📍 Check-in not available for this venue yet'); return; }
+  if (!userLat) {
+    navigator.geolocation.getCurrentPosition(async pos => {
+      userLat = pos.coords.latitude; userLng = pos.coords.longitude;
+      await doCheckIn(v, coords, venueIdx);
+    }, () => showToast('📍 Enable location to check in'));
+    return;
+  }
+  await doCheckIn(v, coords, venueIdx);
+}
+
+async function doCheckIn(v, coords, venueIdx) {
+  const dist = distanceKm(userLat, userLng, coords.lat, coords.lng);
+  if (dist > CHECKIN_RADIUS_KM) {
+    showToast(`📍 You need to be at ${v.name} to check in (${(dist*1000).toFixed(0)}m away)`);
+    return;
+  }
+  if (!db) { showToast('⚠️ Check-in unavailable'); return; }
+  // Save check-in to Supabase
+  await db.from('checkins').insert({ venue_id: v.id, venue_name: v.name, checked_in_at: new Date().toISOString() });
+  // Update crowd count
+  const newHeat = Math.min(99, v.heat + 3);
+  await db.from('venues').update({ heat: newHeat, crowd: Math.min(5, Math.round(newHeat/20)) }).eq('id', v.id);
+  venues[venueIdx].heat = newHeat;
+  showToast('✅ Checked in at ' + v.name + '! Crowd updated.');
+  renderVenues(venues);
+  updateOutTonightCount();
+}
+
+async function updateOutTonightCount() {
+  if (!db) return;
+  const tonight = new Date(); tonight.setHours(0,0,0,0);
+  const { count } = await db.from('checkins').select('*', { count: 'exact', head: true }).gte('checked_in_at', tonight.toISOString());
+  if (count !== null) document.getElementById('crowdCount').textContent = count >= 1000 ? (count/1000).toFixed(1)+'K' : count;
+}
+
+function normaliseVenue(r) {
+  return { id: r.id, name: r.name, area: r.area, type: r.type, heat: r.heat, crowd: r.crowd, tags: r.tags||[], entry: r.entry, time: r.time, color: r.color, premium: r.premium, camOn: r.cam_on };
+}
 function normaliseEvent(r) {
-  return {
-    day: r.event_day,
-    month: r.event_month,
-    name: r.name,
-    venue: r.venue,
-    tags: r.tags || [],
-    time: r.event_time,
-    sponsored: r.sponsored,
-  };
+  return { day: r.event_day, month: r.event_month, name: r.name, venue: r.venue, tags: r.tags||[], time: r.event_time, sponsored: r.sponsored };
 }
 
 async function loadData() {
-  // Fetch venues
-  const { data: venueRows, error: ve } = await db
-    .from('venues')
-    .select('*')
-    .eq('active', true)
-    .order('premium', { ascending: false })
-    .order('heat', { ascending: false });
-
-  if (!ve && venueRows.length) {
-    venues = venueRows.map(normaliseVenue);
-  } else {
-    // Fallback to hardcoded if DB not ready yet
-    venues = [
-      { name: "Onyx Nightclub", area: "East Legon", type: "club", heat: 98, crowd: 5, tags: ["Afrobeats","Hip-Hop","VIP"], entry: "GHS 50", time: "10pm – 4am", color: "#ff3d8a", premium: true, camOn: true },
-      { name: "Sky+ Rooftop Bar", area: "Airport Hills", type: "rooftop", heat: 87, crowd: 4, tags: ["R&B","Cocktails","Views"], entry: "GHS 30", time: "7pm – 2am", color: "#f5c542", premium: true, camOn: true },
-      { name: "Twist Lounge", area: "Osu", type: "lounge", heat: 74, crowd: 3, tags: ["Highlife","Jazz","Chill"], entry: "Free", time: "8pm – 1am", color: "#4fa3ff", premium: false, camOn: false },
-      { name: "La Palm Beach Bar", area: "La", type: "beach", heat: 81, crowd: 4, tags: ["Beach","Reggae","Sundowner"], entry: "GHS 20", time: "6pm – 12am", color: "#39e07a", premium: false, camOn: true },
-      { name: "Firefly Lounge", area: "Cantonments", type: "lounge", heat: 62, crowd: 2, tags: ["Soul","Wine","Events"], entry: "Free", time: "6pm – 1am", color: "#4fa3ff", premium: false, camOn: false },
-      { name: "Rhapsody's Accra", area: "Accra Mall", type: "club", heat: 79, crowd: 4, tags: ["Afrobeats","Dancehall","Birthday"], entry: "GHS 40", time: "9pm – 3am", color: "#ff6b35", premium: false, camOn: false },
-    ];
+  if (db) {
+    const { data: vr, error: ve } = await db.from('venues').select('*').eq('active', true).order('premium', {ascending:false}).order('heat', {ascending:false});
+    if (!ve && vr && vr.length) venues = vr.map(normaliseVenue);
+    const { data: er, error: ee } = await db.from('events').select('*').eq('active', true).order('sponsored', {ascending:false});
+    if (!ee && er && er.length) events = er.map(normaliseEvent);
+    // Real-time updates
+    db.channel('venues-live').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'venues' }, payload => {
+      const idx = venues.findIndex(v => v.id === payload.new.id);
+      if (idx !== -1) { venues[idx] = normaliseVenue(payload.new); renderVenues(venues); showToast('🔴 Live: ' + payload.new.name + ' updated'); }
+    }).subscribe();
+    updateOutTonightCount();
   }
-
-  // Fetch events
-  const { data: eventRows, error: ee } = await db
-    .from('events')
-    .select('*')
-    .eq('active', true)
-    .order('sponsored', { ascending: false });
-
-  if (!ee && eventRows.length) {
-    events = eventRows.map(normaliseEvent);
-  } else {
-    events = [
-      { day: "07", month: "MAY", name: "AFRO NATION WARMUP — Accra Edition", venue: "Accra Sports Stadium", tags: ["Afrobeats","CONCERT","GHS 150"], time: "8:00 PM", sponsored: true },
-      { day: "07", month: "MAY", name: "Rooftop Sundowner with DJ Kess", venue: "Sky+ Rooftop Bar", tags: ["R&B","TONIGHT","GHS 30"], time: "7:30 PM", sponsored: false },
-      { day: "07", month: "MAY", name: "Onyx Wednesday Madness ft. DJ Manzo", venue: "Onyx Nightclub", tags: ["Hip-Hop","TONIGHT","GHS 50"], time: "11:00 PM", sponsored: false },
-      { day: "08", month: "MAY", name: "La Palm Beach Bash", venue: "La Palm Beach", tags: ["Beach","Reggae","GHS 20"], time: "6:00 PM", sponsored: false },
-      { day: "08", month: "MAY", name: "Highlife Legends Night", venue: "Twist Lounge, Osu", tags: ["Highlife","LIVE BAND","Free Entry"], time: "8:30 PM", sponsored: false },
-      { day: "08", month: "MAY", name: "Afrobeats vs Amapiano Showdown", venue: "Rhapsody's Accra", tags: ["Amapiano","Afrobeats","GHS 60"], time: "10:00 PM", sponsored: true },
-    ];
-  }
-
-  // Update stats
+  // Fallback if DB empty
+  if (!venues.length) venues = [
+    { name: "Onyx Nightclub", area: "East Legon", type: "club", heat: 98, crowd: 5, tags: ["Afrobeats","Hip-Hop","VIP"], entry: "GHS 50", time: "10pm – 4am", color: "#ff3d8a", premium: true, camOn: true },
+    { name: "Sky+ Rooftop Bar", area: "Airport Hills", type: "rooftop", heat: 87, crowd: 4, tags: ["R&B","Cocktails","Views"], entry: "GHS 30", time: "7pm – 2am", color: "#f5c542", premium: true, camOn: true },
+    { name: "Twist Lounge", area: "Osu", type: "lounge", heat: 74, crowd: 3, tags: ["Highlife","Jazz","Chill"], entry: "Free", time: "8pm – 1am", color: "#4fa3ff", premium: false, camOn: false },
+    { name: "La Palm Beach Bar", area: "La", type: "beach", heat: 81, crowd: 4, tags: ["Beach","Reggae","Sundowner"], entry: "GHS 20", time: "6pm – 12am", color: "#39e07a", premium: false, camOn: true },
+    { name: "Firefly Lounge", area: "Cantonments", type: "lounge", heat: 62, crowd: 2, tags: ["Soul","Wine","Events"], entry: "Free", time: "6pm – 1am", color: "#4fa3ff", premium: false, camOn: false },
+    { name: "Rhapsodys Accra", area: "Accra Mall", type: "club", heat: 79, crowd: 4, tags: ["Afrobeats","Dancehall","Birthday"], entry: "GHS 40", time: "9pm – 3am", color: "#ff6b35", premium: false, camOn: false },
+  ];
+  if (!events.length) events = [
+    { day: "07", month: "MAY", name: "AFRO NATION WARMUP — Accra Edition", venue: "Accra Sports Stadium", tags: ["Afrobeats","CONCERT","GHS 150"], time: "8:00 PM", sponsored: true },
+    { day: "07", month: "MAY", name: "Rooftop Sundowner with DJ Kess", venue: "Sky+ Rooftop Bar", tags: ["R&B","TONIGHT","GHS 30"], time: "7:30 PM", sponsored: false },
+    { day: "07", month: "MAY", name: "Onyx Wednesday Madness ft. DJ Manzo", venue: "Onyx Nightclub", tags: ["Hip-Hop","TONIGHT","GHS 50"], time: "11:00 PM", sponsored: false },
+    { day: "08", month: "MAY", name: "La Palm Beach Bash", venue: "La Palm Beach", tags: ["Beach","Reggae","GHS 20"], time: "6:00 PM", sponsored: false },
+    { day: "08", month: "MAY", name: "Highlife Legends Night", venue: "Twist Lounge, Osu", tags: ["Highlife","LIVE BAND","Free Entry"], time: "8:30 PM", sponsored: false },
+    { day: "08", month: "MAY", name: "Afrobeats vs Amapiano Showdown", venue: "Rhapsodys Accra", tags: ["Amapiano","Afrobeats","GHS 60"], time: "10:00 PM", sponsored: true },
+  ];
   document.getElementById('venueCount').textContent = venues.length;
   document.getElementById('eventCount').textContent = events.length;
-
   renderVenues(venues);
   renderEvents();
-
-  // Subscribe to real-time venue changes
-  db.channel('venues-live')
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'venues' }, payload => {
-      const idx = venues.findIndex(v => v.id === payload.new.id);
-      if (idx !== -1) {
-        venues[idx] = normaliseVenue(payload.new);
-        renderVenues(venues);
-        showToast('🔴 Live update: ' + payload.new.name);
-      }
-    })
-    .subscribe();
 }
+
+requestLocation();
+loadData();
 
 // Ad rotation
 let currentAd = 0;
 const adSlides = document.querySelectorAll('.ad-slide');
-setInterval(() => {
-  adSlides[currentAd].classList.remove('active');
-  currentAd = (currentAd + 1) % adSlides.length;
-  adSlides[currentAd].classList.add('active');
-}, 4000);
-
-// Load real data from Supabase
-loadData();
+if (adSlides.length) {
+  setInterval(() => {
+    adSlides[currentAd].classList.remove('active');
+    currentAd = (currentAd + 1) % adSlides.length;
+    adSlides[currentAd].classList.add('active');
+  }, 4000);
+}
 
 function createLiveCard(v) {
   const crowdBars = Array.from({length: 5}, (_, i) =>
@@ -680,7 +702,10 @@ function createLiveCard(v) {
             ${crowdBars}
             <span class="crowd-label">${['','Quiet','Picking up','Getting busy','Packed','RAM FULL'][v.crowd]}</span>
           </div>
-          <button class="btn-view" onclick="event.stopPropagation();openVenueModal(${venues.indexOf(v)})">View →</button>
+          <div style="display:flex;gap:6px">
+            <button class="btn-view" onclick="event.stopPropagation();checkInAtVenue(${venues.indexOf(v)})" style="background:rgba(57,224,122,0.15);color:#39e07a;border:1px solid rgba(57,224,122,0.3)">📍 I'm Here</button>
+            <button class="btn-view" onclick="event.stopPropagation();openVenueModal(${venues.indexOf(v)})">View →</button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -717,7 +742,8 @@ function renderEvents() {
   document.getElementById('eventsList').innerHTML = events.map(createEventCard).join('');
 }
 
-// Data is rendered by loadData() above
+renderVenues(venues);
+renderEvents();
 
 function filterVenues(type, btn) {
   document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
@@ -1023,17 +1049,13 @@ function scrollToSection(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Live simulation
-function liveUpdate() {
-  venues.forEach(v => {
-    v.heat = Math.min(99, Math.max(30, v.heat + (Math.random() > 0.5 ? 1 : -1)));
-    v.crowd = Math.min(5, Math.max(1, Math.round(v.heat / 20)));
-  });
-  const activeFilter = document.querySelector('.filter-tab.active')?.textContent;
-  if (activeFilter === 'All Venues') renderVenues(venues);
-  document.getElementById('crowdCount').textContent = (2.8 + Math.random() * 0.8).toFixed(1) + 'K';
-}
-setInterval(liveUpdate, 5000);
+// Refresh real data from Supabase every 30 seconds
+setInterval(async () => {
+  if (!db) return;
+  const { data: vr } = await db.from('venues').select('*').eq('active', true).order('premium', {ascending:false}).order('heat', {ascending:false});
+  if (vr && vr.length) { venues = vr.map(normaliseVenue); renderVenues(venues); }
+  updateOutTonightCount();
+}, 30000);
 </script>
 </body>
 </html>
