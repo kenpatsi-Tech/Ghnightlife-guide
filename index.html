@@ -3,46 +3,951 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GhaNight — Ghana's #1 Nightlife Guide</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Primary SEO -->
+<title>GhaNight — Ghana's #1 Nightlife Guide | Accra Clubs, Bars & Events</title>
+<meta name="description" content="GhaNight is Ghana's #1 nightlife guide. Discover the hottest clubs, rooftop bars, lounges and events in Accra tonight. Live crowd updates, entry prices and more.">
+<meta name="keywords" content="Ghana nightlife, Accra clubs, Accra bars, nightlife Accra, Osu nightlife, East Legon clubs, Ghana events, Accra events tonight, best clubs in Ghana, rooftop bars Accra">
+<meta name="author" content="GhaNight">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.ghanight.com/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.ghanight.com/">
+<meta property="og:title" content="GhaNight — Ghana's #1 Nightlife Guide">
+<meta property="og:description" content="Find the hottest clubs, bars and events in Accra tonight. Live crowd levels, entry prices and event listings.">
+<meta property="og:image" content="https://www.ghanight.com/og-image.jpg">
+<meta property="og:locale" content="en_GH">
+<meta property="og:site_name" content="GhaNight">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GhaNight — Ghana's #1 Nightlife Guide">
+<meta name="twitter:description" content="Discover Accra's hottest clubs, bars and events tonight.">
+<meta name="twitter:image" content="https://www.ghanight.com/og-image.jpg">
+
+<!-- Geo -->
+<meta name="geo.region" content="GH-AA">
+<meta name="geo.placename" content="Accra, Ghana">
+<meta name="geo.position" content="5.6037;-0.1870">
+<meta name="ICBM" content="5.6037, -0.1870">
+
+<!-- Schema.org -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "GhaNight",
+  "description": "Ghana's #1 nightlife guide for clubs, bars, lounges and events in Accra",
+  "url": "https://www.ghanight.com",
+  "applicationCategory": "EntertainmentApplication",
+  "operatingSystem": "All",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GHS" },
+  "areaServed": { "@type": "City", "name": "Accra", "containedInPlace": { "@type": "Country", "name": "Ghana" } },
+  "author": { "@type": "Organization", "name": "GhaNight" },
+  "copyrightYear": "2026",
+  "copyrightHolder": { "@type": "Organization", "name": "GhaNight" }
+}
+</script>
+<!-- © 2026 GhaNight. All rights reserved. -->
+
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
-  :root { --bg: #080810; --gold: #f5c542; --orange: #ff6b35; --text: #f0f0f8; --card: #14142a; }
-  body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; text-align: center; }
-  nav { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
-  .logo { font-weight: bold; font-size: 24px; color: var(--gold); }
-  .hero { padding: 60px 20px; }
-  h1 { font-size: 3rem; margin-bottom: 10px; background: linear-gradient(to right, var(--gold), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
-  .card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
+  :root {
+    --bg: #080810;
+    --surface: #10101e;
+    --card: #14142a;
+    --gold: #f5c542;
+    --orange: #ff6b35;
+    --pink: #ff3d8a;
+    --green: #39e07a;
+    --blue: #4fa3ff;
+    --text: #f0f0f8;
+    --muted: #7070a0;
+    --border: rgba(255,255,255,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+  body::before {
+    content: ''; position: fixed; top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(245,197,66,0.06) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+    animation: bgPulse1 8s ease-in-out infinite;
+  }
+  body::after {
+    content: ''; position: fixed; bottom: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(255,61,138,0.06) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+    animation: bgPulse2 10s ease-in-out infinite;
+  }
+  @keyframes bgPulse1 { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} }
+  @keyframes bgPulse2 { 0%,100%{opacity:0.5;transform:scale(1.1)} 50%{opacity:1;transform:scale(1)} }
+  @keyframes pulseBadge { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  @keyframes pulseDot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+  @keyframes sweepLight { 0%{opacity:0;transform:rotate(-20deg)} 30%{opacity:1} 50%{transform:rotate(20deg);opacity:1} 70%{opacity:0.5} 100%{opacity:0;transform:rotate(-20deg)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes adSlide { 0%,100%{opacity:1} 45%{opacity:1} 50%{opacity:0} 95%{opacity:0} }
+
+  /* NAV */
+  nav.top-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(8,8,16,0.9); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; background: linear-gradient(135deg, var(--gold), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 2px; }
+  .logo span { font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--muted); -webkit-text-fill-color: var(--muted); margin-left: 5px; letter-spacing: 0; }
+  .nav-pills { display: flex; gap: 4px; }
+  .nav-pill { background: none; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 100px; cursor: pointer; transition: all 0.2s; }
+  .nav-pill:hover, .nav-pill.active { background: var(--border); color: var(--gold); }
+  .nav-right { display: flex; gap: 8px; align-items: center; }
+  .badge-live { background: var(--pink); color: white; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 100px; letter-spacing: 1px; animation: pulseBadge 2s infinite; }
+  .btn-nav { background: linear-gradient(135deg, var(--gold), var(--orange)); color: #000; border: none; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 12px; padding: 7px 14px; border-radius: 10px; cursor: pointer; }
+
+  main { padding-top: 60px; position: relative; z-index: 1; }
+
+  /* HERO */
+  .hero { padding: 50px 20px 36px; text-align: center; }
+  .hero-eyebrow { font-size: 11px; letter-spacing: 4px; color: var(--gold); font-weight: 600; margin-bottom: 14px; text-transform: uppercase; }
+  .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 12vw, 100px); line-height: 0.9; background: linear-gradient(135deg, #fff 0%, var(--gold) 50%, var(--orange) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px; }
+  .hero-sub { color: var(--muted); font-size: 15px; max-width: 480px; margin: 0 auto 28px; line-height: 1.6; }
+  .hero-stats { display: flex; justify-content: center; gap: 36px; margin-bottom: 32px; }
+  .stat { text-align: center; }
+  .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 34px; color: var(--gold); }
+  .stat-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .search-bar { max-width: 500px; margin: 0 auto 44px; display: flex; gap: 10px; }
+  .search-input { flex: 1; background: var(--card); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 13px 16px; border-radius: 13px; outline: none; transition: border-color 0.2s; }
+  .search-input:focus { border-color: rgba(245,197,66,0.4); }
+  .search-input::placeholder { color: var(--muted); }
+  .btn-primary { background: linear-gradient(135deg, var(--gold), var(--orange)); color: #000; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 13px; padding: 13px 20px; border: none; border-radius: 13px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(245,197,66,0.3); }
+
+  /* AD BANNER */
+  .ad-banner {
+    margin: 0 20px 28px;
+    border-radius: 16px; overflow: hidden;
+    border: 1px solid rgba(245,197,66,0.15);
+    position: relative; height: 90px;
+    background: linear-gradient(135deg, #1a1030, #0a1830);
+    cursor: pointer;
+  }
+  .ad-banner-inner { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 20px; gap: 16px; }
+  .ad-icon { font-size: 36px; flex-shrink: 0; }
+  .ad-text { flex: 1; }
+  .ad-label { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
+  .ad-title { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .ad-sub { font-size: 12px; color: var(--muted); }
+  .ad-cta { background: linear-gradient(135deg, var(--gold), var(--orange)); color: #000; border: none; border-radius: 10px; padding: 8px 16px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  .ad-slide { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 20px; gap: 16px; opacity: 0; transition: opacity 0.6s; }
+  .ad-slide.active { opacity: 1; }
+
+  /* AD INLINE */
+  .ad-inline {
+    margin: 0 20px 20px;
+    background: linear-gradient(135deg, rgba(245,197,66,0.05), rgba(255,107,53,0.05));
+    border: 1px solid rgba(245,197,66,0.12);
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px; cursor: pointer;
+  }
+  .ad-inline-badge { font-size: 9px; background: rgba(245,197,66,0.15); color: var(--gold); padding: 2px 7px; border-radius: 100px; letter-spacing: 1px; white-space: nowrap; }
+
+  /* FILTER TABS */
+  .filter-tabs { display: flex; gap: 8px; padding: 0 20px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 28px; scrollbar-width: none; }
+  .filter-tabs::-webkit-scrollbar { display: none; }
+  .filter-tab { background: var(--card); border: 1px solid var(--border); color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 8px 16px; border-radius: 100px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .filter-tab:hover { border-color: rgba(245,197,66,0.3); color: var(--text); }
+  .filter-tab.active { background: linear-gradient(135deg, var(--gold), var(--orange)); border-color: transparent; color: #000; font-weight: 700; }
+
+  /* SECTION */
+  .section-header { padding: 0 20px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+  .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1px; }
+  .section-title span { color: var(--gold); }
+  .see-all { color: var(--gold); font-size: 13px; font-weight: 500; cursor: pointer; }
+
+  /* LIVE GRID */
+  .live-section { margin-bottom: 44px; }
+  .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; padding: 0 20px; }
+  .live-card { background: var(--card); border-radius: 18px; overflow: hidden; border: 1px solid var(--border); transition: all 0.3s; cursor: pointer; position: relative; }
+  .live-card:hover { transform: translateY(-4px); border-color: rgba(245,197,66,0.2); box-shadow: 0 16px 40px rgba(0,0,0,0.4); }
+  .live-card.premium { border-color: rgba(245,197,66,0.3); }
+  .premium-crown { position: absolute; top: 0; right: 0; background: linear-gradient(135deg, var(--gold), var(--orange)); color: #000; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 0 0 0 12px; letter-spacing: 0.5px; z-index: 5; }
+  .live-feed-area { height: 170px; position: relative; background: linear-gradient(135deg, #1a0a2e, #0a1a2e); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .crowd-sim { width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 100%); position: relative; overflow: hidden; }
+  .light-beam { position: absolute; top: -20px; width: 36px; height: 200px; opacity: 0; transform-origin: top center; border-radius: 0 0 20px 20px; animation: sweepLight 3s ease-in-out infinite; }
+  .light-beam:nth-child(1) { left: 20%; background: rgba(245,197,66,0.3); animation-delay: 0s; }
+  .light-beam:nth-child(2) { left: 40%; background: rgba(255,61,138,0.25); animation-delay: 0.8s; }
+  .light-beam:nth-child(3) { left: 60%; background: rgba(79,163,255,0.25); animation-delay: 1.6s; }
+  .light-beam:nth-child(4) { left: 75%; background: rgba(57,224,122,0.2); animation-delay: 2.4s; }
+  .crowd-dots { position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: repeating-linear-gradient(90deg, transparent 0px, transparent 6px, rgba(255,255,255,0.03) 6px, rgba(255,255,255,0.03) 7px); }
+  .live-badge { position: absolute; top: 10px; left: 10px; background: rgba(255,61,138,0.9); color: white; font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 100px; display: flex; align-items: center; gap: 4px; letter-spacing: 1px; z-index: 2; }
+  .live-dot { width: 6px; height: 6px; background: white; border-radius: 50%; animation: pulseDot 1s infinite; }
+  .heat-badge { position: absolute; top: 10px; right: 10px; z-index: 2; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); border-radius: 9px; padding: 4px 9px; font-size: 12px; font-weight: 700; color: var(--gold); }
+  .activity-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.05); }
+  .activity-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--orange)); transition: width 2s ease; border-radius: 0 2px 2px 0; }
+  .camera-status { position: absolute; bottom: 10px; left: 10px; z-index: 2; font-size: 10px; padding: 3px 8px; border-radius: 100px; font-weight: 600; }
+  .cam-on { background: rgba(57,224,122,0.2); color: var(--green); border: 1px solid rgba(57,224,122,0.3); }
+  .cam-off { background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid var(--border); }
+  .live-card-body { padding: 14px; }
+  .venue-name { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .venue-meta { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .venue-vibe { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .vibe-tag { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 100px; padding: 3px 9px; font-size: 11px; color: var(--muted); }
+  .venue-footer { display: flex; justify-content: space-between; align-items: center; }
+  .crowd-level { display: flex; gap: 3px; align-items: center; }
+  .crowd-bar { width: 7px; height: 16px; border-radius: 4px; background: var(--border); transition: background 0.5s; }
+  .crowd-bar.filled { background: linear-gradient(180deg, var(--gold), var(--orange)); }
+  .crowd-bar.half { background: linear-gradient(180deg, var(--orange), var(--pink)); }
+  .crowd-label { font-size: 11px; color: var(--muted); margin-left: 4px; }
+  .btn-view { background: var(--border); border: 1px solid rgba(255,255,255,0.1); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 9px; cursor: pointer; transition: all 0.2s; }
+  .btn-view:hover { background: linear-gradient(135deg, var(--gold), var(--orange)); color: #000; border-color: transparent; }
+
+  /* CLUB PROMO CARD */
+  .club-promo-card {
+    margin: 0 20px 28px;
+    background: linear-gradient(135deg, rgba(245,197,66,0.08), rgba(255,107,53,0.06));
+    border: 1px dashed rgba(245,197,66,0.3);
+    border-radius: 18px; padding: 20px;
+    text-align: center;
+  }
+  .club-promo-card h3 { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--gold); margin-bottom: 6px; letter-spacing: 1px; }
+  .club-promo-card p { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+  .btn-register-club { background: linear-gradient(135deg, var(--gold), var(--orange)); color: #000; border: none; border-radius: 12px; padding: 12px 24px; font-family: 'DM Sans', sans-serif; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+  .btn-register-club:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,197,66,0.3); }
+
+  /* EVENTS */
+  .events-section { margin-bottom: 44px; }
+  .events-list { display: flex; flex-direction: column; gap: 10px; padding: 0 20px; }
+  .event-card { background: var(--card); border-radius: 14px; border: 1px solid var(--border); display: flex; align-items: stretch; overflow: hidden; transition: all 0.25s; cursor: pointer; }
+  .event-card:hover { border-color: rgba(245,197,66,0.2); transform: translateX(4px); }
+  .event-card.sponsored { border-color: rgba(245,197,66,0.2); }
+  .event-sponsored-tag { font-size: 9px; color: var(--gold); background: rgba(245,197,66,0.1); padding: 2px 7px; border-radius: 100px; margin-bottom: 4px; display: inline-block; letter-spacing: 1px; }
+  .event-date-block { min-width: 65px; padding: 18px 12px; background: linear-gradient(135deg, var(--gold), var(--orange)); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #000; }
+  .event-day { font-family: 'Bebas Neue', sans-serif; font-size: 30px; line-height: 1; }
+  .event-month { font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+  .event-info { padding: 14px 18px; flex: 1; }
+  .event-name { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .event-venue { font-size: 12px; color: var(--muted); margin-bottom: 7px; }
+  .event-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+  .event-tag { font-size: 11px; padding: 2px 8px; border-radius: 100px; font-weight: 600; }
+  .tag-genre { background: rgba(79,163,255,0.1); color: var(--blue); border: 1px solid rgba(79,163,255,0.2); }
+  .tag-price { background: rgba(57,224,122,0.1); color: var(--green); border: 1px solid rgba(57,224,122,0.2); }
+  .tag-hot { background: rgba(255,61,138,0.1); color: var(--pink); border: 1px solid rgba(255,61,138,0.2); }
+  .event-right { padding: 16px 14px; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; min-width: 75px; }
+  .event-time { font-size: 11px; color: var(--muted); }
+  .btn-interested { background: none; border: 1px solid var(--border); color: var(--text); font-size: 12px; padding: 5px 12px; border-radius: 9px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+  .btn-interested:hover, .btn-interested.liked { background: var(--pink); border-color: var(--pink); color: white; }
+
+  /* MAP */
+  .map-section { margin-bottom: 44px; }
+  .map-placeholder { margin: 0 20px; height: 260px; border-radius: 18px; background: linear-gradient(135deg, #0d1117 0%, #0a1428 50%, #140a1e 100%); border: 1px solid var(--border); position: relative; overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .map-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px; }
+  .map-roads { position: absolute; inset: 0; background: linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.04) 20%, rgba(255,255,255,0.04) 21%, transparent 21%), linear-gradient(transparent 35%, rgba(255,255,255,0.04) 35%, rgba(255,255,255,0.04) 36%, transparent 36%), linear-gradient(90deg, transparent 55%, rgba(255,255,255,0.04) 55%, rgba(255,255,255,0.04) 56%, transparent 56%), linear-gradient(transparent 68%, rgba(255,255,255,0.04) 68%, rgba(255,255,255,0.04) 69%, transparent 69%); }
+  .map-pin { position: absolute; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
+  .map-pin:hover { transform: scale(1.15); }
+  .pin-dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 0 12px currentColor; }
+  .pin-hot { background: var(--pink); color: var(--pink); }
+  .pin-warm { background: var(--gold); color: var(--gold); }
+  .pin-cool { background: var(--blue); color: var(--blue); }
+  .pin-label { font-size: 10px; color: var(--text); background: rgba(0,0,0,0.7); padding: 2px 7px; border-radius: 6px; margin-top: 4px; white-space: nowrap; font-weight: 600; }
+  .map-legend { position: absolute; bottom: 14px; left: 14px; display: flex; gap: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .map-label { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px; color: rgba(255,255,255,0.08); white-space: nowrap; }
+
+  /* BOTTOM NAV */
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(8,8,16,0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0 20px; }
+  .bnav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 5px 0; font-size: 10px; color: var(--muted); transition: color 0.2s; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+  .bnav-item.active { color: var(--gold); }
+  .bnav-icon { font-size: 19px; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.88); backdrop-filter: blur(8px); display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--card); border-radius: 22px 22px 0 0; width: 100%; max-width: 540px; border: 1px solid var(--border); border-bottom: none; padding: 24px 22px 48px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); max-height: 92vh; overflow-y: auto; }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-handle { width: 38px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 22px; }
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 30px; margin-bottom: 4px; }
+  .modal-sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  .modal-live { height: 150px; border-radius: 14px; overflow: hidden; margin-bottom: 18px; position: relative; background: linear-gradient(135deg, #1a0a2e, #0a1a2e); }
+  .modal-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+  .modal-info-item { background: rgba(255,255,255,0.03); border-radius: 11px; border: 1px solid var(--border); padding: 11px; }
+  .modal-info-label { font-size: 10px; color: var(--muted); margin-bottom: 3px; letter-spacing: 0.5px; }
+  .modal-info-val { font-size: 15px; font-weight: 700; color: var(--text); }
+  .btn-book { width: 100%; background: linear-gradient(135deg, var(--gold), var(--orange)); border: none; border-radius: 14px; color: #000; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 800; padding: 16px; cursor: pointer; transition: all 0.2s; }
+  .btn-book:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(245,197,66,0.4); }
+
+  /* AUTH MODAL */
+  .auth-modal { background: var(--card); border-radius: 22px 22px 0 0; width: 100%; max-width: 540px; border: 1px solid var(--border); border-bottom: none; padding: 28px 24px 48px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  .modal-overlay.open .auth-modal { transform: translateY(0); }
+  .auth-tabs { display: flex; gap: 4px; background: var(--surface); border-radius: 12px; padding: 4px; margin-bottom: 24px; }
+  .auth-tab { flex: 1; padding: 9px; border: none; border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; background: none; color: var(--muted); }
+  .auth-tab.active { background: var(--card); color: var(--text); }
+  .auth-form { display: flex; flex-direction: column; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+  .form-input { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 12px 14px; border-radius: 11px; outline: none; transition: border-color 0.2s; }
+  .form-input:focus { border-color: rgba(245,197,66,0.4); }
+  .form-select { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 12px 14px; border-radius: 11px; outline: none; appearance: none; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .plan-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0; }
+  .plan-card { border: 2px solid var(--border); border-radius: 12px; padding: 14px 12px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .plan-card.selected { border-color: var(--gold); background: rgba(245,197,66,0.06); }
+  .plan-name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .plan-price { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--gold); }
+  .plan-price span { font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--muted); }
+  .plan-features { font-size: 11px; color: var(--muted); line-height: 1.6; margin-top: 6px; }
+  .btn-submit { background: linear-gradient(135deg, var(--gold), var(--orange)); color: #000; border: none; border-radius: 12px; padding: 15px; font-family: 'DM Sans', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; width: 100%; margin-top: 4px; transition: all 0.2s; }
+  .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(245,197,66,0.3); }
+  .form-divider { text-align: center; font-size: 12px; color: var(--muted); margin: 4px 0; }
+  .form-link { color: var(--gold); text-decoration: none; cursor: pointer; font-size: 13px; text-align: center; display: block; }
+  .success-screen { text-align: center; padding: 20px 0; animation: fadeIn 0.4s ease; }
+  .success-icon { font-size: 56px; margin-bottom: 16px; }
+  .success-title { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--gold); margin-bottom: 8px; }
+  .success-sub { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(30,30,50,0.96); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 12px; padding: 11px 18px; font-size: 13px; color: var(--text); opacity: 0; transition: all 0.3s; z-index: 300; white-space: nowrap; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .spacer-bottom { height: 88px; }
+
+  @media (max-width: 480px) {
+    .hero-title { font-size: 58px; }
+    .hero-stats { gap: 20px; }
+    .modal-info-grid, .form-row, .plan-cards { grid-template-columns: 1fr; }
+    .live-grid { grid-template-columns: 1fr; }
+    .ad-banner { height: auto; min-height: 80px; }
+  }
 </style>
 </head>
 <body>
-<nav><div class="logo">GHANIGHT</div></nav>
-<div class="hero">
-  <h1>GHANIGHT</h1>
-  <p>Accra's clubs, bars, and lounges—live.</p>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <div class="logo">GhaNight<span>ACCRA</span></div>
+  <div class="nav-pills">
+    <button class="nav-pill active" onclick="scrollToSection('live')">Live</button>
+    <button class="nav-pill" onclick="scrollToSection('events')">Events</button>
+    <button class="nav-pill" onclick="scrollToSection('map')">Map</button>
+  </div>
+  <div class="nav-right">
+    <span class="badge-live">LIVE</span>
+    <button class="btn-nav" onclick="openAuth('user')">Sign Up</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="hero-eyebrow">🇬🇭 Ghana's #1 Nightlife Guide</p>
+    <h1 class="hero-title">GHANIGHT</h1>
+    <p class="hero-sub">Discover the hottest spots in Accra right now. Real-time crowd activity, live feeds & tonight's top events.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num" id="venueCount">24</div><div class="stat-label">Live Venues</div></div>
+      <div class="stat"><div class="stat-num" id="eventCount">11</div><div class="stat-label">Events Tonight</div></div>
+      <div class="stat"><div class="stat-num" id="crowdCount">3.2K</div><div class="stat-label">Out Tonight</div></div>
+    </div>
+    <div class="search-bar">
+      <input class="search-input" placeholder="Search venues, events, DJs..." id="searchInput" oninput="handleSearch(this.value)">
+      <button class="btn-primary" onclick="showToast('🔍 Searching Ghana\'s hottest spots...')">Explore</button>
+    </div>
+  </section>
+
+  <!-- AD BANNER (rotating sponsors) -->
+  <div class="ad-banner" id="adBanner" onclick="showToast('🎯 Opening advertiser page...')">
+    <div class="ad-slide active" id="adSlide0">
+      <div class="ad-icon">🍺</div>
+      <div class="ad-text">
+        <div class="ad-label">Sponsored</div>
+        <div class="ad-title">Club Beer — Chill Responsibly</div>
+        <div class="ad-sub">Ghana's favourite lager. Served cold at your favourite spots.</div>
+      </div>
+      <button class="ad-cta">Learn More</button>
+    </div>
+    <div class="ad-slide" id="adSlide1">
+      <div class="ad-icon">🚗</div>
+      <div class="ad-text">
+        <div class="ad-label">Sponsored</div>
+        <div class="ad-title">Yango — Safe Rides All Night</div>
+        <div class="ad-sub">Book a ride home from any venue. Download the app now.</div>
+      </div>
+      <button class="ad-cta">Get a Ride</button>
+    </div>
+    <div class="ad-slide" id="adSlide2">
+      <div class="ad-icon">👗</div>
+      <div class="ad-text">
+        <div class="ad-label">Sponsored</div>
+        <div class="ad-title">Style Ghana — Dress to Impress</div>
+        <div class="ad-sub">Exclusive nightlife fashion. Shop online, delivered Accra-wide.</div>
+      </div>
+      <button class="ad-cta">Shop Now</button>
+    </div>
+  </div>
+
+  <!-- FILTER TABS -->
+  <div class="filter-tabs" id="filterTabs">
+    <button class="filter-tab active" onclick="filterVenues('all', this)">All Venues</button>
+    <button class="filter-tab" onclick="filterVenues('club', this)">🎶 Clubs</button>
+    <button class="filter-tab" onclick="filterVenues('lounge', this)">🥂 Lounges</button>
+    <button class="filter-tab" onclick="filterVenues('beach', this)">🏖️ Beach Bars</button>
+    <button class="filter-tab" onclick="filterVenues('rooftop', this)">🌙 Rooftops</button>
+    <button class="filter-tab" onclick="filterVenues('concert', this)">🎤 Concerts</button>
+  </div>
+
+  <!-- LIVE FEED -->
+  <section class="live-section" id="live">
+    <div class="section-header">
+      <h2 class="section-title">LIVE <span>FEED</span></h2>
+      <span class="see-all" onclick="openAuth('user')">Join to see all →</span>
+    </div>
+    <div class="live-grid" id="liveGrid"></div>
+  </section>
+
+  <!-- INLINE AD -->
+  <div class="ad-inline" onclick="showToast('Opening sponsor details...')">
+    <div class="ad-inline-badge">AD</div>
+    <div style="flex:1">
+      <div style="font-size:14px;font-weight:700;color:var(--text)">Accra Night Market — Every Saturday</div>
+      <div style="font-size:12px;color:var(--muted)">Food, music & culture. Free entry. Osu Oxford Street.</div>
+    </div>
+    <span style="color:var(--gold);font-size:12px;font-weight:600">Visit →</span>
+  </div>
+
+  <!-- CLUB REGISTRATION PROMO -->
+  <div class="club-promo-card">
+    <h3>📡 List Your Venue on GhaNight</h3>
+    <p>Get real-time crowd visibility, featured placement, ticketing, and camera broadcasting access. Join Ghana's fastest growing nightlife platform.</p>
+    <button class="btn-register-club" onclick="openAuth('club')">Register Your Club / Venue</button>
+  </div>
+
+  <!-- EVENTS -->
+  <section class="events-section" id="events">
+    <div class="section-header">
+      <h2 class="section-title">TONIGHT'S <span>EVENTS</span></h2>
+      <span class="see-all" onclick="openAuth('user')">Sign up to RSVP →</span>
+    </div>
+    <div class="events-list" id="eventsList"></div>
+  </section>
+
+  <!-- MAP -->
+  <section class="map-section" id="map">
+    <div class="section-header">
+      <h2 class="section-title">ACCRA <span>HOTSPOTS</span></h2>
+      <span class="see-all" onclick="showToast('Full map — coming soon!')">Full map →</span>
+    </div>
+    <div class="map-placeholder">
+      <div class="map-grid"></div>
+      <div class="map-roads"></div>
+      <div class="map-pin" style="left:22%;top:38%" onclick="openVenueModal(venues[0])">
+        <div class="pin-dot pin-hot"></div><div class="pin-label">Onyx</div>
+      </div>
+      <div class="map-pin" style="left:45%;top:28%" onclick="openVenueModal(venues[1])">
+        <div class="pin-dot pin-hot"></div><div class="pin-label">Sky+ Rooftop</div>
+      </div>
+      <div class="map-pin" style="left:63%;top:55%" onclick="openVenueModal(venues[2])">
+        <div class="pin-dot pin-warm"></div><div class="pin-label">Twist</div>
+      </div>
+      <div class="map-pin" style="left:35%;top:65%" onclick="openVenueModal(venues[3])">
+        <div class="pin-dot pin-warm"></div><div class="pin-label">La Palm Beach</div>
+      </div>
+      <div class="map-pin" style="left:75%;top:35%" onclick="openVenueModal(venues[4])">
+        <div class="pin-dot pin-cool"></div><div class="pin-label">Firefly</div>
+      </div>
+      <div class="map-pin" style="left:55%;top:72%" onclick="openVenueModal(venues[5])">
+        <div class="pin-dot pin-cool"></div><div class="pin-label">Rhapsody's</div>
+      </div>
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--pink)"></div>Packed</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Busy</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Calm</div>
+      </div>
+      <div class="map-label">ACCRA, GHANA</div>
+    </div>
+  </section>
+
+  <!-- ADVERTISE WITH US -->
+  <div style="margin: 0 20px 28px; background: linear-gradient(135deg, rgba(79,163,255,0.07), rgba(57,224,122,0.05)); border: 1px solid rgba(79,163,255,0.15); border-radius: 16px; padding: 20px; text-align: center;">
+    <div style="font-size:11px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">For Businesses</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;margin-bottom:8px;">Advertise on GhaNight</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Reach thousands of Accra's nightlife audience every weekend. Banner ads, sponsored events, and featured listings available.</div>
+    <button onclick="openAuth('advertiser')" style="background:linear-gradient(135deg,var(--blue),#2d7fd4);color:white;border:none;border-radius:11px;padding:11px 22px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">Get Advertising Packages →</button>
+  </div>
+
+  <div class="spacer-bottom"></div>
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="bnav-item active" onclick="scrollToSection('live')">
+    <span class="bnav-icon">🔴</span><span>Live</span>
+  </button>
+  <button class="bnav-item" onclick="scrollToSection('events')">
+    <span class="bnav-icon">🎉</span><span>Events</span>
+  </button>
+  <button class="bnav-item" onclick="scrollToSection('map')">
+    <span class="bnav-icon">📍</span><span>Map</span>
+  </button>
+  <button class="bnav-item" onclick="openAuth('user')">
+    <span class="bnav-icon">🎟️</span><span>Tickets</span>
+  </button>
+  <button class="bnav-item" onclick="openAuth('user')">
+    <span class="bnav-icon">👤</span><span>Profile</span>
+  </button>
+</nav>
+
+<!-- VENUE MODAL -->
+<div class="modal-overlay" id="venueModalOverlay" onclick="closeVenueModalOnOutside(event)">
+  <div class="modal" id="venueModal">
+    <div class="modal-handle"></div>
+    <div id="venueModalContent"></div>
+  </div>
 </div>
-<div class="grid" id="venueGrid"></div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModalOverlay" onclick="closeAuthModalOnOutside(event)">
+  <div class="auth-modal" id="authModal">
+    <div class="modal-handle"></div>
+    <div id="authModalContent"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 <script>
-  const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
-  const client =  supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// © 2026 GhaNight. All rights reserved.
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) || (e.ctrlKey && ['U','S'].includes(e.key))) {
+    e.preventDefault();
+    showToast('© 2026 GhaNight. All rights reserved.');
+  }
+});
 
-  const venues = [
-    { name: "Onyx Nightclub", area: "East Legon", heat: "98%" },
-    { name: "Sky+ Rooftop", area: "Airport Hills", heat: "85%" },
-    { name: "Twist Lounge", area: "Osu", heat: "72%" }
-  ];
+const venues = [
+  { name: "Onyx Nightclub", area: "East Legon", type: "club", heat: 98, crowd: 5, tags: ["Afrobeats","Hip-Hop","VIP"], entry: "GHS 50", time: "10pm – 4am", color: "#ff3d8a", premium: true, camOn: true },
+  { name: "Sky+ Rooftop Bar", area: "Airport Hills", type: "rooftop", heat: 87, crowd: 4, tags: ["R&B","Cocktails","Views"], entry: "GHS 30", time: "7pm – 2am", color: "#f5c542", premium: true, camOn: true },
+  { name: "Twist Lounge", area: "Osu", type: "lounge", heat: 74, crowd: 3, tags: ["Highlife","Jazz","Chill"], entry: "Free", time: "8pm – 1am", color: "#4fa3ff", premium: false, camOn: false },
+  { name: "La Palm Beach Bar", area: "La", type: "beach", heat: 81, crowd: 4, tags: ["Beach","Reggae","Sundowner"], entry: "GHS 20", time: "6pm – 12am", color: "#39e07a", premium: false, camOn: true },
+  { name: "Firefly Lounge", area: "Cantonments", type: "lounge", heat: 62, crowd: 2, tags: ["Soul","Wine","Events"], entry: "Free", time: "6pm – 1am", color: "#4fa3ff", premium: false, camOn: false },
+  { name: "Rhapsody's Accra", area: "Accra Mall", type: "club", heat: 79, crowd: 4, tags: ["Afrobeats","Dancehall","Birthday"], entry: "GHS 40", time: "9pm – 3am", color: "#ff6b35", premium: false, camOn: false },
+];
 
-  const grid = document.getElementById('venueGrid');
-  grid.innerHTML = venues.map(v => `
-    <div class="card">
-      <h3>${v.name}</h3>
-      <p>📍 ${v.area}</p>
-      <div style="color:var(--gold)">🔥 ${v.heat} Capacity</div>
+const events = [
+  { day: "29", month: "APR", name: "AFRO NATION WARMUP — Accra Edition", venue: "Accra Sports Stadium", tags: ["Afrobeats","CONCERT","GHS 150"], time: "8:00 PM", sponsored: true },
+  { day: "29", month: "APR", name: "Rooftop Sundowner with DJ Kess", venue: "Sky+ Rooftop Bar", tags: ["R&B","TONIGHT","GHS 30"], time: "7:30 PM", sponsored: false },
+  { day: "29", month: "APR", name: "Onyx Friday Madness ft. DJ Manzo", venue: "Onyx Nightclub", tags: ["Hip-Hop","SOLD OUT","GHS 50"], time: "11:00 PM", sponsored: false },
+  { day: "30", month: "APR", name: "La Palm Beach Bash — Sat Special", venue: "La Palm Beach", tags: ["Beach","Reggae","GHS 20"], time: "6:00 PM", sponsored: false },
+  { day: "30", month: "APR", name: "Highlife Legends Night", venue: "Twist Lounge, Osu", tags: ["Highlife","LIVE BAND","Free Entry"], time: "8:30 PM", sponsored: false },
+  { day: "30", month: "APR", name: "Afrobeats vs Amapiano Showdown", venue: "Rhapsody's Accra", tags: ["Amapiano","Afrobeats","GHS 60"], time: "10:00 PM", sponsored: true },
+];
+
+// Ad rotation
+let currentAd = 0;
+const adSlides = document.querySelectorAll('.ad-slide');
+setInterval(() => {
+  adSlides[currentAd].classList.remove('active');
+  currentAd = (currentAd + 1) % adSlides.length;
+  adSlides[currentAd].classList.add('active');
+}, 4000);
+
+function createLiveCard(v) {
+  const crowdBars = Array.from({length: 5}, (_, i) =>
+    `<div class="crowd-bar ${i < v.crowd ? (v.crowd >= 4 ? 'half' : 'filled') : ''}"></div>`
+  ).join('');
+  const tagsHtml = v.tags.map(t => `<span class="vibe-tag">${t}</span>`).join('');
+  const heatEmoji = v.heat >= 90 ? '🔥🔥🔥' : v.heat >= 75 ? '🔥🔥' : '🔥';
+  const camStatus = v.camOn
+    ? `<span class="camera-status cam-on">📹 Camera On</span>`
+    : `<span class="camera-status cam-off">📷 No Feed</span>`;
+  return `
+    <div class="live-card ${v.premium ? 'premium' : ''}" onclick="openVenueModal(${venues.indexOf(v)})">
+      ${v.premium ? `<div class="premium-crown">⭐ FEATURED</div>` : ''}
+      <div class="live-feed-area">
+        <div class="crowd-sim">
+          <div class="light-beam"></div><div class="light-beam"></div>
+          <div class="light-beam"></div><div class="light-beam"></div>
+          <div class="crowd-dots"></div>
+        </div>
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        <div class="heat-badge">${heatEmoji} ${v.heat}%</div>
+        ${camStatus}
+        <div class="activity-bar"><div class="activity-fill" style="width:${v.heat}%"></div></div>
+      </div>
+      <div class="live-card-body">
+        <div class="venue-name">${v.name}</div>
+        <div class="venue-meta">
+          <span>📍 ${v.area}</span>
+          <span>⏰ ${v.time}</span>
+        </div>
+        <div class="venue-vibe">${tagsHtml}</div>
+        <div class="venue-footer">
+          <div class="crowd-level">
+            ${crowdBars}
+            <span class="crowd-label">${['','Quiet','Picking up','Getting busy','Packed','RAM FULL'][v.crowd]}</span>
+          </div>
+          <button class="btn-view" onclick="event.stopPropagation();openVenueModal(${venues.indexOf(v)})">View →</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function createEventCard(e) {
+  const tagsHtml = e.tags.map((t,i) => {
+    const cls = i === 0 ? 'tag-genre' : i === 1 ? 'tag-hot' : 'tag-price';
+    return `<span class="event-tag ${cls}">${t}</span>`;
+  }).join('');
+  return `
+    <div class="event-card ${e.sponsored ? 'sponsored' : ''}">
+      <div class="event-date-block">
+        <div class="event-day">${e.day}</div>
+        <div class="event-month">${e.month}</div>
+      </div>
+      <div class="event-info">
+        ${e.sponsored ? `<span class="event-sponsored-tag">SPONSORED</span>` : ''}
+        <div class="event-name">${e.name}</div>
+        <div class="event-venue">📍 ${e.venue}</div>
+        <div class="event-tags">${tagsHtml}</div>
+      </div>
+      <div class="event-right">
+        <div class="event-time">🕐 ${e.time}</div>
+        <button class="btn-interested" onclick="handleRSVP(this)">♡ Going</button>
+      </div>
+    </div>`;
+}
+
+function renderVenues(list) {
+  document.getElementById('liveGrid').innerHTML = list.map(createLiveCard).join('');
+}
+function renderEvents() {
+  document.getElementById('eventsList').innerHTML = events.map(createEventCard).join('');
+}
+
+renderVenues(venues);
+renderEvents();
+
+function filterVenues(type, btn) {
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = type === 'all' ? venues : venues.filter(v => v.type === type);
+  renderVenues(filtered.length ? filtered : venues);
+}
+
+function handleSearch(q) {
+  if (!q) { renderVenues(venues); return; }
+  const filtered = venues.filter(v =>
+    v.name.toLowerCase().includes(q.toLowerCase()) ||
+    v.area.toLowerCase().includes(q.toLowerCase()) ||
+    v.tags.some(t => t.toLowerCase().includes(q.toLowerCase()))
+  );
+  renderVenues(filtered.length ? filtered : venues);
+}
+
+function handleRSVP(btn) {
+  btn.classList.toggle('liked');
+  btn.textContent = btn.classList.contains('liked') ? '❤️ Going' : '♡ Going';
+  if (btn.classList.contains('liked')) showToast('✅ You\'re going! Sign up to save your spot.');
+}
+
+// VENUE MODAL
+function openVenueModal(idx) {
+  const v = typeof idx === 'number' ? venues[idx] : idx;
+  const heatEmoji = v.heat >= 90 ? '🔥🔥🔥' : v.heat >= 75 ? '🔥🔥' : '🔥';
+  document.getElementById('venueModalContent').innerHTML = `
+    <div class="modal-title">${v.name}</div>
+    <div class="modal-sub">📍 ${v.area}, Accra &nbsp;·&nbsp; ${v.premium ? '⭐ Featured Venue' : 'Standard Listing'}</div>
+    <div class="modal-live">
+      <div class="crowd-sim" style="height:100%">
+        <div class="light-beam"></div><div class="light-beam"></div>
+        <div class="light-beam"></div><div class="light-beam"></div>
+        <div class="crowd-dots"></div>
+      </div>
+      <div style="position:absolute;top:10px;left:10px" class="live-badge"><div class="live-dot"></div>${v.camOn ? 'LIVE FEED' : 'SIMULATED'}</div>
+      <div style="position:absolute;top:10px;right:10px" class="heat-badge">${heatEmoji} ${v.heat}% capacity</div>
+      <div class="activity-bar"><div class="activity-fill" style="width:${v.heat}%"></div></div>
     </div>
-  `).join('');
+    ${v.camOn ? '' : '<div style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center;">📡 Live camera not active — crowd data is estimated</div>'}
+    <div class="modal-info-grid">
+      <div class="modal-info-item"><div class="modal-info-label">ENTRY</div><div class="modal-info-val">${v.entry}</div></div>
+      <div class="modal-info-item"><div class="modal-info-label">OPENS</div><div class="modal-info-val">${v.time}</div></div>
+      <div class="modal-info-item"><div class="modal-info-label">CROWD</div><div class="modal-info-val">${['','Quiet','Picking up','Getting busy','Packed','RAM FULL'][v.crowd]}</div></div>
+      <div class="modal-info-item"><div class="modal-info-label">VIBE</div><div class="modal-info-val">${v.tags[0]}</div></div>
+    </div>
+    <button class="btn-book" onclick="openAuth('user');closeVenueModal()">🎟️ Get Tickets / Reserve Table</button>
+  `;
+  document.getElementById('venueModalOverlay').classList.add('open');
+}
+
+function closeVenueModal() { document.getElementById('venueModalOverlay').classList.remove('open'); }
+function closeVenueModalOnOutside(e) { if (e.target.id === 'venueModalOverlay') closeVenueModal(); }
+
+// AUTH MODAL
+let authType = 'user';
+let selectedPlan = 'basic';
+
+function openAuth(type) {
+  authType = type;
+  closeVenueModal();
+  renderAuthModal();
+  document.getElementById('authModalOverlay').classList.add('open');
+}
+
+function closeAuthModal() { document.getElementById('authModalOverlay').classList.remove('open'); }
+function closeAuthModalOnOutside(e) { if (e.target.id === 'authModalOverlay') closeAuthModal(); }
+
+function renderAuthModal() {
+  const el = document.getElementById('authModalContent');
+  if (authType === 'user') {
+    el.innerHTML = `
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold)">JOIN GHANIGHT</div>
+        <div style="font-size:13px;color:var(--muted)">Create your free account to access events, tickets & more</div>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="setAuthTab(this,'signup-user')">Sign Up</button>
+        <button class="auth-tab" onclick="setAuthTab(this,'login-user')">Log In</button>
+      </div>
+      <div id="authTabContent">
+        ${getUserSignupForm()}
+      </div>`;
+  } else if (authType === 'club') {
+    el.innerHTML = `
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold)">LIST YOUR VENUE</div>
+        <div style="font-size:13px;color:var(--muted)">Join Ghana's #1 nightlife platform and grow your audience</div>
+      </div>
+      ${getClubRegForm()}`;
+  } else if (authType === 'advertiser') {
+    el.innerHTML = `
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--blue)">ADVERTISE WITH US</div>
+        <div style="font-size:13px;color:var(--muted)">Reach Accra's most active nightlife audience</div>
+      </div>
+      ${getAdvertiserForm()}`;
+  }
+}
+
+function setAuthTab(btn, tab) {
+  document.querySelectorAll('.auth-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const el = document.getElementById('authTabContent');
+  el.innerHTML = tab === 'signup-user' ? getUserSignupForm() : getLoginForm();
+}
+
+function getUserSignupForm() {
+  return `
+    <div class="auth-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input class="form-input" placeholder="Kofi" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input class="form-input" placeholder="Mensah" type="text">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone / Email</label>
+        <input class="form-input" placeholder="0244 000 000 or email@gmail.com" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" placeholder="Create a password" type="password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Favourite Area</label>
+        <select class="form-select">
+          <option>East Legon</option>
+          <option>Osu</option>
+          <option>Airport Hills</option>
+          <option>Cantonments</option>
+          <option>La / Labadi</option>
+          <option>Tema</option>
+          <option>Everywhere 🇬🇭</option>
+        </select>
+      </div>
+      <button class="btn-submit" onclick="handleSubmit('user')">🎉 Create Free Account</button>
+      <div class="form-divider">Already have an account? <span class="form-link" onclick="setAuthTab(document.querySelectorAll('.auth-tab')[1],'login-user')" style="display:inline">Log in</span></div>
+    </div>`;
+}
+
+function getLoginForm() {
+  return `
+    <div class="auth-form">
+      <div class="form-group">
+        <label class="form-label">Phone / Email</label>
+        <input class="form-input" placeholder="Your phone or email" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" placeholder="Your password" type="password">
+      </div>
+      <button class="btn-submit" onclick="handleSubmit('login')">🔓 Log In</button>
+      <span class="form-link">Forgot password?</span>
+    </div>`;
+}
+
+function getClubRegForm() {
+  return `
+    <div class="auth-form">
+      <div class="form-group">
+        <label class="form-label">Venue / Club Name</label>
+        <input class="form-input" placeholder="e.g. Onyx Nightclub" type="text">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Area / Location</label>
+          <select class="form-select">
+            <option>East Legon</option>
+            <option>Osu</option>
+            <option>Airport Hills</option>
+            <option>Cantonments</option>
+            <option>La / Labadi</option>
+            <option>Accra CBD</option>
+            <option>Tema</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Venue Type</label>
+          <select class="form-select">
+            <option>Nightclub</option>
+            <option>Lounge</option>
+            <option>Rooftop Bar</option>
+            <option>Beach Bar</option>
+            <option>Restaurant & Bar</option>
+            <option>Event Centre</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contact Name</label>
+        <input class="form-input" placeholder="Manager / Owner name" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input class="form-input" placeholder="0244 000 000" type="tel">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" placeholder="venue@email.com" type="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Choose Your Plan</label>
+        <div class="plan-cards">
+          <div class="plan-card selected" onclick="selectPlan(this,'basic')">
+            <div class="plan-name">Basic</div>
+            <div class="plan-price">Free <span>/mo</span></div>
+            <div class="plan-features">Standard listing · Crowd data · Basic profile</div>
+          </div>
+          <div class="plan-card" onclick="selectPlan(this,'premium')">
+            <div class="plan-name">⭐ Premium</div>
+            <div class="plan-price">GHS 250 <span>/mo</span></div>
+            <div class="plan-features">Featured placement · Camera access · Ticketing · Priority support</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-submit" onclick="handleSubmit('club')">📡 Submit Venue Registration</button>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">GhaNight will review and activate your listing within 48 hours.</div>
+    </div>`;
+}
+
+function getAdvertiserForm() {
+  return `
+    <div class="auth-form">
+      <div class="form-group">
+        <label class="form-label">Company / Brand Name</label>
+        <input class="form-input" placeholder="e.g. Club Beer Ghana" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contact Name</label>
+        <input class="form-input" placeholder="Your full name" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" placeholder="marketing@company.com" type="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="form-input" placeholder="0244 000 000" type="tel">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ad Type Interested In</label>
+        <select class="form-select">
+          <option>Banner Ad (rotating top banner)</option>
+          <option>Sponsored Event Listing</option>
+          <option>Featured Venue Sponsorship</option>
+          <option>Full Page Takeover</option>
+          <option>All Packages</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Monthly Budget (GHS)</label>
+        <select class="form-select">
+          <option>GHS 500 – 1,000</option>
+          <option>GHS 1,000 – 3,000</option>
+          <option>GHS 3,000 – 5,000</option>
+          <option>GHS 5,000+</option>
+        </select>
+      </div>
+      <button class="btn-submit" onclick="handleSubmit('advertiser')">📩 Send Enquiry</button>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">Our team will contact you within 24 hours with a custom package.</div>
+    </div>`;
+}
+
+function selectPlan(el, plan) {
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedPlan = plan;
+}
+
+function handleSubmit(type) {
+  const msgs = {
+    user: { icon: '🎉', title: 'Welcome to GhaNight!', sub: 'Your account is being set up. You\'ll receive a confirmation on your phone or email shortly.' },
+    login: { icon: '🔓', title: 'Welcome Back!', sub: 'You\'re now logged in to GhaNight.' },
+    club: { icon: '📡', title: 'Venue Registered!', sub: 'We\'ve received your listing. Our team will review and activate your venue within 48 hours. Check your email for next steps.' },
+    advertiser: { icon: '📩', title: 'Enquiry Sent!', sub: 'Our advertising team will contact you within 24 hours with a custom package tailored to your budget.' },
+  };
+  const m = msgs[type];
+  document.getElementById('authModalContent').innerHTML = `
+    <div class="success-screen">
+      <div class="success-icon">${m.icon}</div>
+      <div class="success-title">${m.title}</div>
+      <p class="success-sub">${m.sub}</p>
+      <button class="btn-submit" style="margin-top:24px" onclick="closeAuthModal()">Back to GhaNight →</button>
+    </div>`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function scrollToSection(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Live simulation
+function liveUpdate() {
+  venues.forEach(v => {
+    v.heat = Math.min(99, Math.max(30, v.heat + (Math.random() > 0.5 ? 1 : -1)));
+    v.crowd = Math.min(5, Math.max(1, Math.round(v.heat / 20)));
+  });
+  const activeFilter = document.querySelector('.filter-tab.active')?.textContent;
+  if (activeFilter === 'All Venues') renderVenues(venues);
+  document.getElementById('crowdCount').textContent = (2.8 + Math.random() * 0.8).toFixed(1) + 'K';
+}
+setInterval(liveUpdate, 5000);
 </script>
 </body>
 </html>
