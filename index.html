@@ -3,76 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GhaNight | Live Map</title>
+    <title>GhaNight | Live</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #121212; color: white; }
-        #map { height: 75vh; width: 100%; border-bottom: 2px solid #333; }
-        .info-panel { padding: 20px; text-align: center; }
-        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; }
-        .busy { background: #ff4444; color: white; }
-        .normal { background: #00C851; color: white; }
+        :root { --bg-color: #0f0f0f; --card-bg: #1a1a1a; --accent: #ffcc00; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-color); color: white; overflow-x: hidden; }
+        
+        /* Tab Content Control */
+        .tab-content { display: none; padding: 20px; padding-bottom: 80px; }
+        .tab-content.active { display: block; }
+
+        /* Map Styling */
+        #map { height: 60vh; width: 100%; border-radius: 15px; margin-top: 10px; z-index: 1; }
+
+        /* Bottom Navigation (From your original design) */
+        .bottom-nav { 
+            position: fixed; bottom: 0; width: 100%; height: 65px; 
+            background: #111; display: flex; justify-content: space-around; 
+            align-items: center; border-top: 1px solid #333; z-index: 1000;
+        }
+        .nav-item { color: #888; text-decoration: none; font-size: 12px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item.active { color: var(--accent); }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; }
+
+        /* Status Pills */
+        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .busy { background: #ff4444; }
+        .normal { background: #00C851; }
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
-    
-    <div class="info-panel">
+    <div id="home" class="tab-content active">
         <h1>GhaNight Live</h1>
-        <p>Real-time vibes across Accra.</p>
-        <div id="venue-feed">Connecting to Supabase...</div>
+        <p>Explore real-time vibes in Accra</p>
+        <div id="map"></div>
+        <div id="venue-list" style="margin-top: 20px;"></div>
     </div>
+
+    <div id="profile" class="tab-content">
+        <h1>Your Profile</h1>
+        <div style="background: var(--card-bg); padding: 20px; border-radius: 15px; text-align: center;">
+            <div style="width: 80px; height: 80px; background: #333; border-radius: 50%; margin: 0 auto 10px;"></div>
+            <h3>Kenpatsi Tech</h3>
+            <p style="color: #888;">Nightlife Explorer</p>
+        </div>
+    </div>
+
+    <div id="explore" class="tab-content"><h1>Explore</h1><p>Trending spots coming soon...</p></div>
+    <div id="notifications" class="tab-content"><h1>Alerts</h1><p>No new crowd alerts.</p></div>
+
+    <nav class="bottom-nav">
+        <a href="javascript:void(0)" class="nav-item active" onclick="openTab('home')"><i>🏠</i>Home</a>
+        <a href="javascript:void(0)" class="nav-item" onclick="openTab('explore')"><i>🔍</i>Explore</a>
+        <a href="javascript:void(0)" class="nav-item" onclick="openTab('notifications')"><i>🔔</i>Alerts</a>
+        <a href="javascript:void(0)" class="nav-item" onclick="openTab('profile')"><i>👤</i>Profile</a>
+    </nav>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Initialize Supabase with your key
+        // 1. Connection Details
         const SB_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrdXByendic2N1YWl0a3RsaHJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzcxNzgsImV4cCI6MjA5MzY1MzE3OH0.u4ptPk9lbFhAzw4HoHl5uyffgG9RMkev6ktUyu9VZfg';
-        
         const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        // Initialize Map (Centered on Accra)
-        const map = L.map('map').setView([5.5500, -0.1800], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        async function getLiveUpdates() {
-            try {
-                const { data, error } = await _supabase.from('venues').select('*');
-                
-                if (error) throw error;
-
-                const feed = document.getElementById('venue-feed');
-                feed.innerHTML = ''; // Clear loading text
-
-                data.forEach(venue => {
-                    // Create Map Marker
-                    const marker = L.marker([venue.latitude, venue.longitude]).addTo(map);
-                    marker.bindPopup(`<b>${venue.name}</b><br>Crowd: ${venue.crowd_status}`);
-
-                    // Create List Item below map
-                    const item = document.createElement('div');
-                    item.style.marginBottom = "10px";
-                    item.innerHTML = `
-                        <span>📍 ${venue.name} is </span>
-                        <span class="status-pill ${venue.crowd_status.toLowerCase()}">${venue.crowd_status}</span>
-                    `;
-                    feed.appendChild(item);
-                });
-
-            } catch (err) {
-                console.error("Connection Error:", err);
-                document.getElementById('venue-feed').innerHTML = "Failed to load data. Ensure SQL table 'venues' exists.";
-            }
+        // 2. Tab Switching Logic
+        function openTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            // Fix Leaflet sizing when switching back to Home
+            if(tabId === 'home') { setTimeout(() => { map.invalidateSize() }, 200); }
         }
 
-        getLiveUpdates();
+        // 3. Map Setup
+        const map = L.map('map').setView([5.5500, -0.1800], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // 4. Load Data from Supabase
+        async function fetchVenues() {
+            const { data, error } = await _supabase.from('venues').select('*');
+            if (error) return console.error(error);
+
+            const list = document.getElementById('venue-list');
+            list.innerHTML = "";
+
+            data.forEach(v => {
+                // Add Pin
+                L.marker([v.latitude, v.longitude]).addTo(map)
+                 .bindPopup(`<b>${v.name}</b><br>Status: ${v.crowd_status}`);
+
+                // Add List Info
+                const el = document.createElement('div');
+                el.style.background = "#1a1a1a";
+                el.style.padding = "15px";
+                el.style.borderRadius = "10px";
+                el.style.marginBottom = "10px";
+                el.innerHTML = `📍 ${v.name} is <span class="status-pill ${v.crowd_status.toLowerCase()}">${v.crowd_status}</span>`;
+                list.appendChild(el);
+            });
+        }
+
+        fetchVenues();
     </script>
 </body>
 </html>
