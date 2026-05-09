@@ -1,43 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>GhaNight - Live Map</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhaNight | Live Navigation</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
-        #map { height: 500px; width: 100%; border-radius: 10px; }
-        .status-busy { color: red; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #121212; color: white; }
+        #map { height: 60vh; width: 100%; border-bottom: 2px solid #333; }
+        .container { padding: 20px; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .busy { background: #ff4444; }
+        .normal { background: #00C851; }
     </style>
 </head>
 <body>
-    <h1>GhaNight Live Navigation</h1>
+
     <div id="map"></div>
 
+    <div class="container">
+        <h1>GhaNight Live</h1>
+        <p>Real-time crowd updates for Accra nightlife.</p>
+        <div id="status-feed">Loading live data...</div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
-        // Initialize the map centered on Accra
+        // Initialize map centered on Accra
         const map = L.map('map').setView([5.6037, -0.1870], 13);
 
+        // Load map tiles (OpenStreetMap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Fetch data from your Render Backend
-        async function loadVenues() {
+        // 3. FETCH DATA FROM YOUR RENDER BACKEND
+        async function fetchVenues() {
             try {
-                const response = await fetch('YOUR_RENDER_URL/venues');
+                // REPLACE THIS URL with your actual Render link!
+                const response = await fetch('https://your-app-name.onrender.com/venues');
                 const venues = await response.json();
+                
+                const feed = document.getElementById('status-feed');
+                feed.innerHTML = ''; // Clear loading text
 
                 venues.forEach(venue => {
-                    L.marker([venue.latitude, venue.longitude])
-                        .addTo(map)
-                        .bindPopup(`<b>${venue.name}</b><br>Status: ${venue.crowd_status}`);
+                    // Add a marker to the map for each venue in your SQL table
+                    const marker = L.marker([venue.latitude, venue.longitude]).addTo(map);
+                    
+                    // Add a popup that shows the name and crowd status
+                    marker.bindPopup(`
+                        <b>${venue.name}</b><br>
+                        Status: ${venue.crowd_status}
+                    `);
+
+                    // Also add it to the text list below the map
+                    const item = document.createElement('div');
+                    item.innerHTML = `
+                        <p>📍 ${venue.name} - 
+                        <span class="status-badge ${venue.crowd_status.toLowerCase()}">
+                            ${venue.crowd_status}
+                        </span></p>
+                    `;
+                    feed.appendChild(item);
                 });
-            } catch (err) {
-                console.error("Error loading map markers:", err);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('status-feed').innerHTML = 'Offline: Check Render Backend.';
             }
         }
 
-        loadVenues();
+        fetchVenues();
     </script>
 </body>
 </html>
