@@ -1,55 +1,43 @@
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-    #map { 
-        height: 400px; 
-        width: 100%; 
-        border-radius: 18px; 
-        border: 1px solid var(--border);
-        z-index: 1; /* Ensure it stays behind dropdowns */
-    }
-    .leaflet-container { background: var(--bg); }
-    /* Style the Leaflet popup to match your dark theme */
-    .leaflet-popup-content-wrapper {
-        background: var(--card);
-        color: var(--text);
-        border: 1px solid var(--gold);
-    }
-</style>
-
-<section class="map-section" id="map-section">
-    <div class="section-header">
-        <h2 class="section-title">NIGHTLIFE <span>MAP</span></h2>
-    </div>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GhaNight - Live Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 500px; width: 100%; border-radius: 10px; }
+        .status-busy { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>GhaNight Live Navigation</h1>
     <div id="map"></div>
-</section>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    // Initialize Map centered on Accra
-    const map = L.map('map').setView([5.6037, -0.1870], 13);
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map centered on Accra
+        const map = L.map('map').setView([5.6037, -0.1870], 13);
 
-    // Dark Mode Tile Layer (using CartoDB Voyager Dark)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // Sample Data (In a real app, fetch this from your API)
-    const venues = [
-        { name: "Front/Back", lat: 5.5670, lng: -0.1730, status: "Peak" },
-        { name: "Bloom Bar", lat: 5.5600, lng: -0.1700, status: "Busy" },
-        { name: "Skybar 25", lat: 5.6200, lng: -0.1800, status: "Chill" }
-    ];
-
-    venues.forEach(venue => {
-        const marker = L.circleMarker([venue.lat, venue.lng], {
-            radius: 8,
-            fillColor: venue.status === "Peak" ? "#ff3d8a" : "#f5c542",
-            color: "#fff",
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.8
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        marker.bindPopup(`<b>${venue.name}</b><br>Status: ${venue.status}`);
-    });
-</script>
+        // Fetch data from your Render Backend
+        async function loadVenues() {
+            try {
+                const response = await fetch('YOUR_RENDER_URL/venues');
+                const venues = await response.json();
+
+                venues.forEach(venue => {
+                    L.marker([venue.latitude, venue.longitude])
+                        .addTo(map)
+                        .bindPopup(`<b>${venue.name}</b><br>Status: ${venue.crowd_status}`);
+                });
+            } catch (err) {
+                console.error("Error loading map markers:", err);
+            }
+        }
+
+        loadVenues();
+    </script>
+</body>
+</html>
