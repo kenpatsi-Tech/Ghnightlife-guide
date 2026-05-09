@@ -8,107 +8,129 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
+        /* YOUR ORIGINAL PREMIUM STYLES */
         :root { --accent: #ffcc00; --bg: #0b0b0b; --card: #161616; --text: #eee; --glass: rgba(255,255,255,0.05); }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; overflow-x: hidden; }
         
         .tab-content { display: none; padding-bottom: 90px; }
         .tab-content.active { display: block; }
         
-        /* THE MAP FEATURE (Styled to match your cards) */
-        #map { height: 280px; width: calc(100% - 32px); margin: 16px; border-radius: 20px; border: 1px solid #333; z-index: 1; }
-
-        /* Navigation styling from your GhaNight_v2 */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: rgba(15,15,15,0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 1000; }
-        .nav-item { color: #666; text-decoration: none; font-size: 11px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.3s; }
+        /* NAVIGATION (Matching your screenshots) */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: rgba(10,10,10,0.98); backdrop-filter: blur(15px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 1000; }
+        .nav-item { color: #666; text-decoration: none; font-size: 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; font-weight: 500; }
         .nav-item.active { color: var(--accent); }
+        .nav-icon { font-size: 22px; margin-bottom: 4px; }
+
+        /* MAP BOX (Integrated as a feature) */
+        #map { height: 260px; width: calc(100% - 32px); margin: 16px; border-radius: 24px; border: 1px solid #333; z-index: 1; }
         
-        /* Hero & Buttons from your original design */
-        .hero { padding: 40px 20px; text-align: center; background: linear-gradient(to bottom, #1a1a1a, #0b0b0b); }
-        .btn-main { background: var(--accent); color: #000; padding: 12px 24px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; }
-        .event-card { background: var(--card); margin: 16px; padding: 16px; border-radius: 16px; border: 1px solid #222; }
+        /* ORIGINAL UI ELEMENTS */
+        .hero { padding: 40px 20px; text-align: left; }
+        .btn-main { background: var(--accent); color: #000; padding: 14px 28px; border-radius: 14px; font-weight: 800; border: none; cursor: pointer; font-size: 15px; }
+        .section-title { padding: 0 20px; font-size: 18px; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .event-card { background: var(--card); margin: 0 20px 15px; padding: 16px; border-radius: 20px; border: 1px solid #222; }
     </style>
 </head>
 <body>
 
     <div id="home" class="tab-content active">
-        <section class="hero">
-            <h1 style="font-size: 32px; margin-bottom: 8px;">GhaNight</h1>
-            <p style="color: #888; margin-bottom: 24px;">Discover the rhythm of Accra tonight.</p>
-            <button class="btn-main" onclick="switchTab('explore')">Find Events</button>
-        </section>
+        <div class="hero">
+            <h1 style="font-size: 36px; margin: 0; font-weight: 900;">GhaNight</h1>
+            <p style="color: #888; margin-top: 5px; font-size: 15px;">Live vibes, crowd levels & events.</p>
+        </div>
 
-        <h3 style="padding: 0 20px; margin-top: 20px;">Live Crowd Map</h3>
+        <div class="section-title">📍 Live Crowd Map</div>
         <div id="map"></div>
 
-        <div id="live-venues" style="padding: 0 20px;">
+        <div class="section-title">🔥 Happening Now</div>
+        <div id="live-feed" style="padding: 0 20px;">
             </div>
-
-        <h3 style="padding: 0 20px;">Featured Events</h3>
-        <div class="event-card">
-            <div style="font-weight: bold;">Friday Night Lights</div>
-            <div style="color: #888; font-size: 13px;">Bloom Bar • 9:00 PM</div>
-        </div>
     </div>
 
     <div id="explore" class="tab-content">
-        <div style="padding: 20px;">
-            <h2>Explore Accra</h2>
-            <input type="text" placeholder="Search clubs, bars..." style="width: 100%; padding: 12px; border-radius: 10px; background: #222; border: none; color: white;">
+        <div style="padding: 25px;">
+            <h2 style="font-size: 28px;">Explore Accra</h2>
+            <div style="background: #222; padding: 15px; border-radius: 15px; display: flex; align-items: center; gap: 10px;">
+                <span>🔍</span><input type="text" placeholder="Search clubs, bars, lounges..." style="background: none; border: none; color: white; width: 100%; outline: none;">
+            </div>
+            <p style="color: #666; margin-top: 20px;">Trending: Osu, East Legon, Airport City</p>
+        </div>
+    </div>
+
+    <div id="updates" class="tab-content">
+        <div style="padding: 25px;">
+            <h2>Daily Updates</h2>
+            <div class="event-card">
+                <div style="color: var(--accent); font-size: 12px; font-weight: 800;">WEEKEND SPECIAL</div>
+                <h3 style="margin: 8px 0;">Friday Night Fever</h3>
+                <p style="color: #888; font-size: 14px; margin: 0;">Bloom Bar • From 9:00 PM</p>
+            </div>
         </div>
     </div>
 
     <div id="profile" class="tab-content">
-        <div style="padding: 40px 20px; text-align: center;">
-            <h2>Join GhaNight</h2>
-            <p style="color: #888;">Sign up to track your favorite spots.</p>
-            <button class="btn-main" style="width: 100%; margin-bottom: 12px;">Create Account</button>
-            <button style="width: 100%; background: transparent; border: 1px solid #444; color: white; padding: 12px; border-radius: 12px;">Login</button>
+        <div style="padding: 60px 25px; text-align: center;">
+            <div style="width: 90px; height: 90px; background: linear-gradient(45deg, #333, #222); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 30px;">👤</div>
+            <h2 style="margin-bottom: 5px;">Join the Community</h2>
+            <p style="color: #888; margin-bottom: 30px;">Save your favorite spots and get alerts.</p>
+            <button class="btn-main" style="width: 100%; margin-bottom: 15px;">Sign Up Now</button>
+            <button style="width: 100%; background: transparent; border: 1px solid #444; color: white; padding: 14px; border-radius: 14px; font-weight: 600;">Login</button>
         </div>
     </div>
 
     <nav class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('home')"><span>🏠</span>Home</div>
-        <div class="nav-item" onclick="switchTab('explore')"><span>🔍</span>Explore</div>
-        <div class="nav-item" onclick="switchTab('profile')"><span>👤</span>Profile</div>
+        <div class="nav-item active" onclick="switchTab('home')"><span class="nav-icon">🏠</span>Home</div>
+        <div class="nav-item" onclick="switchTab('explore')"><span class="nav-icon">🔍</span>Explore</div>
+        <div class="nav-item" onclick="switchTab('updates')"><span class="nav-icon">✨</span>Updates</div>
+        <div class="nav-item" onclick="switchTab('profile')"><span class="nav-icon">👤</span>Profile</div>
     </nav>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // 1. Connection
+        // 1. SUPABASE CONNECTION
         const supabaseUrl = 'https://lkuprzwbscuaitktlhrp.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrdXByendic2N1YWl0a3RsaHJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzcxNzgsImV4cCI6MjA5MzY1MzE3OH0.u4ptPk9lbFhAzw4HoHl5uyffgG9RMkev6ktUyu9VZfg';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // 2. Tab Logic (Preserves your original navigation)
+        // 2. TAB SWITCHING (Handles all screens)
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
             document.getElementById(id).classList.add('active');
             event.currentTarget.classList.add('active');
-            if(id === 'home') { setTimeout(() => { map.invalidateSize() }, 100); }
+            
+            if(id === 'home') { 
+                setTimeout(() => { map.invalidateSize() }, 100); 
+            }
         }
 
-        // 3. Map Initialization
-        const map = L.map('map').setView([5.5582, -0.1855], 14);
+        // 3. MAP SETUP
+        const map = L.map('map', { zoomControl: false }).setView([5.5582, -0.1855], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // 4. Live Data
-        async function fetchLiveSpots() {
-            const { data } = await _supabase.from('venues').select('*');
+        // 4. LOAD LIVE DATA
+        async function fetchVibes() {
+            const { data, error } = await _supabase.from('venues').select('*');
             if (data) {
-                const list = document.getElementById('live-venues');
+                const feed = document.getElementById('live-feed');
+                feed.innerHTML = '';
                 data.forEach(v => {
-                    L.marker([v.latitude, v.longitude]).addTo(map).bindPopup(v.name);
-                    const el = document.createElement('div');
-                    el.style.fontSize = '14px'; el.style.padding = '8px 0';
-                    el.innerHTML = `🔥 ${v.name} is currently ${v.crowd_status}`;
-                    list.appendChild(el);
+                    // Marker
+                    L.marker([v.latitude, v.longitude]).addTo(map)
+                     .bindPopup(`<b>${v.name}</b><br>${v.crowd_status}`);
+                    
+                    // List Item
+                    const card = document.createElement('div');
+                    card.className = 'event-card';
+                    card.innerHTML = `📍 ${v.name} is currently <b style="color:var(--accent)">${v.crowd_status}</b>`;
+                    feed.appendChild(card);
                 });
             }
         }
-        fetchLiveSpots();
+        fetchVibes();
     </script>
 </body>
 </html>
