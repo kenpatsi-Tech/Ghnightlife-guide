@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GhaNight Admin — Control Panel</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#080810;--surface:#10101e;--card:#14142a;--gold:#f5c542;--orange:#ff6b35;--pink:#ff3d8a;--green:#39e07a;--blue:#4fa3ff;--purple:#a855f7;--text:#f0f0f8;--muted:#7070a0;--border:rgba(255,255,255,0.08);}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;min-height:100vh;}
+
+  /* LOGIN */
+  .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+  .login-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px 28px;width:100%;max-width:380px;}
+  .login-logo{font-size:26px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+
+  /* LAYOUT */
+  .admin-wrap{display:none;min-height:100vh;}
+  .admin-wrap.visible{display:flex;flex-direction:column;}
+  .admin-header{background:rgba(8,8,16,0.98);border-bottom:1px solid var(--border);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .admin-logo{font-size:16px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .admin-body{display:flex;flex:1;min-height:0;}
+
+  /* SIDEBAR */
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;overflow-y:auto;}
+  .sidebar-section{padding:8px 16px 4px;font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;}
+  .sidebar-item{display:flex;align-items:center;gap:9px;padding:10px 18px;font-size:13px;color:var(--muted);cursor:pointer;transition:all 0.15s;border:none;background:none;width:100%;text-align:left;font-family:inherit;}
+  .sidebar-item:hover,.sidebar-item.active{background:rgba(245,197,66,0.07);color:var(--gold);}
+  .sidebar-item .icon{font-size:15px;width:18px;text-align:center;}
+  .sidebar-item .count{margin-left:auto;background:var(--pink);color:white;font-size:10px;font-weight:700;padding:1px 6px;border-radius:100px;}
+
+  /* MAIN */
+  .main-content{flex:1;padding:24px;overflow-y:auto;}
+  .page-title{font-size:20px;font-weight:800;margin-bottom:6px;}
+  .page-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+
+  /* STATS */
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:16px;}
+  .stat-num{font-size:28px;font-weight:800;color:var(--gold);margin-bottom:2px;}
+  .stat-label{font-size:11px;color:var(--muted);}
+
+  /* TABLE */
+  .table-wrap{overflow-x:auto;}
+  .data-table{width:100%;border-collapse:collapse;margin-bottom:24px;min-width:500px;}
+  .data-table th{text-align:left;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;padding:10px 12px;border-bottom:1px solid var(--border);}
+  .data-table td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:13px;vertical-align:middle;}
+  .data-table tr:hover td{background:rgba(255,255,255,0.02);}
+
+  /* BADGES */
+  .badge{font-size:11px;padding:2px 8px;border-radius:100px;font-weight:600;white-space:nowrap;}
+  .bg{background:rgba(57,224,122,0.15);color:var(--green);}
+  .bp{background:rgba(255,61,138,0.15);color:var(--pink);}
+  .bo{background:rgba(245,197,66,0.15);color:var(--gold);}
+  .bb{background:rgba(79,163,255,0.15);color:var(--blue);}
+  .bm{background:rgba(255,255,255,0.06);color:var(--muted);}
+  .bpu{background:rgba(168,85,247,0.15);color:var(--purple);}
+
+  /* BUTTONS */
+  .btn{border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:inherit;white-space:nowrap;}
+  .btn-gold{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;}
+  .btn-green{background:rgba(57,224,122,0.15);color:var(--green);border:1px solid rgba(57,224,122,0.3);}
+  .btn-danger{background:rgba(255,61,138,0.15);color:var(--pink);border:1px solid rgba(255,61,138,0.3);}
+  .btn-muted{background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--border);}
+  .btn-blue{background:rgba(79,163,255,0.15);color:var(--blue);border:1px solid rgba(79,163,255,0.3);}
+  .btn-purple{background:rgba(168,85,247,0.15);color:var(--purple);border:1px solid rgba(168,85,247,0.3);}
+  .btn-lg{padding:11px 20px;font-size:14px;border-radius:11px;}
+
+  /* FORM */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .form-group{display:flex;flex-direction:column;gap:5px;}
+  .form-group.full{grid-column:1/-1;}
+  .form-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
+  .form-input,.form-select,.form-textarea{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;padding:9px 12px;border-radius:9px;outline:none;transition:border-color 0.2s;width:100%;}
+  .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:rgba(245,197,66,0.4);}
+  .form-textarea{min-height:100px;resize:vertical;}
+
+  /* PANEL SECTIONS */
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;}
+  .panel-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .panel-title-left{display:flex;align-items:center;gap:8px;}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;}
+  .modal-title{font-size:18px;font-weight:800;margin-bottom:16px;}
+
+  /* CARD ROWS */
+  .card-row{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;}
+  .card-row-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+  .card-row-meta{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+  .card-row-actions{display:flex;gap:6px;flex-wrap:wrap;}
+
+  /* TOKEN GENERATOR */
+  .token-display{background:var(--surface);border:2px solid rgba(57,224,122,0.3);border-radius:12px;padding:16px;text-align:center;margin:12px 0;}
+  .token-code{font-family:'Courier New',monospace;font-size:22px;font-weight:800;color:var(--green);letter-spacing:4px;margin-bottom:6px;}
+  .token-meta{font-size:12px;color:var(--muted);}
+
+  /* HEAT BAR */
+  .heat-bar{height:5px;background:rgba(255,255,255,0.08);border-radius:3px;width:70px;display:inline-block;vertical-align:middle;margin-right:5px;overflow:hidden;}
+  .heat-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--orange));}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px 16px;font-size:13px;opacity:0;transition:all 0.25s;z-index:600;pointer-events:none;}
+  .toast.show{opacity:1;}
+
+  @media(max-width:768px){.sidebar{display:none;}.form-grid{grid-template-columns:1fr;}.form-group.full{grid-column:1;}.stats-row{grid-template-columns:1fr 1fr;}}
+  @media(max-width:768px){.sidebar.mobile-open{display:block;position:fixed;top:54px;left:0;bottom:0;z-index:200;width:240px;overflow-y:auto;}}
+  .mobile-menu-btn{display:none;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;}
+  @media(max-width:768px){.mobile-menu-btn{display:block;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">GhaNight</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:24px">Admin Control Panel — Authorised access only</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="loginEmail" type="email" placeholder="admin@ghanight.com" autocomplete="email"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="loginPass" type="password" placeholder="Password" autocomplete="current-password"></div>
+      <button class="btn btn-gold btn-lg" style="width:100%" onclick="adminLogin()">Log In →</button>
+      <div id="loginErr" style="color:var(--pink);font-size:12px;text-align:center;display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="admin-wrap" id="adminWrap">
+  <div class="admin-header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="admin-logo">GhaNight Admin</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <a href="index.html" target="_blank" style="color:var(--muted);font-size:12px;text-decoration:none">View Site ↗</a>
+      <span id="adminEmail" style="font-size:12px;color:var(--muted)"></span>
+      <button class="btn btn-muted" onclick="adminLogout()">Log Out</button>
+    </div>
+  </div>
+  <div class="admin-body">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-section">Overview</div>
+      <button class="sidebar-item active" onclick="show('overview',this)"><span class="icon">📊</span>Dashboard</button>
+
+      <div class="sidebar-section">Nightlife</div>
+      <button class="sidebar-item" onclick="show('venues',this)"><span class="icon">🏛️</span>Venues</button>
+      <button class="sidebar-item" onclick="show('events',this)"><span class="icon">🎉</span>Events</button>
+
+      <div class="sidebar-section">Creators</div>
+      <button class="sidebar-item" onclick="show('posts',this)"><span class="icon">✍️</span>Blog Posts<span class="count" id="pendingPostsBadge" style="display:none">0</span></button>
+
+      <div class="sidebar-section">Gaming</div>
+      <button class="sidebar-item" onclick="show('predictions',this)"><span class="icon">🔮</span>Predictions</button>
+      <button class="sidebar-item" onclick="show('leaderboard',this)"><span class="icon">🏆</span>Leaderboard</button>
+      <button class="sidebar-item" onclick="show('rewards',this)"><span class="icon">🎁</span>Reward Claims</button>
+
+      <div class="sidebar-section">Corporate</div>
+      <button class="sidebar-item" onclick="show('tokens',this)"><span class="icon">🎫</span>Vendor Tokens</button>
+      <button class="sidebar-item" onclick="show('subscriptions',this)"><span class="icon">🏢</span>Subscriptions</button>
+      <button class="sidebar-item" onclick="show('vendors',this)"><span class="icon">🏪</span>Vendor Apps<span class="count" id="vendorBadge" style="display:none">0</span></button>
+      <button class="sidebar-item" onclick="show('corpEnquiries',this)"><span class="icon">📋</span>Corp Enquiries<span class="count" id="corpBadge" style="display:none">0</span></button>
+
+      <div class="sidebar-section">Business</div>
+      <button class="sidebar-item" onclick="show('registrations',this)"><span class="icon">📝</span>Venue Regs<span class="count" id="regBadge" style="display:none">0</span></button>
+      <button class="sidebar-item" onclick="show('adEnquiries',this)"><span class="icon">📩</span>Ad Enquiries<span class="count" id="adBadge" style="display:none">0</span></button>
+
+      <div class="sidebar-section">Users</div>
+      <button class="sidebar-item" onclick="show('checkins',this)"><span class="icon">📍</span>Check-ins</button>
+      <button class="sidebar-item" onclick="show('users',this)"><span class="icon">👥</span>Users</button>
+    </div>
+
+    <div class="main-content" id="mainContent"></div>
+  </div>
+</div>
+
+<!-- UNIVERSAL MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target.id==='modal')closeModal()">
+  <div class="modal-box"><div class="modal-title" id="modalTitle"></div><div id="modalBody"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+let db = null, adminUser = null, editId = null, editType = null;
+
+window.addEventListener('load', async () => {
+  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data:{ session } } = await db.auth.getSession();
+  if (session) { adminUser = session.user; showAdmin(); }
+});
+
+// ── AUTH ──────────────────────────────────────────────
+async function adminLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const err   = document.getElementById('loginErr');
+  err.style.display = 'none';
+  const { data, error } = await db.auth.signInWithPassword({ email, password:pass });
+  if (error) { err.textContent='Incorrect email or password'; err.style.display='block'; return; }
+  adminUser = data.user;
+  showAdmin();
+}
+async function adminLogout() {
+  await db.auth.signOut();
+  location.reload();
+}
+function showAdmin() {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('adminWrap').classList.add('visible');
+  document.getElementById('adminEmail').textContent = adminUser.email;
+  show('overview', document.querySelector('.sidebar-item'));
+  loadBadges();
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+}
+
+// ── BADGES ────────────────────────────────────────────
+async function loadBadges() {
+  const checks = [
+    { table:'creator_posts', filter:{status:'pending'}, badge:'pendingPostsBadge' },
+    { table:'vendor_applications', filter:{status:'pending'}, badge:'vendorBadge' },
+    { table:'corporate_enquiries', filter:{status:'new'}, badge:'corpBadge' },
+    { table:'venue_registrations', filter:{status:'pending'}, badge:'regBadge' },
+    { table:'advertiser_enquiries', filter:{status:'new'}, badge:'adBadge' },
+  ];
+  for (const c of checks) {
+    try {
+      let q = db.from(c.table).select('*',{count:'exact',head:true});
+      for (const [k,v] of Object.entries(c.filter)) q = q.eq(k,v);
+      const { count } = await q;
+      if (count > 0) {
+        const el = document.getElementById(c.badge);
+        if (el) { el.textContent = count; el.style.display = 'block'; }
+      }
+    } catch(e){}
+  }
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+function show(section, btn) {
+  document.querySelectorAll('.sidebar-item').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const map = {
+    overview:renderOverview, venues:renderVenues, events:renderEvents,
+    posts:renderPosts, predictions:renderPredictions, leaderboard:renderLeaderboard,
+    rewards:renderRewards, tokens:renderTokens, subscriptions:renderSubscriptions,
+    vendors:renderVendors, corpEnquiries:renderCorpEnquiries,
+    registrations:renderRegistrations, adEnquiries:renderAdEnquiries,
+    checkins:renderCheckins, users:renderUsers
+  };
+  if (map[section]) map[section]();
+}
+
+// ── OVERVIEW ──────────────────────────────────────────
+async function renderOverview() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const queries = [
+    db.from('venues').select('*',{count:'exact',head:true}).eq('active',true),
+    db.from('events').select('*',{count:'exact',head:true}).eq('active',true),
+    db.from('checkins').select('*',{count:'exact',head:true}).gte('checked_in_at',today.toISOString()),
+    db.from('user_profiles').select('*',{count:'exact',head:true}),
+    db.from('creator_posts').select('*',{count:'exact',head:true}).eq('status','pending'),
+    db.from('vendor_applications').select('*',{count:'exact',head:true}).eq('status','pending'),
+    db.from('corporate_subscriptions').select('*',{count:'exact',head:true}).eq('status','active'),
+    db.from('venue_registrations').select('*',{count:'exact',head:true}).eq('status','pending'),
+  ];
+  const results = await Promise.allSettled(queries);
+  const get = i => results[i].value?.count || 0;
+  el.innerHTML = `
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Welcome back. Here's what's happening on GhaNight right now.</div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num">${get(0)}</div><div class="stat-label">Active Venues</div></div>
+      <div class="stat-card"><div class="stat-num">${get(1)}</div><div class="stat-label">Active Events</div></div>
+      <div class="stat-card"><div class="stat-num">${get(2)}</div><div class="stat-label">Check-ins Today</div></div>
+      <div class="stat-card"><div class="stat-num">${get(3)}</div><div class="stat-label">Registered Users</div></div>
+      <div class="stat-card" style="border-color:rgba(168,85,247,0.3)"><div class="stat-num" style="color:var(--purple)">${get(4)}</div><div class="stat-label">Posts Pending Review</div></div>
+      <div class="stat-card" style="border-color:rgba(57,224,122,0.3)"><div class="stat-num" style="color:var(--green)">${get(6)}</div><div class="stat-label">Active Corp Subs</div></div>
+      <div class="stat-card" style="border-color:rgba(255,61,138,0.3)"><div class="stat-num" style="color:var(--pink)">${get(5)}</div><div class="stat-label">Vendor Apps Pending</div></div>
+      <div class="stat-card" style="border-color:rgba(245,197,66,0.3)"><div class="stat-num" style="color:var(--orange)">${get(7)}</div><div class="stat-label">Venue Regs Pending</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Quick Actions</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-gold" onclick="show('venues',null);setTimeout(()=>openVenueForm({}),100)">+ Add Venue</button>
+        <button class="btn btn-gold" onclick="show('events',null);setTimeout(()=>openEventForm({}),100)">+ Add Event</button>
+        <button class="btn btn-green" onclick="show('tokens',null);setTimeout(generateToken,100)">🎫 Generate Token</button>
+        <button class="btn btn-purple" onclick="show('posts',null)">✍️ Review Posts (${get(4)})</button>
+        <button class="btn btn-blue" onclick="show('vendors',null)">🏪 Vendor Apps (${get(5)})</button>
+      </div>
+    </div>`;
+}
+
+// ── VENUES ────────────────────────────────────────────
+async function renderVenues() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  const { data } = await db.from('venues').select('*').order('premium',{ascending:false}).order('heat',{ascending:false});
+  el.innerHTML = `
+    <div class="page-title">Venues</div>
+    <div class="page-sub">Add, edit, hide or delete venues. Changes appear on the site instantly.</div>
+    <div class="panel">
+      <div class="panel-title"><span>All Venues (${(data||[]).length})</span><button class="btn btn-gold" onclick="openVenueForm({})">+ Add Venue</button></div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Name</th><th>Area</th><th>Type</th><th>Heat</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${(data||[]).map(v=>`<tr>
+            <td><strong>${v.name}</strong>${v.premium?' <span class="badge bo">Featured</span>':''}</td>
+            <td>${v.area}</td><td><span class="badge bm">${v.type}</span></td>
+            <td><span class="heat-bar"><span class="heat-fill" style="width:${v.heat}%"></span></span>${v.heat}%</td>
+            <td><span class="badge ${v.active?'bg':'bp'}">${v.active?'Active':'Hidden'}</span></td>
+            <td style="display:flex;gap:5px;flex-wrap:wrap">
+              <button class="btn btn-muted" onclick='openVenueForm(${JSON.stringify(v)})'>Edit</button>
+              <button class="btn ${v.active?'btn-muted':'btn-green'}" onclick="toggleRow('venues','${v.id}',${!v.active})">${v.active?'Hide':'Show'}</button>
+              <button class="btn btn-danger" onclick="deleteRow('venues','${v.id}','${v.name}')">Delete</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+function openVenueForm(v) {
+  editId = v.id||null; editType = 'venue';
+  document.getElementById('modalTitle').textContent = v.id ? 'Edit Venue' : 'Add New Venue';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Venue Name *</label><input class="form-input" id="vname" value="${v.name||''}" placeholder="e.g. Onyx Nightclub"></div>
+      <div class="form-group"><label class="form-label">Area *</label>
+        <select class="form-select" id="varea">${['East Legon','Airport Hills','Osu','Cantonments','La / Labadi','Accra CBD','Tema','Other'].map(a=>`<option ${v.area===a?'selected':''}>${a}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label class="form-label">Type *</label>
+        <select class="form-select" id="vtype">${['club','lounge','rooftop','beach','concert','bar'].map(t=>`<option ${v.type===t?'selected':''}>${t}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label class="form-label">Entry Price</label><input class="form-input" id="ventry" value="${v.entry||'Free'}" placeholder="GHS 50 or Free"></div>
+      <div class="form-group"><label class="form-label">Opening Hours</label><input class="form-input" id="vtime" value="${v.time||'9pm - 2am'}"></div>
+      <div class="form-group"><label class="form-label">Heat % (0–99)</label><input class="form-input" id="vheat" type="number" min="0" max="99" value="${v.heat||50}"></div>
+      <div class="form-group"><label class="form-label">Crowd Level (1–5)</label><input class="form-input" id="vcrowd" type="number" min="1" max="5" value="${v.crowd||2}"></div>
+      <div class="form-group full"><label class="form-label">Tags (comma separated)</label><input class="form-input" id="vtags" value="${(v.tags||[]).join(', ')}" placeholder="Afrobeats, VIP, Hip-Hop"></div>
+      <div class="form-group"><label class="form-label">Card Colour</label><input class="form-input" id="vcolor" type="color" value="${v.color||'#f5c542'}"></div>
+      <div class="form-group"><label class="form-label">GPS Latitude</label><input class="form-input" id="vlat" value="${v.lat||''}" placeholder="5.6361"></div>
+      <div class="form-group"><label class="form-label">GPS Longitude</label><input class="form-input" id="vlng" value="${v.lng||''}" placeholder="-0.1569"></div>
+      <div class="form-group"><label class="form-label">Featured (Premium)</label>
+        <select class="form-select" id="vpremium"><option value="false" ${!v.premium?'selected':''}>No</option><option value="true" ${v.premium?'selected':''}>Yes</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Camera Feed</label>
+        <select class="form-select" id="vcamon"><option value="false" ${!v.cam_on?'selected':''}>No</option><option value="true" ${v.cam_on?'selected':''}>Yes</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Active (visible on site)</label>
+        <select class="form-select" id="vactive"><option value="true" ${v.active!==false?'selected':''}>Yes</option><option value="false" ${v.active===false?'selected':''}>No</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-gold btn-lg" style="flex:1" onclick="saveVenue()">Save Venue</button>
+      <button class="btn btn-muted btn-lg" onclick="closeModal()">Cancel</button>
+    </div>
+    <div id="formErr" style="color:var(--pink);font-size:12px;margin-top:8px;display:none"></div>`;
+  openModal();
+}
+
+async function saveVenue() {
+  const name = document.getElementById('vname').value.trim();
+  if (!name) { document.getElementById('formErr').textContent='Venue name required'; document.getElementById('formErr').style.display='block'; return; }
+  const tags = document.getElementById('vtags').value ? document.getElementById('vtags').value.split(',').map(t=>t.trim()).filter(Boolean) : [];
+  const payload = {
+    name, area:g('varea'), type:g('vtype'), entry:g('ventry'), time:g('vtime'),
+    heat:parseInt(g('vheat'))||50, crowd:parseInt(g('vcrowd'))||2, tags,
+    color:g('vcolor'), lat:parseFloat(g('vlat'))||null, lng:parseFloat(g('vlng'))||null,
+    premium:g('vpremium')==='true', cam_on:g('vcamon')==='true',
+    active:g('vactive')==='true', updated_at:new Date().toISOString()
+  };
+  const { error } = editId ? await db.from('venues').update(payload).eq('id',editId) : await db.from('venues').insert(payload);
+  if (error) { document.getElementById('formErr').textContent=error.message; document.getElementById('formErr').style.display='block'; return; }
+  closeModal(); toast(editId?'✅ Venue updated':'✅ Venue added'); renderVenues();
+}
+
+// ── EVENTS ────────────────────────────────────────────
+async function renderEvents() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  const { data } = await db.from('events').select('*').order('event_month').order('event_day');
+  el.innerHTML = `
+    <div class="page-title">Events</div>
+    <div class="page-sub">Manage tonight's and upcoming events. Sponsored events appear at the top.</div>
+    <div class="panel">
+      <div class="panel-title"><span>All Events (${(data||[]).length})</span><button class="btn btn-gold" onclick="openEventForm({})">+ Add Event</button></div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Date</th><th>Event</th><th>Venue</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${(data||[]).map(e=>`<tr>
+            <td><strong>${e.event_day} ${e.event_month}</strong></td>
+            <td>${e.name}${e.sponsored?' <span class="badge bo">Sponsored</span>':''}</td>
+            <td>${e.venue}</td>
+            <td><span class="badge ${e.active?'bg':'bp'}">${e.active?'Active':'Hidden'}</span></td>
+            <td style="display:flex;gap:5px">
+              <button class="btn btn-muted" onclick='openEventForm(${JSON.stringify(e)})'>Edit</button>
+              <button class="btn ${e.active?'btn-muted':'btn-green'}" onclick="toggleRow('events','${e.id}',${!e.active})">${e.active?'Hide':'Show'}</button>
+              <button class="btn btn-danger" onclick="deleteRow('events','${e.id}','${e.name.replace(/'/g,"\\'")}')">Delete</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+function openEventForm(e) {
+  editId = e.id||null; editType = 'event';
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('modalTitle').textContent = e.id ? 'Edit Event' : 'Add New Event';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Event Name *</label><input class="form-input" id="ename" value="${e.name||''}" placeholder="e.g. Onyx Friday Madness"></div>
+      <div class="form-group full"><label class="form-label">Venue *</label><input class="form-input" id="evenue" value="${e.venue||''}" placeholder="e.g. Onyx Nightclub, East Legon"></div>
+      <div class="form-group"><label class="form-label">Day (01–31)</label><input class="form-input" id="eday" value="${e.event_day||''}" placeholder="09" maxlength="2"></div>
+      <div class="form-group"><label class="form-label">Month</label>
+        <select class="form-select" id="emonth">${months.map(m=>`<option ${e.event_month===m?'selected':''}>${m}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label class="form-label">Start Time</label><input class="form-input" id="etime" value="${e.event_time||''}" placeholder="9:00 PM"></div>
+      <div class="form-group"><label class="form-label">Sponsored</label>
+        <select class="form-select" id="esponsored"><option value="false" ${!e.sponsored?'selected':''}>No</option><option value="true" ${e.sponsored?'selected':''}>Yes — show at top</option></select>
+      </div>
+      <div class="form-group full"><label class="form-label">Tags (comma separated)</label><input class="form-input" id="etags" value="${(e.tags||[]).join(', ')}" placeholder="Afrobeats, TONIGHT, GHS 50"></div>
+      <div class="form-group"><label class="form-label">Active</label>
+        <select class="form-select" id="eactive"><option value="true" ${e.active!==false?'selected':''}>Yes</option><option value="false" ${e.active===false?'selected':''}>No</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-gold btn-lg" style="flex:1" onclick="saveEvent()">Save Event</button>
+      <button class="btn btn-muted btn-lg" onclick="closeModal()">Cancel</button>
+    </div>
+    <div id="formErr" style="color:var(--pink);font-size:12px;margin-top:8px;display:none"></div>`;
+  openModal();
+}
+
+async function saveEvent() {
+  const name=g('ename').trim(), venue=g('evenue').trim();
+  if(!name||!venue){document.getElementById('formErr').textContent='Name and venue required';document.getElementById('formErr').style.display='block';return;}
+  const tags=g('etags')?g('etags').split(',').map(t=>t.trim()).filter(Boolean):[];
+  const payload={name,venue,event_day:g('eday').padStart(2,'0'),event_month:g('emonth'),event_time:g('etime'),tags,sponsored:g('esponsored')==='true',active:g('eactive')==='true'};
+  const {error}=editId?await db.from('events').update(payload).eq('id',editId):await db.from('events').insert(payload);
+  if(error){document.getElementById('formErr').textContent=error.message;document.getElementById('formErr').style.display='block';return;}
+  closeModal();toast(editId?'✅ Event updated':'✅ Event added');renderEvents();
+}
+
+// ── BLOG POSTS ────────────────────────────────────────
+async function renderPosts() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  const { data } = await db.from('creator_posts').select('*').order('created_at',{ascending:false});
+  const pending = (data||[]).filter(p=>p.status==='pending');
+  el.innerHTML = `
+    <div class="page-title">Blog Posts</div>
+    <div class="page-sub">Review and approve creator posts. Approved posts earn the creator GHS 0.05 per view.</div>
+    ${pending.length?`<div class="panel" style="border-color:rgba(168,85,247,0.3)">
+      <div class="panel-title" style="color:var(--purple)">⏳ Pending Review (${pending.length})</div>
+      ${pending.map(p=>postCard(p)).join('')}
+    </div>`:''}
+    <div class="panel">
+      <div class="panel-title">All Posts (${(data||[]).length})</div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Title</th><th>Author</th><th>Category</th><th>Views</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${(data||[]).map(p=>`<tr>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</td>
+            <td>${p.author_name}</td>
+            <td><span class="badge bm">${p.category}</span></td>
+            <td>👁️ ${(p.views||0).toLocaleString()}</td>
+            <td><span class="badge ${p.status==='approved'?'bg':p.status==='pending'?'bpu':'bp'}">${p.status}</span></td>
+            <td style="display:flex;gap:5px;flex-wrap:wrap">
+              <button class="btn btn-muted" onclick="previewPost('${p.id}')">Preview</button>
+              ${p.status==='pending'?`<button class="btn btn-green" onclick="updatePost('${p.id}','approved')">Approve</button><button class="btn btn-danger" onclick="updatePost('${p.id}','rejected')">Reject</button>`:''}
+              ${p.status==='approved'?`<button class="btn btn-muted" onclick="updatePost('${p.id}','${p.featured?'unfeatured':'featured'}')">⭐ ${p.featured?'Unfeature':'Feature'}</button>`:''}
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+function postCard(p) {
+  return `<div class="card-row">
+    <div class="card-row-title">${p.title}</div>
+    <div class="card-row-meta">By ${p.author_name} · ${p.category} · ${new Date(p.created_at).toLocaleDateString()}<br>${(p.body||'').substring(0,200)}...</div>
+    <div class="card-row-actions">
+      <button class="btn btn-green" onclick="updatePost('${p.id}','approved')">✅ Approve</button>
+      <button class="btn btn-danger" onclick="updatePost('${p.id}','rejected')">❌ Reject</button>
+      <button class="btn btn-muted" onclick="previewPost('${p.id}')">Read Full Post</button>
+    </div>
+  </div>`;
+}
+
+async function updatePost(id, status) {
+  const update = status === 'featured' ? { featured:true } : status === 'unfeatured' ? { featured:false } : { status };
+  await db.from('creator_posts').update(update).eq('id',id);
+  toast(`✅ Post ${status}`); renderPosts();
+}
+async function previewPost(id) {
+  const { data } = await db.from('creator_posts').select('*').eq('id',id).single();
+  if (!data) return;
+  document.getElementById('modalTitle').textContent = data.title;
+  document.getElementById('modalBody').innerHTML = `
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">By ${data.author_name} · ${data.category} · ${new Date(data.created_at).toLocaleDateString()}</div>
+    <div style="font-size:14px;line-height:1.7;color:rgba(240,240,248,0.85);margin-bottom:16px">${(data.body||'').replace(/\n/g,'<br>')}</div>
+    <div style="display:flex;gap:8px">
+      ${data.status==='pending'?`<button class="btn btn-green btn-lg" onclick="updatePost('${data.id}','approved');closeModal()">✅ Approve</button><button class="btn btn-danger btn-lg" onclick="updatePost('${data.id}','rejected');closeModal()">❌ Reject</button>`:''}
+      <button class="btn btn-muted btn-lg" onclick="closeModal()">Close</button>
+    </div>`;
+  openModal();
+}
+
+// ── PREDICTIONS ───────────────────────────────────────
+async function renderPredictions() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('predictions').select('*').order('created_at',{ascending:false}).limit(50);
+  el.innerHTML = `
+    <div class="page-title">Predictions</div>
+    <div class="page-sub">See what users are predicting. You can mark outcomes correct/incorrect and award points.</div>
+    <div class="panel">
+      <div class="panel-title">Recent Predictions (${(data||[]).length})</div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Prediction ID</th><th>Choice</th><th>Result</th><th>Pts Awarded</th><th>Date</th></tr></thead>
+        <tbody>
+          ${(data||[]).map(p=>`<tr>
+            <td><code style="font-size:11px;color:var(--muted)">${p.prediction_id}</code></td>
+            <td>Option ${(p.choice_index||0)+1}</td>
+            <td>${p.correct===null?'<span class="badge bm">Pending</span>':p.correct?'<span class="badge bg">Correct ✅</span>':'<span class="badge bp">Wrong ❌</span>'}</td>
+            <td>${p.pts_awarded||0} pts</td>
+            <td>${new Date(p.created_at).toLocaleDateString()}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Mark Prediction Results</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Enter the prediction ID and winning option to award points to correct predictors.</p>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Prediction ID</label><input class="form-input" id="predId" placeholder="e.g. p1"></div>
+        <div class="form-group"><label class="form-label">Winning Option (0-indexed)</label><input class="form-input" id="predWinner" type="number" min="0" placeholder="0"></div>
+      </div>
+      <button class="btn btn-gold btn-lg" style="margin-top:8px" onclick="markPredictionResult()">Mark Result & Award Points</button>
+    </div>`;
+}
+
+async function markPredictionResult() {
+  const predId = document.getElementById('predId').value.trim();
+  const winner = parseInt(document.getElementById('predWinner').value);
+  if (!predId) { toast('⚠️ Enter a prediction ID'); return; }
+  // Get all predictions for this ID
+  const { data } = await db.from('predictions').select('*').eq('prediction_id', predId);
+  if (!data?.length) { toast('No predictions found for that ID'); return; }
+  // Mark correct/wrong and award points
+  for (const p of data) {
+    const isCorrect = p.choice_index === winner;
+    const pts = isCorrect ? 50 : 0;
+    await db.from('predictions').update({ correct:isCorrect, pts_awarded:pts }).eq('id',p.id);
+    if (isCorrect && pts > 0) {
+      // Add points to user
+      const { data:existing } = await db.from('user_points').select('points').eq('user_id',p.user_id).single().catch(()=>({data:null}));
+      const newPts = (existing?.points||0) + pts;
+      await db.from('user_points').upsert({ user_id:p.user_id, points:newPts, updated_at:new Date().toISOString() });
+    }
+  }
+  toast(`✅ Results marked! ${data.filter(p=>p.choice_index===winner).length} correct predictors awarded 50 pts each.`);
+  renderPredictions();
+}
+
+// ── LEADERBOARD ───────────────────────────────────────
+async function renderLeaderboard() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('user_points').select('user_id,points,user_profiles(first_name,last_name)').order('points',{ascending:false}).limit(30);
+  el.innerHTML = `
+    <div class="page-title">Leaderboard</div>
+    <div class="page-sub">Top players by points. You can adjust points manually if needed.</div>
+    <div class="panel">
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Rank</th><th>Player</th><th>Points</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${(data||[]).map((r,i)=>`<tr>
+            <td>${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</td>
+            <td>${r.user_profiles?`${r.user_profiles.first_name||''} ${r.user_profiles.last_name||''}`.trim()||'Player':'Player'}</td>
+            <td><strong style="color:var(--purple)">${(r.points||0).toLocaleString()} pts</strong></td>
+            <td><button class="btn btn-muted" onclick="adjustPoints('${r.user_id}',${r.points||0})">Adjust Points</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+function adjustPoints(userId, current) {
+  document.getElementById('modalTitle').textContent = 'Adjust User Points';
+  document.getElementById('modalBody').innerHTML = `
+    <p style="color:var(--muted);margin-bottom:14px">Current balance: <strong style="color:var(--purple)">${current} pts</strong></p>
+    <div class="form-group"><label class="form-label">New Points Total</label><input class="form-input" id="newPts" type="number" value="${current}" min="0"></div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn btn-gold btn-lg" style="flex:1" onclick="savePoints('${userId}')">Save</button>
+      <button class="btn btn-muted btn-lg" onclick="closeModal()">Cancel</button>
+    </div>`;
+  openModal();
+}
+async function savePoints(userId) {
+  const pts = parseInt(document.getElementById('newPts').value)||0;
+  await db.from('user_points').upsert({ user_id:userId, points:pts, updated_at:new Date().toISOString() });
+  closeModal(); toast('✅ Points updated'); renderLeaderboard();
+}
+
+// ── REWARD CLAIMS ─────────────────────────────────────
+async function renderRewards() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('redemptions').select('*,user_profiles(first_name,last_name,favourite_area)').order('created_at',{ascending:false});
+  el.innerHTML = `
+    <div class="page-title">Reward Claims</div>
+    <div class="page-sub">Users who have redeemed points for rewards. Mark as fulfilled once delivered.</div>
+    <div class="panel">
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>User</th><th>Reward</th><th>Points Spent</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${(data||[]).map(r=>`<tr>
+            <td>${r.user_profiles?`${r.user_profiles.first_name||''} ${r.user_profiles.last_name||''}`.trim()||'User':'User'}</td>
+            <td>${r.reward}</td>
+            <td>${r.points_spent} pts</td>
+            <td><span class="badge ${r.status==='fulfilled'?'bg':r.status==='pending'?'bo':'bp'}">${r.status}</span></td>
+            <td>${new Date(r.created_at).toLocaleDateString()}</td>
+            <td style="display:flex;gap:5px">
+              ${r.status==='pending'?`<button class="btn btn-green" onclick="updateRedemption('${r.id}','fulfilled')">✅ Fulfilled</button>`:''}
+              ${r.status==='pending'?`<button class="btn btn-danger" onclick="updateRedemption('${r.id}','cancelled')">Cancel</button>`:''}
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+async function updateRedemption(id, status) {
+  await db.from('redemptions').update({ status }).eq('id',id);
+  toast(`✅ Redemption marked as ${status}`); renderRewards();
+}
+
+// ── VENDOR TOKENS ─────────────────────────────────────
+async function renderTokens() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('vendor_tokens').select('*').order('created_at',{ascending:false});
+  el.innerHTML = `
+    <div class="page-title">Vendor Tokens</div>
+    <div class="page-sub">Generate tokens for vendors to give to their clients. Each token unlocks a discounted subscription.</div>
+    <div class="panel" style="border-color:rgba(57,224,122,0.2)">
+      <div class="panel-title">Generate New Token</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Vendor Name *</label><input class="form-input" id="tvendor" placeholder="e.g. Accra Drinks Co."></div>
+        <div class="form-group"><label class="form-label">Organisation (optional)</label><input class="form-input" id="torg" placeholder="e.g. TechCorp Ghana"></div>
+        <div class="form-group"><label class="form-label">Subscription Plan</label>
+          <select class="form-select" id="tplan"><option>Starter</option><option>Business</option><option>Enterprise</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Discount %</label>
+          <select class="form-select" id="tdisc"><option value="15">15% (Starter)</option><option value="25">25% (Business)</option><option value="35">35% (Enterprise)</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Valid For (days)</label>
+          <select class="form-select" id="tdays"><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select>
+        </div>
+      </div>
+      <button class="btn btn-green btn-lg" style="margin-top:12px" onclick="generateToken()">🎫 Generate Token</button>
+      <div id="generatedToken" style="display:none"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">All Tokens (${(data||[]).length})</div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Token</th><th>Vendor</th><th>Plan</th><th>Expires</th><th>Status</th></tr></thead>
+        <tbody>
+          ${(data||[]).map(t=>`<tr>
+            <td><code style="font-family:monospace;color:var(--green);letter-spacing:1px">${t.token}</code></td>
+            <td>${t.vendor_name}</td>
+            <td><span class="badge bo">${t.plan}</span></td>
+            <td>${new Date(t.expires_at).toLocaleDateString()}</td>
+            <td><span class="badge ${t.used?'bp':'bg'}">${t.used?'Used':'Available'}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+async function generateToken() {
+  const vendor = document.getElementById('tvendor')?.value?.trim();
+  if (!vendor) { toast('⚠️ Vendor name required'); return; }
+  // Generate unique token: GHN-XXXXX-XXX
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const rand = n => Array.from({length:n},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  const token = `GHN-${rand(5)}-${rand(3)}`;
+  const days = parseInt(document.getElementById('tdays')?.value||'30');
+  const expires = new Date(); expires.setDate(expires.getDate()+days);
+  const payload = {
+    token, vendor_name:vendor, org_name:document.getElementById('torg')?.value?.trim()||null,
+    plan:document.getElementById('tplan')?.value||'Business',
+    discount_pct:parseInt(document.getElementById('tdisc')?.value||'25'),
+    used:false, expires_at:expires.toISOString()
+  };
+  const { error } = await db.from('vendor_tokens').insert(payload);
+  if (error) { toast('⚠️ Failed to save token: '+error.message); return; }
+  const el = document.getElementById('generatedToken');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="token-display">
+      <div class="token-code">${token}</div>
+      <div class="token-meta">${payload.plan} Plan · ${payload.discount_pct}% off · Valid ${days} days · Send this to ${vendor}</div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-green" onclick="navigator.clipboard.writeText('${token}');toast('📋 Token copied!')">📋 Copy Token</button>
+    </div>`;
+  toast('✅ Token generated and saved!');
+}
+
+// ── SUBSCRIPTIONS ─────────────────────────────────────
+async function renderSubscriptions() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('corporate_subscriptions').select('*').order('activated_at',{ascending:false});
+  el.innerHTML = `
+    <div class="page-title">Corporate Subscriptions</div>
+    <div class="page-sub">Organisations that have activated a subscription via vendor token.</div>
+    <div class="panel">
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Organisation</th><th>Plan</th><th>Discount</th><th>Vendor</th><th>Expires</th><th>Status</th></tr></thead>
+        <tbody>
+          ${(data||[]).map(s=>`<tr>
+            <td><strong>${s.org_name}</strong></td>
+            <td><span class="badge bo">${s.plan}</span></td>
+            <td><span style="color:var(--green);font-weight:700">${s.discount_pct}% off</span></td>
+            <td>${s.vendor_name||'—'}</td>
+            <td>${new Date(s.expires_at).toLocaleDateString('en-GH')}</td>
+            <td><span class="badge ${s.status==='active'?'bg':'bp'}">${s.status}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+// ── VENDOR APPLICATIONS ───────────────────────────────
+async function renderVendors() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('vendor_applications').select('*').order('created_at',{ascending:false});
+  el.innerHTML = `
+    <div class="page-title">Vendor Applications</div>
+    <div class="page-sub">Businesses applying to become GhaNight recommended vendors.</div>
+    <div class="panel">
+      ${(data||[]).map(v=>`<div class="card-row">
+        <div class="card-row-title">${v.business_name} <span class="badge bm">${v.business_type}</span> <span class="badge ${v.status==='pending'?'bo':v.status==='approved'?'bg':'bp'}">${v.status}</span></div>
+        <div class="card-row-meta">${v.contact_name} · ${v.email} · ${v.phone}<br>Monthly volume: ${v.monthly_volume||'—'} · Applied: ${new Date(v.created_at).toLocaleDateString()}</div>
+        <div class="card-row-actions">
+          ${v.status==='pending'?`<button class="btn btn-green" onclick="updateVendorApp('${v.id}','approved')">✅ Approve</button><button class="btn btn-danger" onclick="updateVendorApp('${v.id}','rejected')">❌ Reject</button>`:''}
+          <button class="btn btn-muted" onclick="copyEmail('${v.email}')">Copy Email</button>
+        </div>
+      </div>`).join('')||'<div style="color:var(--muted)">No vendor applications yet.</div>'}
+    </div>`;
+}
+async function updateVendorApp(id, status) {
+  await db.from('vendor_applications').update({ status }).eq('id',id);
+  toast(`✅ Vendor application ${status}`); renderVendors(); loadBadges();
+}
+
+// ── CORPORATE ENQUIRIES ───────────────────────────────
+async function renderCorpEnquiries() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('corporate_enquiries').select('*').order('created_at',{ascending:false});
+  el.innerHTML = `
+    <div class="page-title">Corporate Enquiries</div>
+    <div class="page-sub">Organisations requesting to be matched with a vendor for a discount subscription.</div>
+    <div class="panel">
+      ${(data||[]).map(c=>`<div class="card-row">
+        <div class="card-row-title">${c.org_name} <span class="badge ${c.status==='new'?'bo':c.status==='matched'?'bg':'bm'}">${c.status}</span></div>
+        <div class="card-row-meta">${c.contact_name}${c.role?' ('+c.role+')':''} · ${c.email} · ${c.phone||'—'}<br>Size: ${c.org_size||'—'} · Vendor pref: ${c.vendor_pref||'—'} · ${new Date(c.created_at).toLocaleDateString()}</div>
+        <div class="card-row-actions">
+          ${c.status==='new'?`<button class="btn btn-green" onclick="updateCorpEnq('${c.id}','contacted')">Mark Contacted</button>`:''}
+          ${c.status==='contacted'?`<button class="btn btn-blue" onclick="updateCorpEnq('${c.id}','matched')">Mark Matched</button>`:''}
+          <button class="btn btn-muted" onclick="copyEmail('${c.email}')">Copy Email</button>
+        </div>
+      </div>`).join('')||'<div style="color:var(--muted)">No corporate enquiries yet.</div>'}
+    </div>`;
+}
+async function updateCorpEnq(id, status) {
+  await db.from('corporate_enquiries').update({ status }).eq('id',id);
+  toast(`✅ Status updated to ${status}`); renderCorpEnquiries(); loadBadges();
+}
+
+// ── VENUE REGISTRATIONS ───────────────────────────────
+async function renderRegistrations() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('venue_registrations').select('*').order('created_at',{ascending:false});
+  el.innerHTML = `
+    <div class="page-title">Venue Registrations</div>
+    <div class="page-sub">Venues that have applied to be listed on GhaNight.</div>
+    <div class="panel">
+      ${(data||[]).map(r=>`<div class="card-row">
+        <div class="card-row-title">${r.venue_name} <span class="badge bm">${r.venue_type}</span> <span class="badge ${r.plan==='premium'?'bo':'bm'}">${r.plan}</span> <span class="badge ${r.status==='pending'?'bo':r.status==='approved'?'bg':'bp'}">${r.status}</span></div>
+        <div class="card-row-meta">📍 ${r.area} · ${r.contact_name} · ${r.phone} · ${r.email}<br>Applied: ${new Date(r.created_at).toLocaleDateString()}</div>
+        <div class="card-row-actions">
+          ${r.status==='pending'?`<button class="btn btn-green" onclick="updateReg('${r.id}','approved')">✅ Approve</button><button class="btn btn-danger" onclick="updateReg('${r.id}','rejected')">❌ Reject</button>`:''}
+          <button class="btn btn-muted" onclick="copyEmail('${r.email}')">Copy Email</button>
+        </div>
+      </div>`).join('')||'<div style="color:var(--muted)">No registrations yet.</div>'}
+    </div>`;
+}
+async function updateReg(id, status) {
+  await db.from('venue_registrations').update({ status }).eq('id',id);
+  toast(`✅ Registration ${status}`); renderRegistrations(); loadBadges();
+}
+
+// ── AD ENQUIRIES ──────────────────────────────────────
+async function renderAdEnquiries() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('advertiser_enquiries').select('*').order('created_at',{ascending:false});
+  el.innerHTML = `
+    <div class="page-title">Advertiser Enquiries</div>
+    <div class="page-sub">Businesses enquiring about advertising on GhaNight.</div>
+    <div class="panel">
+      ${(data||[]).map(a=>`<div class="card-row">
+        <div class="card-row-title">${a.company_name} <span class="badge ${a.status==='new'?'bo':a.status==='contacted'?'bg':'bm'}">${a.status}</span></div>
+        <div class="card-row-meta">${a.contact_name} · ${a.email} · ${a.phone||'—'}<br>📢 ${a.ad_type} · 💰 ${a.budget_range} · ${new Date(a.created_at).toLocaleDateString()}</div>
+        <div class="card-row-actions">
+          ${a.status==='new'?`<button class="btn btn-green" onclick="updateAd('${a.id}','contacted')">Mark Contacted</button>`:''}
+          ${a.status==='contacted'?`<button class="btn btn-muted" onclick="updateAd('${a.id}','closed')">Mark Closed</button>`:''}
+          <button class="btn btn-muted" onclick="copyEmail('${a.email}')">Copy Email</button>
+        </div>
+      </div>`).join('')||'<div style="color:var(--muted)">No enquiries yet.</div>'}
+    </div>`;
+}
+async function updateAd(id, status) {
+  await db.from('advertiser_enquiries').update({ status }).eq('id',id);
+  toast(`✅ Status updated`); renderAdEnquiries(); loadBadges();
+}
+
+// ── CHECK-INS ─────────────────────────────────────────
+async function renderCheckins() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('checkins').select('*').order('checked_in_at',{ascending:false}).limit(100);
+  el.innerHTML = `
+    <div class="page-title">Check-ins</div>
+    <div class="page-sub">Real location-verified check-ins from users at venues. This drives the crowd counter.</div>
+    <div class="panel">
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Venue</th><th>Time</th><th>User</th></tr></thead>
+        <tbody>
+          ${(data||[]).map(c=>`<tr>
+            <td><strong>${c.venue_name}</strong></td>
+            <td>${new Date(c.checked_in_at).toLocaleString('en-GH')}</td>
+            <td style="color:var(--muted);font-size:12px">${c.user_id?c.user_id.substring(0,12)+'...':'Anonymous'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+// ── USERS ─────────────────────────────────────────────
+async function renderUsers() {
+  const el = document.getElementById('mainContent');
+  const { data } = await db.from('user_profiles').select('*').order('created_at',{ascending:false}).limit(100);
+  el.innerHTML = `
+    <div class="page-title">Registered Users</div>
+    <div class="page-sub">Everyone who has signed up to GhaNight.</div>
+    <div class="panel">
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Name</th><th>Favourite Area</th><th>Joined</th></tr></thead>
+        <tbody>
+          ${(data||[]).map(u=>`<tr>
+            <td><strong>${u.first_name||''} ${u.last_name||''}</strong></td>
+            <td>${u.favourite_area||'—'}</td>
+            <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('en-GH')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function g(id) { return document.getElementById(id)?.value||''; }
+function openModal() { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function copyEmail(email) { navigator.clipboard.writeText(email); toast('📋 '+email+' copied'); }
+function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+
+async function toggleRow(table, id, active) {
+  await db.from(table).update({ active, updated_at:new Date().toISOString() }).eq('id',id);
+  toast(active?'✅ Now visible on site':'👁️ Hidden from site');
+  if (table==='venues') renderVenues(); else renderEvents();
+}
+async function deleteRow(table, id, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  await db.from(table).delete().eq('id',id);
+  toast('🗑️ Deleted'); if (table==='venues') renderVenues(); else renderEvents();
+}
+</script>
+</body>
+</html>
