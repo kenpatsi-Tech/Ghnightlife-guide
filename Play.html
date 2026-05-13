@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GhaNight Play — Predictions & Trivia</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#080810;--surface:#10101e;--card:#14142a;--gold:#f5c542;--orange:#ff6b35;--pink:#ff3d8a;--green:#39e07a;--blue:#4fa3ff;--purple:#a855f7;--text:#f0f0f8;--muted:#7070a0;--border:rgba(255,255,255,0.06);}
+  *{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  .top-nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,8,16,0.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:22px;background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;text-decoration:none;}
+  .pts-badge{background:linear-gradient(135deg,var(--purple),var(--blue));color:white;font-size:12px;font-weight:700;padding:6px 14px;border-radius:100px;}
+  .btn-nav{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;cursor:pointer;}
+  main{padding-top:56px;}
+  /* HERO */
+  .play-hero{padding:40px 20px 32px;text-align:center;background:linear-gradient(180deg,rgba(168,85,247,0.06) 0%,transparent 100%);}
+  .play-hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(42px,10vw,80px);line-height:0.9;background:linear-gradient(135deg,#fff,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;}
+  .play-hero p{color:var(--muted);font-size:15px;max-width:420px;margin:0 auto 24px;line-height:1.6;}
+  /* TABS */
+  .mode-tabs{display:flex;gap:12px;justify-content:center;margin-bottom:36px;flex-wrap:wrap;padding:0 20px;}
+  .mode-tab{background:var(--card);border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 22px;border-radius:14px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:8px;}
+  .mode-tab:hover{border-color:rgba(168,85,247,0.3);color:var(--text);}
+  .mode-tab.active{background:linear-gradient(135deg,var(--purple),var(--pink));border-color:transparent;color:white;}
+  /* PREDICTIONS SECTION */
+  .section{padding:0 20px;margin-bottom:44px;}
+  .section-hd{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;margin-bottom:18px;}
+  .section-hd span{color:var(--purple);}
+  .prediction-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;}
+  .pred-question{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;margin-bottom:6px;}
+  .pred-meta{font-size:12px;color:var(--muted);margin-bottom:16px;}
+  .pred-options{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .pred-option{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:12px 16px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:500;}
+  .pred-option:hover{border-color:rgba(168,85,247,0.4);}
+  .pred-option.selected{border-color:var(--purple);background:rgba(168,85,247,0.1);color:white;}
+  .pred-option.correct{border-color:var(--green);background:rgba(57,224,122,0.1);}
+  .pred-option.wrong{border-color:var(--pink);background:rgba(255,61,138,0.08);opacity:0.6;}
+  .pred-option.revealed{cursor:default;}
+  .pred-bar{height:4px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden;}
+  .pred-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--purple),var(--pink));transition:width 0.8s ease;}
+  .pred-pts{font-size:11px;color:var(--purple);font-weight:700;}
+  .pred-footer{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);}
+  .btn-predict{background:linear-gradient(135deg,var(--purple),var(--pink));color:white;border:none;border-radius:10px;padding:8px 18px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;}
+  .btn-predict:disabled{opacity:0.4;cursor:not-allowed;}
+  /* TRIVIA GAME */
+  .game-wrap{max-width:520px;margin:0 auto;}
+  .game-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px 22px;text-align:center;}
+  .game-status{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+  .game-stat{text-align:center;}
+  .game-stat-num{font-family:'Bebas Neue',sans-serif;font-size:28px;}
+  .game-stat-label{font-size:10px;color:var(--muted);letter-spacing:1px;}
+  .progress-bar{height:6px;background:var(--border);border-radius:3px;margin-bottom:28px;overflow:hidden;}
+  .progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--purple),var(--pink));transition:width 0.4s ease;}
+  .question-num{font-size:11px;color:var(--purple);font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+  .question-text{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;margin-bottom:24px;line-height:1.4;}
+  .answers-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+  .answer-btn{background:var(--surface);border:2px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:14px 18px;border-radius:13px;cursor:pointer;transition:all 0.2s;text-align:left;}
+  .answer-btn:hover:not(:disabled){border-color:rgba(168,85,247,0.5);background:rgba(168,85,247,0.08);}
+  .answer-btn.correct{border-color:var(--green);background:rgba(57,224,122,0.15);color:var(--green);}
+  .answer-btn.wrong{border-color:var(--pink);background:rgba(255,61,138,0.08);color:var(--pink);}
+  .answer-btn:disabled{cursor:default;}
+  .feedback{font-size:15px;font-weight:700;margin-bottom:12px;min-height:24px;}
+  .timer-ring{width:52px;height:52px;position:relative;margin:0 auto 16px;}
+  .timer-svg{transform:rotate(-90deg);}
+  .timer-circle{fill:none;stroke:var(--border);stroke-width:4;}
+  .timer-progress{fill:none;stroke:var(--purple);stroke-width:4;stroke-linecap:round;stroke-dasharray:138;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear;}
+  .timer-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);}
+  /* LEADERBOARD */
+  .lb-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);border-radius:12px;margin-bottom:8px;border:1px solid var(--border);}
+  .lb-rank{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--muted);width:28px;}
+  .lb-rank.gold{color:var(--gold);}
+  .lb-rank.silver{color:#c0c0c0;}
+  .lb-rank.bronze{color:#cd7f32;}
+  .lb-name{flex:1;font-size:14px;font-weight:600;}
+  .lb-pts{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--purple);}
+  .lb-badge{font-size:11px;padding:2px 8px;border-radius:100px;background:rgba(168,85,247,0.15);color:var(--purple);font-weight:600;}
+  /* RESULTS */
+  .result-screen{text-align:center;padding:20px 0;}
+  .result-icon{font-size:64px;margin-bottom:16px;}
+  .result-title{font-family:'Bebas Neue',sans-serif;font-size:36px;margin-bottom:8px;}
+  .result-sub{color:var(--muted);font-size:14px;margin-bottom:24px;line-height:1.6;}
+  .result-pts{font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--purple);margin-bottom:8px;}
+  .btn-play{background:linear-gradient(135deg,var(--purple),var(--pink));color:white;border:none;border-radius:14px;padding:15px 32px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:16px;cursor:pointer;width:100%;margin-top:8px;}
+  .btn-muted{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:14px;padding:12px 24px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;width:100%;margin-top:8px;}
+  /* REWARDS */
+  .reward-card{background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(255,61,138,0.06));border:1px solid rgba(168,85,247,0.2);border-radius:16px;padding:18px;margin-bottom:12px;display:flex;align-items:center;gap:16px;}
+  .reward-icon{font-size:32px;flex-shrink:0;}
+  .reward-pts{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--purple);}
+  .reward-title{font-size:15px;font-weight:700;margin-bottom:2px;}
+  .reward-desc{font-size:12px;color:var(--muted);}
+  .btn-redeem{background:linear-gradient(135deg,var(--purple),var(--pink));color:white;border:none;border-radius:9px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;}
+  .btn-redeem:disabled{opacity:0.4;cursor:not-allowed;}
+  /* AUTH */
+  .auth-gate{background:var(--card);border:1px solid rgba(168,85,247,0.2);border-radius:18px;padding:32px;text-align:center;max-width:400px;margin:0 auto;}
+  .auth-gate h3{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--purple);margin-bottom:8px;}
+  .auth-gate p{color:var(--muted);font-size:14px;margin-bottom:20px;line-height:1.5;}
+  .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;text-align:left;}
+  .form-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
+  .form-input{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:12px 14px;border-radius:11px;outline:none;transition:border-color 0.2s;width:100%;}
+  .form-input:focus{border-color:rgba(168,85,247,0.4);}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(30,30,50,0.96);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:12px;padding:11px 18px;font-size:13px;color:var(--text);opacity:0;transition:all 0.3s;z-index:300;white-space:nowrap;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  @media(max-width:480px){.mode-tabs{gap:8px;}.mode-tab{font-size:13px;padding:10px 16px;}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="index.html" class="logo">GhaNight</a>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div class="pts-badge" id="ptsDisplay" style="display:none">⚡ 0 pts</div>
+    <button class="btn-nav" id="navBtn" onclick="handleNavBtn()">Sign Up to Play</button>
+  </div>
+</nav>
+
+<main>
+  <div class="play-hero">
+    <h1>PLAY &<br>WIN</h1>
+    <p>Predict tonight's hottest venues, challenge the GhaNight AI in nightlife trivia, and earn points you can redeem for real discounts.</p>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('predictions',this)">🔮 Predictions</button>
+    <button class="mode-tab" onclick="switchMode('trivia',this)">🧠 Trivia Game</button>
+    <button class="mode-tab" onclick="switchMode('leaderboard',this)">🏆 Leaderboard</button>
+    <button class="mode-tab" onclick="switchMode('rewards',this)">🎁 Rewards</button>
+  </div>
+
+  <div id="modeContent"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+let db = null, currentUser = null, userPoints = 0;
+
+// ── TRIVIA QUESTIONS ──────────────────────────────────
+const QUESTIONS = [
+  { q:"Which area of Accra is most famous for its rooftop bar scene?", opts:["Osu","Airport Hills","Tema","Cantonments"], correct:1, fact:"Airport Hills has the highest concentration of rooftop bars in Accra." },
+  { q:"What is the traditional Ghanaian music genre often played at Accra lounges?", opts:["Amapiano","Highlife","Gqom","Juju"], correct:1, fact:"Highlife originated in Ghana and is a staple of Accra's lounge scene." },
+  { q:"Which South African genre has taken over Accra clubs since 2022?", opts:["Kwaito","Maskandi","Amapiano","Bubblegum"], correct:2, fact:"Amapiano exploded across West Africa from 2022 and now dominates club setlists." },
+  { q:"What is the local Ghanaian beer most commonly served in Accra nightlife venues?", opts:["Star","Club","Gulder","Guinness"], correct:1, fact:"Club Beer is brewed in Ghana and is the most popular beer in Accra's nightlife." },
+  { q:"La Palm Beach in Accra is located in which neighbourhood?", opts:["Osu","East Legon","La","Cantonments"], correct:2, fact:"La (also called Labadi) is home to Accra's most popular beach bars." },
+  { q:"What does 'TGIF' typically signal at Accra clubs?", opts:["Closing time","Happy hour specials","VIP only entry","Private bookings"], correct:1, fact:"Friday happy hours at Accra venues often run from 6–9pm with reduced prices." },
+  { q:"Which neighbourhood is known as Accra's main nightlife strip?", opts:["Airport Hills","East Legon","Osu","Tema"], correct:2, fact:"Osu — particularly Oxford Street — is Accra's most famous nightlife zone." },
+  { q:"What typically happens to entry prices at Accra clubs after midnight?", opts:["They drop","They stay the same","They increase","Entry becomes free"], correct:2, fact:"Many Accra clubs charge more after midnight or require bottle service for late entry." },
+  { q:"Which major music festival warms up in Accra each year before heading to the main island event?", opts:["AfroPunk","Afro Nation","Coachella","Detty December"], correct:1, fact:"Afro Nation hosts warmup events in Accra before its main Ghana event." },
+  { q:"What is 'Detty December' in Ghana?", opts:["A Christmas tradition","The peak nightlife season","A music genre","A local cocktail"], correct:1, fact:"Detty December is the peak party season in Ghana when the diaspora returns and every night is packed." },
+];
+
+// ── PREDICTIONS DATA ──────────────────────────────────
+const PREDICTIONS = [
+  { id:'p1', q:"Which venue will be the most packed this Friday night?", opts:["Onyx Nightclub","Sky+ Rooftop Bar","Rhapsodys Accra","Twist Lounge"], votes:[234,156,189,87], pts:50, closes:"Friday 6pm", status:"open" },
+  { id:'p2', q:"Which genre will dominate Accra clubs this weekend?", opts:["Afrobeats","Amapiano","Highlife","Hip-Hop"], votes:[312,278,89,124], pts:30, closes:"Saturday 6pm", status:"open" },
+  { id:'p3', q:"Will La Palm Beach reach 90%+ capacity on Saturday?", opts:["Yes 🔥","No — under 90%"], votes:[445,231], pts:20, closes:"Saturday 8pm", status:"open" },
+  { id:'p4', q:"Which area will have the most events this weekend?", opts:["Osu","East Legon","Airport Hills","Cantonments"], votes:[289,201,178,134], pts:40, closes:"Friday 5pm", status:"open" },
+];
+
+// ── GAME STATE ────────────────────────────────────────
+let gameState = { mode:'idle', qIndex:0, score:0, lives:3, answers:[], timer:null, timeLeft:15 };
+let userPredictions = {};
+
+window.addEventListener('load', async () => {
+  try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
+  await checkSession();
+  switchMode('predictions', document.querySelector('.mode-tab'));
+});
+
+async function checkSession() {
+  if (!db) return;
+  try {
+    const { data:{ session } } = await db.auth.getSession();
+    if (session) { currentUser = session.user; await loadUserPoints(); updateNav(); }
+    db.auth.onAuthStateChange(async (_, s) => {
+      currentUser = s?.user||null;
+      if (currentUser) { await loadUserPoints(); }
+      updateNav();
+    });
+  } catch(e){}
+}
+async function loadUserPoints() {
+  if (!db || !currentUser) return;
+  try {
+    const { data } = await db.from('user_points').select('points').eq('user_id',currentUser.id).single();
+    userPoints = data?.points || 0;
+    updatePointsDisplay();
+  } catch(e){ userPoints = 0; }
+}
+async function addPoints(pts, reason) {
+  userPoints += pts;
+  updatePointsDisplay();
+  showToast(`+${pts} pts — ${reason}! ⚡`);
+  if (!db || !currentUser) return;
+  try {
+    await db.from('user_points').upsert({ user_id:currentUser.id, points:userPoints, updated_at:new Date().toISOString() });
+    await db.from('points_log').insert({ user_id:currentUser.id, points:pts, reason, created_at:new Date().toISOString() });
+  } catch(e){}
+}
+function updatePointsDisplay() {
+  const el = document.getElementById('ptsDisplay');
+  if (currentUser) { el.style.display='block'; el.textContent=`⚡ ${userPoints.toLocaleString()} pts`; }
+  else el.style.display='none';
+}
+function updateNav() {
+  const btn = document.getElementById('navBtn');
+  btn.textContent = currentUser ? '👤 My Stats' : 'Sign Up to Play';
+  btn.onclick = currentUser ? showMyStats : showAuthGate;
+}
+function handleNavBtn() { currentUser ? showMyStats() : showAuthGate(); }
+
+// ── MODE SWITCHING ────────────────────────────────────
+function switchMode(mode, btn) {
+  if (gameState.timer) { clearInterval(gameState.timer); gameState.timer=null; }
+  document.querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const el = document.getElementById('modeContent');
+  if (mode==='predictions') renderPredictions(el);
+  else if (mode==='trivia') renderTriviaStart(el);
+  else if (mode==='leaderboard') renderLeaderboard(el);
+  else if (mode==='rewards') renderRewards(el);
+}
+
+// ── PREDICTIONS ───────────────────────────────────────
+function renderPredictions(el) {
+  el.innerHTML = `
+    <div class="section">
+      <div class="section-hd">THIS WEEK'S <span>PREDICTIONS</span></div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Pick what you think will happen. If you're right, earn points. Leaderboard updated after results.</p>
+      ${PREDICTIONS.map(p=>renderPredCard(p)).join('')}
+    </div>`;
+}
+function renderPredCard(p) {
+  const total = p.votes.reduce((s,v)=>s+v,0);
+  const userPick = userPredictions[p.id];
+  return `<div class="prediction-card">
+    <div class="pred-question">${p.q}</div>
+    <div class="pred-meta">🕐 Closes ${p.closes} · ${p.pts} pts if correct · ${total.toLocaleString()} predictions so far</div>
+    <div class="pred-options">
+      ${p.opts.map((o,i)=>{
+        const pct = Math.round((p.votes[i]/total)*100);
+        const isSelected = userPick===i;
+        return `<div class="pred-option ${isSelected?'selected':''} ${userPick!==undefined?'revealed':''}" onclick="makePrediction('${p.id}',${i})">
+          <span>${o}</span>
+          <span class="pred-pts">${userPick!==undefined?pct+'%':p.pts+' pts'}</span>
+          ${userPick!==undefined?`<div class="pred-bar" style="width:100%"><div class="pred-fill" style="width:${pct}%"></div></div>`:''}
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="pred-footer">
+      <span>${total.toLocaleString()} players predicted</span>
+      ${userPick===undefined?`<button class="btn-predict" onclick="makePrediction('${p.id}',userPredictions['${p.id}'])" disabled>Select an option</button>`:`<span style="color:var(--purple);font-size:12px;font-weight:600">✅ Prediction locked in!</span>`}
+    </div>
+  </div>`;
+}
+function makePrediction(predId, optIdx) {
+  if (!currentUser) { showAuthGate(); return; }
+  if (userPredictions[predId] !== undefined) return;
+  if (optIdx === undefined || optIdx === null) return;
+  userPredictions[predId] = optIdx;
+  // Increment vote count locally
+  const p = PREDICTIONS.find(p=>p.id===predId);
+  if (p) p.votes[optIdx]++;
+  showToast('🔮 Prediction locked! Points awarded when results are in.');
+  // Save to DB
+  if (db) db.from('predictions').insert({ user_id:currentUser.id, prediction_id:predId, choice_index:optIdx, created_at:new Date().toISOString() }).catch(()=>{});
+  renderPredictions(document.getElementById('modeContent'));
+}
+
+// ── TRIVIA ────────────────────────────────────────────
+function renderTriviaStart(el) {
+  gameState = { mode:'idle', qIndex:0, score:0, lives:3, answers:[], timer:null, timeLeft:15 };
+  el.innerHTML = `
+    <div class="section">
+      <div class="game-wrap">
+        <div class="game-card">
+          <div style="font-size:52px;margin-bottom:16px">🧠</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;margin-bottom:8px">ACCRA NIGHTLIFE TRIVIA</div>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:24px;line-height:1.6">10 questions. 15 seconds each. 3 lives. Beat the GhaNight AI and climb the leaderboard.</p>
+          <div style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:24px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+              <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--purple)">10</div><div style="font-size:11px;color:var(--muted)">Questions</div></div>
+              <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold)">15s</div><div style="font-size:11px;color:var(--muted)">Per Question</div></div>
+              <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--pink)">3 ❤️</div><div style="font-size:11px;color:var(--muted)">Lives</div></div>
+            </div>
+          </div>
+          <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;color:var(--purple)">
+            💡 Earn 100pts for each correct answer. Perfect score = 1000pts bonus!
+          </div>
+          <button class="btn-play" onclick="startTrivia()">▶ Start Game</button>
+          ${!currentUser?'<p style="color:var(--muted);font-size:12px;text-align:center;margin-top:12px">Sign in to save your score to the leaderboard</p>':''}
+        </div>
+      </div>
+    </div>`;
+}
+
+function startTrivia() {
+  const shuffled = [...QUESTIONS].sort(()=>Math.random()-0.5);
+  gameState = { mode:'playing', questions:shuffled, qIndex:0, score:0, lives:3, answers:[], timer:null, timeLeft:15 };
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = gameState.questions[gameState.qIndex];
+  const el = document.getElementById('modeContent');
+  el.innerHTML = `
+    <div class="section">
+      <div class="game-wrap">
+        <div class="game-card">
+          <div class="game-status">
+            <div class="game-stat"><div class="game-stat-num" style="color:var(--purple)">${gameState.score}</div><div class="game-stat-label">POINTS</div></div>
+            <div class="game-stat"><div class="game-stat-num" id="livesDisplay">${'❤️'.repeat(gameState.lives)}</div><div class="game-stat-label">LIVES</div></div>
+            <div class="game-stat"><div class="game-stat-num">${gameState.qIndex+1}/10</div><div class="game-stat-label">QUESTION</div></div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${(gameState.qIndex/10)*100}%"></div></div>
+          <div class="timer-ring">
+            <svg class="timer-svg" width="52" height="52"><circle class="timer-circle" cx="26" cy="26" r="22"/><circle class="timer-progress" id="timerCircle" cx="26" cy="26" r="22"/></svg>
+            <div class="timer-text" id="timerText">15</div>
+          </div>
+          <div class="question-num">QUESTION ${gameState.qIndex+1} OF 10</div>
+          <div class="question-text">${q.q}</div>
+          <div class="answers-grid">
+            ${q.opts.map((o,i)=>`<button class="answer-btn" id="ans${i}" onclick="selectAnswer(${i})">${o}</button>`).join('')}
+          </div>
+          <div class="feedback" id="feedback"></div>
+        </div>
+      </div>
+    </div>`;
+  startTimer();
+}
+
+function startTimer() {
+  gameState.timeLeft = 15;
+  const circle = document.getElementById('timerCircle');
+  const text   = document.getElementById('timerText');
+  const total  = 138; // circumference
+  gameState.timer = setInterval(() => {
+    gameState.timeLeft--;
+    if (text) text.textContent = gameState.timeLeft;
+    if (circle) circle.style.strokeDashoffset = total - (total * gameState.timeLeft / 15);
+    if (circle) circle.style.stroke = gameState.timeLeft <= 5 ? 'var(--pink)' : 'var(--purple)';
+    if (gameState.timeLeft <= 0) {
+      clearInterval(gameState.timer);
+      timeUp();
+    }
+  }, 1000);
+}
+
+function timeUp() {
+  const q = gameState.questions[gameState.qIndex];
+  document.querySelectorAll('.answer-btn').forEach((b,i) => {
+    b.disabled = true;
+    if (i === q.correct) b.classList.add('correct');
+  });
+  const fb = document.getElementById('feedback');
+  if (fb) { fb.textContent = "⏰ Time's up! -1 life"; fb.style.color='var(--pink)'; }
+  gameState.lives--;
+  if (gameState.lives <= 0) { setTimeout(endGame, 1500); return; }
+  setTimeout(nextQuestion, 1800);
+}
+
+function selectAnswer(idx) {
+  if (gameState.mode !== 'playing') return;
+  clearInterval(gameState.timer);
+  const q = gameState.questions[gameState.qIndex];
+  const isCorrect = idx === q.correct;
+  document.querySelectorAll('.answer-btn').forEach((b,i) => {
+    b.disabled = true;
+    if (i === q.correct) b.classList.add('correct');
+    else if (i === idx && !isCorrect) b.classList.add('wrong');
+  });
+  const fb = document.getElementById('feedback');
+  if (isCorrect) {
+    const bonus = gameState.timeLeft >= 10 ? 150 : gameState.timeLeft >= 5 ? 120 : 100;
+    gameState.score += bonus;
+    gameState.answers.push({ correct:true });
+    if (fb) { fb.textContent = `✅ Correct! +${bonus} pts — ${q.fact}`; fb.style.color='var(--green)'; }
+  } else {
+    gameState.lives--;
+    gameState.answers.push({ correct:false });
+    if (fb) { fb.textContent = `❌ Wrong! ${q.fact}`; fb.style.color='var(--pink)'; }
+    if (gameState.lives <= 0) { setTimeout(endGame, 2000); return; }
+  }
+  gameState.qIndex++;
+  if (gameState.qIndex >= gameState.questions.length) { setTimeout(endGame, 2000); return; }
+  setTimeout(nextQuestion, 2200);
+}
+
+function nextQuestion() {
+  if (gameState.qIndex >= gameState.questions.length || gameState.lives <= 0) { endGame(); return; }
+  renderQuestion();
+}
+
+async function endGame() {
+  if (gameState.timer) clearInterval(gameState.timer);
+  const correct = gameState.answers.filter(a=>a.correct).length;
+  const isPerfect = correct === 10;
+  const totalPts = gameState.score + (isPerfect ? 1000 : 0);
+  let icon='😅', title='NICE TRY!';
+  if (correct >= 8) { icon='🏆'; title='ACCRA LEGEND!'; }
+  else if (correct >= 6) { icon='🔥'; title='NIGHTLIFE PRO!'; }
+  else if (correct >= 4) { icon='😊'; title='GETTING THERE!'; }
+  const el = document.getElementById('modeContent');
+  el.innerHTML = `
+    <div class="section">
+      <div class="game-wrap">
+        <div class="game-card">
+          <div class="result-screen">
+            <div class="result-icon">${icon}</div>
+            <div class="result-title">${title}</div>
+            <div class="result-pts">${totalPts.toLocaleString()}</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:16px">points earned this game</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px">
+              <div style="background:var(--surface);border-radius:11px;padding:12px;text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green)">${correct}/10</div><div style="font-size:11px;color:var(--muted)">Correct</div></div>
+              <div style="background:var(--surface);border-radius:11px;padding:12px;text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--pink)">${10-correct}</div><div style="font-size:11px;color:var(--muted)">Wrong</div></div>
+              <div style="background:var(--surface);border-radius:11px;padding:12px;text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--purple)">${totalPts}</div><div style="font-size:11px;color:var(--muted)">Points</div></div>
+            </div>
+            ${isPerfect?'<div style="background:rgba(245,197,66,0.1);border:1px solid rgba(245,197,66,0.3);border-radius:12px;padding:12px;font-size:13px;color:var(--gold);margin-bottom:16px">🏅 PERFECT SCORE! +1000 bonus points awarded!</div>':''}
+            <button class="btn-play" onclick="startTrivia()">▶ Play Again</button>
+            <button class="btn-muted" onclick="switchMode('leaderboard',null)">🏆 View Leaderboard</button>
+            <button class="btn-muted" onclick="switchMode('rewards',null)">🎁 Redeem Points</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  if (currentUser) await addPoints(totalPts, `Trivia game — ${correct}/10 correct`);
+  // Save to leaderboard
+  if (db && currentUser) {
+    try {
+      await db.from('game_scores').insert({ user_id:currentUser.id, score:totalPts, correct_answers:correct, game_type:'trivia', created_at:new Date().toISOString() });
+    } catch(e){}
+  }
+}
+
+// ── LEADERBOARD ───────────────────────────────────────
+async function renderLeaderboard(el) {
+  el.innerHTML = `<div class="section"><div class="section-hd">🏆 <span>LEADERBOARD</span></div><div style="color:var(--muted);text-align:center;padding:20px">Loading...</div></div>`;
+  let rows = [];
+  if (db) {
+    try {
+      const { data } = await db.from('user_points').select('user_id,points,user_profiles(first_name,last_name)').order('points',{ascending:false}).limit(20);
+      rows = (data||[]).map((r,i)=>({
+        rank:i+1, name:r.user_profiles?`${r.user_profiles.first_name||''} ${r.user_profiles.last_name||''}`.trim()||'Player':'Player', pts:r.points||0
+      }));
+    } catch(e){}
+  }
+  if (!rows.length) rows = [
+    {rank:1,name:'Kofi A.',pts:4850},{rank:2,name:'Abena K.',pts:3920},{rank:3,name:'Kwame M.',pts:3410},
+    {rank:4,name:'Ama S.',pts:2890},{rank:5,name:'Nana B.',pts:2240},{rank:6,name:'Efua T.',pts:1950},
+  ];
+  el.innerHTML = `
+    <div class="section">
+      <div class="section-hd">🏆 <span>LEADERBOARD</span></div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Top GhaNight players this month. Points earned from trivia games and correct predictions.</p>
+      ${rows.map(r=>`<div class="lb-row">
+        <div class="lb-rank ${r.rank===1?'gold':r.rank===2?'silver':r.rank===3?'bronze':''}">${r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':r.rank}</div>
+        <div class="lb-name">${r.name}${currentUser&&r.name===currentUser.email?' <span class="lb-badge">You</span>':''}</div>
+        <div class="lb-pts">${r.pts.toLocaleString()} pts</div>
+      </div>`).join('')}
+      <div style="margin-top:20px;text-align:center"><button class="btn-play" onclick="switchMode('trivia',null)">Play to Climb the Board →</button></div>
+    </div>`;
+}
+
+// ── REWARDS ───────────────────────────────────────────
+function renderRewards(el) {
+  const rewards = [
+    { icon:'🎟️', title:'GhaNight Premium — 1 Month', desc:'Full access to exclusive events, priority ticketing, and venue discounts.', pts:2000 },
+    { icon:'🥂', title:'Free Drink at Partner Venue', desc:'Redeem for one complimentary drink at any GhaNight partner venue.', pts:500 },
+    { icon:'💆', title:'VIP Queue Skip', desc:'Skip the entry queue at Onyx Nightclub or Sky+ Rooftop on any Friday.', pts:1000 },
+    { icon:'📸', title:'VIP Table for 2', desc:'Reserved table for 2 at a partner venue on a Thursday or Sunday.', pts:3000 },
+    { icon:'🎧', title:'DJ Shoutout', desc:'Get a shoutout from the DJ at a partner venue on your birthday week.', pts:800 },
+  ];
+  el.innerHTML = `
+    <div class="section">
+      <div class="section-hd">🎁 <span>REDEEM POINTS</span></div>
+      <div style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-size:13px;color:var(--muted)">Your Balance</div><div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--purple)">${userPoints.toLocaleString()} pts</div></div>
+        <button class="btn-play" style="width:auto;padding:10px 20px;font-size:13px" onclick="switchMode('trivia',null)">Earn More ▶</button>
+      </div>
+      ${rewards.map(r=>`<div class="reward-card">
+        <div class="reward-icon">${r.icon}</div>
+        <div style="flex:1">
+          <div class="reward-title">${r.title}</div>
+          <div class="reward-desc">${r.desc}</div>
+          <div class="reward-pts">${r.pts.toLocaleString()} pts</div>
+        </div>
+        <button class="btn-redeem" ${userPoints<r.pts?'disabled':''} onclick="redeemReward('${r.title}',${r.pts})">${userPoints>=r.pts?'Redeem':'Need '+r.pts+'pts'}</button>
+      </div>`).join('')}
+    </div>`;
+}
+async function redeemReward(title, pts) {
+  if (!currentUser) { showAuthGate(); return; }
+  if (userPoints < pts) { showToast('Not enough points!'); return; }
+  userPoints -= pts;
+  updatePointsDisplay();
+  showToast(`🎉 Redeemed: ${title}! Check your email.`);
+  if (db) {
+    try {
+      await db.from('user_points').upsert({ user_id:currentUser.id, points:userPoints });
+      await db.from('redemptions').insert({ user_id:currentUser.id, reward:title, points_spent:pts, created_at:new Date().toISOString() });
+    } catch(e){}
+  }
+  renderRewards(document.getElementById('modeContent'));
+}
+
+// ── AUTH GATE ─────────────────────────────────────────
+function showAuthGate() {
+  const el = document.getElementById('modeContent');
+  el.innerHTML = `
+    <div class="section">
+      <div class="auth-gate">
+        <h3>JOIN TO PLAY</h3>
+        <p>Sign up free to save your score, climb the leaderboard, and redeem points for real rewards.</p>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="authEmail" placeholder="email@gmail.com" type="email"></div>
+        <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="authPass" placeholder="Min 6 characters" type="password"></div>
+        <button class="btn-play" onclick="quickSignup()">Create Free Account →</button>
+        <button class="btn-muted" onclick="quickLogin()">Already have an account? Log In</button>
+        <div id="authErr" style="color:var(--pink);font-size:12px;text-align:center;margin-top:8px;display:none"></div>
+      </div>
+    </div>`;
+}
+async function quickSignup() {
+  if (!db) return;
+  const email = document.getElementById('authEmail')?.value?.trim();
+  const pass  = document.getElementById('authPass')?.value;
+  if (!email||!pass) { document.getElementById('authErr').textContent='Please fill in both fields'; document.getElementById('authErr').style.display='block'; return; }
+  const {data,error} = await db.auth.signUp({email,password:pass});
+  if (error) { document.getElementById('authErr').textContent=error.message; document.getElementById('authErr').style.display='block'; return; }
+  currentUser = data.user;
+  updateNav();
+  showToast('🎉 Account created! Start playing!');
+  switchMode('trivia', document.querySelectorAll('.mode-tab')[1]);
+}
+async function quickLogin() {
+  if (!db) return;
+  const email = document.getElementById('authEmail')?.value?.trim();
+  const pass  = document.getElementById('authPass')?.value;
+  const {data,error} = await db.auth.signInWithPassword({email,password:pass});
+  if (error) { document.getElementById('authErr').textContent='Incorrect email or password'; document.getElementById('authErr').style.display='block'; return; }
+  currentUser = data.user;
+  await loadUserPoints();
+  updateNav();
+  showToast('🔓 Welcome back!');
+  switchMode('predictions', document.querySelector('.mode-tab'));
+}
+function showMyStats() {
+  showToast(`⚡ You have ${userPoints.toLocaleString()} points. Keep playing!`);
+}
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+</script>
+</body>
+</html>
