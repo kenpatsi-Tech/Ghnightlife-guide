@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GhaNight — Checkout</title>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#080810;--surface:#10101e;--card:#14142a;--gold:#f5c542;--orange:#ff6b35;--pink:#ff3d8a;--green:#39e07a;--blue:#4fa3ff;--text:#f0f0f8;--muted:#7070a0;--border:rgba(255,255,255,0.06);}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  .top-nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,8,16,0.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:22px;background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;text-decoration:none;}
+  main{padding:80px 20px 40px;max-width:560px;margin:0 auto;}
+  .page-title{font-family:'Bebas Neue',sans-serif;font-size:32px;margin-bottom:4px;}
+  .page-sub{color:var(--muted);font-size:14px;margin-bottom:28px;}
+  /* PRODUCT TABS */
+  .product-tabs{display:flex;gap:8px;margin-bottom:28px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+  .product-tabs::-webkit-scrollbar{display:none;}
+  .ptab{background:var(--card);border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:9px 16px;border-radius:100px;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+  .ptab.active{background:linear-gradient(135deg,var(--gold),var(--orange));border-color:transparent;color:#000;}
+  /* CHECKOUT CARD */
+  .checkout-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;margin-bottom:16px;}
+  .product-name{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px;}
+  .product-desc{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+  .price-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+  .price-label{font-size:13px;color:var(--muted);}
+  .price-val{font-size:14px;font-weight:600;}
+  .price-total{display:flex;justify-content:space-between;align-items:center;padding:14px 0 0;}
+  .price-total-label{font-size:15px;font-weight:700;}
+  .price-total-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);}
+  /* FORM */
+  .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .form-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
+  .form-input,.form-select{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:12px 14px;border-radius:11px;outline:none;transition:border-color 0.2s;width:100%;}
+  .form-input:focus,.form-select:focus{border-color:rgba(245,197,66,0.4);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  /* PAY BUTTON */
+  .btn-pay{width:100%;background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;border-radius:14px;padding:16px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:16px;cursor:pointer;transition:all 0.2s;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:10px;}
+  .btn-pay:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,197,66,0.3);}
+  .btn-pay:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+  .security-note{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:12px;justify-content:center;}
+  /* PAYMENT METHODS */
+  .methods-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .method-badge{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--muted);}
+  /* SUCCESS */
+  .success-card{background:linear-gradient(135deg,rgba(57,224,122,0.1),rgba(79,163,255,0.06));border:1px solid rgba(57,224,122,0.3);border-radius:20px;padding:32px;text-align:center;display:none;}
+  .success-icon{font-size:56px;margin-bottom:16px;}
+  .success-title{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--green);margin-bottom:8px;}
+  .success-sub{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:20px;}
+  .ticket-code{font-family:'Courier New',monospace;font-size:18px;font-weight:800;color:var(--green);letter-spacing:3px;background:var(--surface);border:1px solid rgba(57,224,122,0.3);border-radius:12px;padding:14px;margin:12px 0;word-break:break-all;}
+  .btn-back{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;border-radius:12px;padding:13px 24px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;}
+  /* PAYOUT */
+  .earnings-display{background:var(--surface);border-radius:14px;padding:18px;margin-bottom:16px;text-align:center;}
+  .earnings-amount{font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--green);margin-bottom:4px;}
+  .earnings-label{font-size:12px;color:var(--muted);}
+  .progress-wrap{margin:12px 0;}
+  .progress-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:4px;transition:width 0.6s ease;}
+  .progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px;}
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(30,30,50,0.96);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:12px;padding:11px 18px;font-size:13px;color:var(--text);opacity:0;transition:all 0.3s;z-index:300;white-space:nowrap;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  @media(max-width:480px){.form-row{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="index.html" class="logo">GhaNight</a>
+  <span style="font-size:12px;color:var(--muted)">🔒 Secure Checkout</span>
+</nav>
+
+<main>
+  <div class="page-title">Checkout</div>
+  <div class="page-sub">All payments secured by Paystack. Supports Mobile Money & card.</div>
+
+  <div class="product-tabs">
+    <button class="ptab active" onclick="switchProduct('ticket',this)">🎟️ Event Ticket</button>
+    <button class="ptab" onclick="switchProduct('venue_sub',this)">📡 Venue Subscription</button>
+    <button class="ptab" onclick="switchProduct('corporate',this)">🏢 Corporate Plan</button>
+    <button class="ptab" onclick="switchProduct('payout',this)">💰 Creator Payout</button>
+  </div>
+
+  <div id="checkoutArea"></div>
+  <div class="success-card" id="successCard">
+    <div class="success-icon">🎉</div>
+    <div class="success-title" id="successTitle">Payment Successful!</div>
+    <div class="success-sub" id="successSub">Your payment has been confirmed.</div>
+    <div class="ticket-code" id="ticketCode" style="display:none"></div>
+    <button class="btn-back" onclick="document.getElementById('successCard').style.display='none';switchProduct('ticket',document.querySelector('.ptab'))">← Back to Checkout</button>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────
+// Replace with your real Paystack PUBLIC key from paystack.com/dashboard
+const PAYSTACK_PUBLIC_KEY = 'pk_test_YOUR_PAYSTACK_PUBLIC_KEY_HERE';
+const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+const RATE_PER_VIEW = 0.05;
+const MIN_PAYOUT = 50;
+
+let db = null, currentUser = null, currentProduct = 'ticket';
+
+window.addEventListener('load', async () => {
+  try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
+  if (db) {
+    const { data:{ session } } = await db.auth.getSession();
+    if (session) currentUser = session.user;
+  }
+  // Check URL params for deep linking
+  const params = new URLSearchParams(window.location.search);
+  const product = params.get('product');
+  const tab = document.querySelector('.ptab');
+  if (product && ['ticket','venue_sub','corporate','payout'].includes(product)) {
+    switchProduct(product, tab);
+  } else {
+    switchProduct('ticket', tab);
+  }
+});
+
+// ── PRODUCT SWITCHER ──────────────────────────────────
+function switchProduct(type, btn) {
+  currentProduct = type;
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('successCard').style.display = 'none';
+  const map = { ticket:renderTicket, venue_sub:renderVenueSub, corporate:renderCorporate, payout:renderPayout };
+  if (map[type]) map[type]();
+}
+
+// ── EVENT TICKET ──────────────────────────────────────
+function renderTicket() {
+  document.getElementById('checkoutArea').innerHTML = `
+    <div class="checkout-card">
+      <div class="product-name">🎟️ Event Ticket</div>
+      <div class="product-desc">Buy tickets for GhaNight events. Your ticket code will be sent to your email and shown here after payment.</div>
+      <div class="methods-row">
+        <span class="method-badge">📱 MTN MoMo</span>
+        <span class="method-badge">📱 Vodafone Cash</span>
+        <span class="method-badge">📱 AirtelTigo</span>
+        <span class="method-badge">💳 Visa / Mastercard</span>
+      </div>
+      <div class="form-group"><label class="form-label">Your Email *</label><input class="form-input" id="ticketEmail" type="email" placeholder="you@gmail.com" value="${currentUser?.email||''}"></div>
+      <div class="form-group"><label class="form-label">Event *</label>
+        <select class="form-select" id="ticketEvent" onchange="updateTicketPrice()">
+          <option value="afro_nation|150">AFRO NATION WARMUP — GHS 150</option>
+          <option value="rooftop_sundowner|30">Rooftop Sundowner with DJ Kess — GHS 30</option>
+          <option value="onyx_friday|50">Onyx Friday Madness — GHS 50</option>
+          <option value="beach_bash|20">La Palm Beach Bash — GHS 20</option>
+          <option value="highlife_night|0">Highlife Legends Night — Free</option>
+          <option value="amapiano_showdown|60">Afrobeats vs Amapiano Showdown — GHS 60</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Number of Tickets</label>
+        <select class="form-select" id="ticketQty" onchange="updateTicketPrice()">
+          <option value="1">1 ticket</option><option value="2">2 tickets</option>
+          <option value="3">3 tickets</option><option value="4">4 tickets</option><option value="5">5 tickets</option>
+        </select>
+      </div>
+      <div class="price-row"><span class="price-label">Price per ticket</span><span class="price-val" id="pricePerTicket">GHS 150.00</span></div>
+      <div class="price-row"><span class="price-label">Quantity</span><span class="price-val" id="priceQty">x 1</span></div>
+      <div class="price-row"><span class="price-label">Processing fee (1.5%)</span><span class="price-val" id="priceFee">GHS 2.25</span></div>
+      <div class="price-total"><span class="price-total-label">Total</span><span class="price-total-val" id="priceTotal">GHS 152.25</span></div>
+    </div>
+    <button class="btn-pay" onclick="payTicket()">
+      <span>🔒 Pay with Paystack</span>
+    </button>
+    <div class="security-note">🔒 Secured by Paystack · No card details stored on GhaNight</div>`;
+  updateTicketPrice();
+}
+
+function updateTicketPrice() {
+  const sel = document.getElementById('ticketEvent');
+  const price = parseFloat(sel?.value?.split('|')[1]||'0');
+  const qty = parseInt(document.getElementById('ticketQty')?.value||'1');
+  const subtotal = price * qty;
+  const fee = Math.round(subtotal * 0.015 * 100) / 100;
+  const total = subtotal + fee;
+  if (document.getElementById('pricePerTicket')) {
+    document.getElementById('pricePerTicket').textContent = `GHS ${price.toFixed(2)}`;
+    document.getElementById('priceQty').textContent = `x ${qty}`;
+    document.getElementById('priceFee').textContent = `GHS ${fee.toFixed(2)}`;
+    document.getElementById('priceTotal').textContent = `GHS ${total.toFixed(2)}`;
+  }
+}
+
+async function payTicket() {
+  const email = document.getElementById('ticketEmail')?.value?.trim();
+  if (!email) { toast('⚠️ Please enter your email'); return; }
+  const sel = document.getElementById('ticketEvent');
+  const [eventKey, priceStr] = sel.value.split('|');
+  const price = parseFloat(priceStr);
+  const qty = parseInt(document.getElementById('ticketQty')?.value||'1');
+  if (price === 0) { // Free event
+    const code = generateCode();
+    showSuccess('You\'re In!', `Your free ticket for ${sel.options[sel.selectedIndex].text.split('—')[0].trim()} is confirmed.`, code);
+    return;
+  }
+  const subtotal = price * qty;
+  const fee = Math.round(subtotal * 0.015 * 100) / 100;
+  const totalGHS = subtotal + fee;
+  const totalKobo = Math.round(totalGHS * 100);
+  const ref = generateRef('TKT');
+  // Save pending payment
+  if (db) {
+    await db.from('payments').insert({
+      user_id: currentUser?.id||null, reference:ref,
+      amount_ghs:totalGHS, amount_kobo:totalKobo,
+      payment_type:'event_ticket', status:'pending', email,
+      metadata:{ event:eventKey, qty, price_per:price }
+    }).catch(()=>{});
+  }
+  initPaystack({
+    email, amount:totalKobo, reference:ref,
+    onSuccess: async (res) => {
+      await verifyAndSaveTicket(res.reference, email, eventKey, sel.options[sel.selectedIndex].text.split('—')[0].trim(), qty, price, totalGHS);
+    }
+  });
+}
+
+async function verifyAndSaveTicket(ref, email, eventKey, eventName, qty, price, total) {
+  const code = generateCode();
+  if (db) {
+    await db.from('payments').update({ status:'success', verified_at:new Date().toISOString() }).eq('reference',ref).catch(()=>{});
+    await db.from('event_tickets').insert({
+      event_name:eventName, user_id:currentUser?.id||null,
+      email, quantity:qty, price_ghs:price, total_ghs:total,
+      ticket_code:code, status:'confirmed'
+    }).catch(()=>{});
+  }
+  showSuccess('Ticket Confirmed! 🎟️', `Your ticket for ${eventName} is confirmed. Show this code at the door.`, code);
+}
+
+// ── VENUE SUBSCRIPTION ────────────────────────────────
+function renderVenueSub() {
+  document.getElementById('checkoutArea').innerHTML = `
+    <div class="checkout-card">
+      <div class="product-name">📡 Venue Monthly Subscription</div>
+      <div class="product-desc">List your venue on GhaNight and get real-time crowd visibility, featured placement, and ticketing access.</div>
+      <div class="form-group"><label class="form-label">Venue Name *</label><input class="form-input" id="subVenueName" placeholder="e.g. Onyx Nightclub"></div>
+      <div class="form-group"><label class="form-label">Contact Email *</label><input class="form-input" id="subEmail" type="email" placeholder="venue@email.com" value="${currentUser?.email||''}"></div>
+      <div class="form-group"><label class="form-label">Plan *</label>
+        <select class="form-select" id="subPlan" onchange="updateSubPrice()">
+          <option value="basic|0">Basic — Free (Standard listing)</option>
+          <option value="premium|250">Premium — GHS 250/mo (Featured + Camera + Ticketing)</option>
+        </select>
+      </div>
+      <div id="subPriceArea"></div>
+    </div>
+    <button class="btn-pay" id="subPayBtn" onclick="payVenueSub()" style="display:none">
+      🔒 Pay GHS 250 with Paystack
+    </button>
+    <div id="subFreeBtn" style="margin-top:8px">
+      <button class="btn-pay" onclick="submitFreeVenue()" style="background:linear-gradient(135deg,var(--green),var(--blue))">
+        ✅ Submit Free Listing
+      </button>
+    </div>
+    <div class="security-note">🔒 Secured by Paystack · Cancel anytime</div>`;
+  updateSubPrice();
+}
+
+function updateSubPrice() {
+  const sel = document.getElementById('subPlan');
+  const [plan, priceStr] = (sel?.value||'basic|0').split('|');
+  const price = parseFloat(priceStr);
+  const area = document.getElementById('subPriceArea');
+  const payBtn = document.getElementById('subPayBtn');
+  const freeBtn = document.getElementById('subFreeBtn');
+  if (price > 0 && area) {
+    area.innerHTML = `<div class="price-total" style="margin-top:12px"><span class="price-total-label">Monthly Total</span><span class="price-total-val">GHS ${price.toFixed(2)}</span></div>`;
+    if (payBtn) payBtn.style.display='flex';
+    if (freeBtn) freeBtn.style.display='none';
+  } else if (area) {
+    area.innerHTML = '';
+    if (payBtn) payBtn.style.display='none';
+    if (freeBtn) freeBtn.style.display='block';
+  }
+}
+
+async function payVenueSub() {
+  const email = document.getElementById('subEmail')?.value?.trim();
+  const venue = document.getElementById('subVenueName')?.value?.trim();
+  if (!email || !venue) { toast('⚠️ Please fill in venue name and email'); return; }
+  const ref = generateRef('SUB');
+  const amount = 25000; // GHS 250 in pesewas
+  if (db) {
+    await db.from('payments').insert({
+      user_id:currentUser?.id||null, reference:ref,
+      amount_ghs:250, amount_kobo:amount,
+      payment_type:'venue_subscription', status:'pending', email,
+      metadata:{ venue_name:venue, plan:'premium' }
+    }).catch(()=>{});
+  }
+  initPaystack({
+    email, amount, reference:ref,
+    onSuccess: async (res) => {
+      if (db) await db.from('payments').update({ status:'success', verified_at:new Date().toISOString() }).eq('reference',ref).catch(()=>{});
+      showSuccess('Subscription Active! 📡', `${venue} is now on GhaNight Premium. Our team will activate your listing within 24 hours.`);
+    }
+  });
+}
+
+async function submitFreeVenue() {
+  const venue = document.getElementById('subVenueName')?.value?.trim();
+  const email = document.getElementById('subEmail')?.value?.trim();
+  if (!venue || !email) { toast('⚠️ Please fill in venue name and email'); return; }
+  if (db) {
+    await db.from('venue_registrations').insert({
+      venue_name:venue, area:'To be confirmed', venue_type:'To be confirmed',
+      contact_name:'', phone:'', email, plan:'basic'
+    }).catch(()=>{});
+  }
+  showSuccess('Free Listing Submitted! ✅', `${venue} has been submitted for review. We\'ll activate your free listing within 48 hours.`);
+}
+
+// ── CORPORATE SUBSCRIPTION ────────────────────────────
+function renderCorporate() {
+  document.getElementById('checkoutArea').innerHTML = `
+    <div class="checkout-card">
+      <div class="product-name">🏢 Corporate Subscription</div>
+      <div class="product-desc">Discounted GhaNight access for your whole team. Pay directly here or use a vendor token for additional discounts.</div>
+      <div class="form-group"><label class="form-label">Organisation *</label><input class="form-input" id="corpOrg" placeholder="e.g. Accra Tech Solutions Ltd"></div>
+      <div class="form-group"><label class="form-label">Contact Email *</label><input class="form-input" id="corpEmail" type="email" placeholder="hr@company.com" value="${currentUser?.email||''}"></div>
+      <div class="form-group"><label class="form-label">Plan *</label>
+        <select class="form-select" id="corpPlan" onchange="updateCorpPrice()">
+          <option value="Starter|300">Starter — GHS 300/mo (up to 10 employees)</option>
+          <option value="Business|700">Business — GHS 700/mo (up to 50 employees)</option>
+          <option value="Enterprise|1400">Enterprise — GHS 1,400/mo (unlimited)</option>
+        </select>
+      </div>
+      <div id="corpPriceArea"></div>
+      <div style="margin-top:14px;padding:12px;background:rgba(57,224,122,0.08);border:1px solid rgba(57,224,122,0.2);border-radius:10px;font-size:12px;color:var(--green)">
+        💡 Have a vendor token? <a href="corporate.html" style="color:var(--green);font-weight:700">Use it here for extra discounts →</a>
+      </div>
+    </div>
+    <button class="btn-pay" id="corpPayBtn" onclick="payCorporate()">🔒 Pay with Paystack</button>
+    <div class="security-note">🔒 Secured by Paystack · Invoice billing available for Enterprise</div>`;
+  updateCorpPrice();
+}
+
+function updateCorpPrice() {
+  const sel = document.getElementById('corpPlan');
+  const [plan, priceStr] = (sel?.value||'Starter|300').split('|');
+  const price = parseFloat(priceStr);
+  const area = document.getElementById('corpPriceArea');
+  const btn = document.getElementById('corpPayBtn');
+  if (area) area.innerHTML = `<div class="price-total" style="margin-top:12px"><span class="price-total-label">Monthly Total</span><span class="price-total-val">GHS ${price.toFixed(2)}</span></div>`;
+  if (btn) btn.textContent = `🔒 Pay GHS ${price.toFixed(2)} with Paystack`;
+}
+
+async function payCorporate() {
+  const email = document.getElementById('corpEmail')?.value?.trim();
+  const org = document.getElementById('corpOrg')?.value?.trim();
+  if (!email || !org) { toast('⚠️ Please fill in organisation and email'); return; }
+  const [plan, priceStr] = document.getElementById('corpPlan').value.split('|');
+  const price = parseFloat(priceStr);
+  const amountKobo = Math.round(price * 100);
+  const ref = generateRef('CORP');
+  if (db) {
+    await db.from('payments').insert({
+      user_id:currentUser?.id||null, reference:ref,
+      amount_ghs:price, amount_kobo:amountKobo,
+      payment_type:'corporate_subscription', status:'pending', email,
+      metadata:{ org_name:org, plan }
+    }).catch(()=>{});
+  }
+  initPaystack({
+    email, amount:amountKobo, reference:ref,
+    onSuccess: async (res) => {
+      if (db) {
+        await db.from('payments').update({ status:'success', verified_at:new Date().toISOString() }).eq('reference',ref).catch(()=>{});
+        const expires = new Date(); expires.setMonth(expires.getMonth()+1);
+        await db.from('corporate_subscriptions').insert({
+          org_name:org, plan, discount_pct:{Starter:15,Business:25,Enterprise:35}[plan]||15,
+          vendor_name:'Direct Payment', token_used:ref,
+          user_id:currentUser?.id||null, expires_at:expires.toISOString(), status:'active'
+        }).catch(()=>{});
+      }
+      showSuccess('Corporate Plan Active! 🏢', `${org} now has an active ${plan} subscription. Your team\'s accounts will be set up within 24 hours.`);
+    }
+  });
+}
+
+// ── CREATOR PAYOUT ────────────────────────────────────
+async function renderPayout() {
+  const el = document.getElementById('checkoutArea');
+  el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Loading your earnings...</div>';
+  if (!currentUser) {
+    el.innerHTML = `<div class="checkout-card" style="text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">✍️</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px">Sign in to request payout</div>
+      <div style="font-size:13px;color:var(--muted)">You need to be logged in to request your creator earnings.</div>
+    </div>`;
+    return;
+  }
+  // Calculate earnings from approved posts
+  let totalViews = 0, totalEarnings = 0;
+  if (db) {
+    const { data } = await db.from('creator_posts').select('views').eq('author_id',currentUser.id).eq('status','approved');
+    totalViews = (data||[]).reduce((s,p)=>s+(p.views||0),0);
+    totalEarnings = totalViews * RATE_PER_VIEW;
+  }
+  const canPayout = totalEarnings >= MIN_PAYOUT;
+  const progress = Math.min(100, (totalEarnings/MIN_PAYOUT)*100);
+  el.innerHTML = `
+    <div class="checkout-card">
+      <div class="product-name">💰 Creator Payout</div>
+      <div class="product-desc">Withdraw your post earnings directly to Mobile Money. Minimum payout is GHS ${MIN_PAYOUT}.</div>
+      <div class="earnings-display">
+        <div class="earnings-amount">GHS ${totalEarnings.toFixed(2)}</div>
+        <div class="earnings-label">Total earnings from ${totalViews.toLocaleString()} views</div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+          <div class="progress-label"><span>GHS 0</span><span>Minimum: GHS ${MIN_PAYOUT}</span></div>
+        </div>
+      </div>
+      ${canPayout ? `
+        <div class="form-group"><label class="form-label">Mobile Money Number *</label><input class="form-input" id="momoNumber" placeholder="0244 000 000" type="tel"></div>
+        <div class="form-group"><label class="form-label">Network *</label>
+          <select class="form-select" id="momoNetwork">
+            <option>MTN MoMo</option><option>Vodafone Cash</option><option>AirtelTigo Money</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Confirm Email</label><input class="form-input" id="payoutEmail" type="email" value="${currentUser.email}" readonly></div>
+        <div class="price-total"><span class="price-total-label">Payout Amount</span><span class="price-total-val">GHS ${totalEarnings.toFixed(2)}</span></div>
+      ` : `<div style="text-align:center;padding:16px;color:var(--muted);font-size:14px">Write more posts to reach the GHS ${MIN_PAYOUT} minimum. You need GHS ${(MIN_PAYOUT-totalEarnings).toFixed(2)} more.</div>`}
+    </div>
+    ${canPayout ? `
+      <button class="btn-pay" onclick="requestPayout(${totalEarnings})" style="background:linear-gradient(135deg,var(--green),var(--blue));color:#000">
+        📱 Request Mobile Money Payout
+      </button>
+      <div class="security-note">💰 Payouts processed within 3 business days via Mobile Money</div>
+    ` : `
+      <button class="btn-pay" onclick="window.location.href='creators.html'" style="background:linear-gradient(135deg,var(--gold),var(--orange))">
+        ✍️ Write More Posts to Earn →
+      </button>
+    `}`;
+}
+
+async function requestPayout(amount) {
+  const momo = document.getElementById('momoNumber')?.value?.trim();
+  const network = document.getElementById('momoNetwork')?.value;
+  if (!momo) { toast('⚠️ Please enter your Mobile Money number'); return; }
+  if (!db || !currentUser) return;
+  try {
+    await db.from('creator_payouts').insert({
+      author_id:currentUser.id, amount_ghs:amount,
+      views_count:Math.round(amount/RATE_PER_VIEW),
+      momo_number:momo, momo_network:network, status:'requested'
+    });
+    showSuccess('Payout Requested! 💰', `Your payout of GHS ${amount.toFixed(2)} to ${network} (${momo}) has been submitted. We\'ll process it within 3 business days.`);
+  } catch(e) { toast('⚠️ Failed to submit payout request. Please try again.'); }
+}
+
+// ── PAYSTACK INIT ─────────────────────────────────────
+function initPaystack({ email, amount, reference, onSuccess }) {
+  if (!window.PaystackPop) { toast('⚠️ Paystack not loaded. Check your connection.'); return; }
+  const handler = PaystackPop.setup({
+    key: PAYSTACK_PUBLIC_KEY,
+    email,
+    amount, // in pesewas (GHS x 100)
+    ref: reference,
+    currency: 'GHS',
+    channels: ['mobile_money', 'card', 'bank', 'ussd'],
+    metadata: { custom_fields:[{ display_name:'Platform', variable_name:'platform', value:'GhaNight' }] },
+    callback: function(response) { onSuccess(response); },
+    onClose: function() { toast('Payment cancelled'); }
+  });
+  handler.openIframe();
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function generateRef(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2,8).toUpperCase()}`;
+}
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:12},()=>chars[Math.floor(Math.random()*chars.length)]).join('').match(/.{4}/g).join('-');
+}
+function showSuccess(title, sub, code) {
+  document.getElementById('checkoutArea').style.display = 'none';
+  const card = document.getElementById('successCard');
+  card.style.display = 'block';
+  document.getElementById('successTitle').textContent = title;
+  document.getElementById('successSub').textContent = sub;
+  const codeEl = document.getElementById('ticketCode');
+  if (code) { codeEl.textContent = code; codeEl.style.display='block'; }
+  else codeEl.style.display='none';
+  setTimeout(()=>document.getElementById('checkoutArea').style.display='block', 0);
+}
+function toast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+</script>
+</body>
+</html>
