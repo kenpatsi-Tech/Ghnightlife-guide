@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GhaNight — Ghana's #1 Nightlife Guide | Accra Clubs, Bars & Events</title>
+<meta name="description" content="GhaNight is Ghana's #1 nightlife guide. Discover the hottest clubs, rooftop bars, lounges and events in Accra tonight.">
+<meta name="author" content="GhaNight">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="GhaNight — Ghana's #1 Nightlife Guide">
+<meta property="og:description" content="Find the hottest clubs, bars and events in Accra tonight.">
+<meta name="geo.region" content="GH-AA">
+<meta name="geo.placename" content="Accra, Ghana">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#080810;--surface:#10101e;--card:#14142a;--gold:#f5c542;--orange:#ff6b35;--pink:#ff3d8a;--green:#39e07a;--blue:#4fa3ff;--text:#f0f0f8;--muted:#7070a0;--border:rgba(255,255,255,0.06);}
+  *{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(245,197,66,0.06) 0%,transparent 70%);pointer-events:none;z-index:0;animation:bgPulse1 8s ease-in-out infinite;}
+  body::after{content:'';position:fixed;bottom:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(255,61,138,0.06) 0%,transparent 70%);pointer-events:none;z-index:0;animation:bgPulse2 10s ease-in-out infinite;}
+  @keyframes bgPulse1{0%,100%{opacity:0.5;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+  @keyframes bgPulse2{0%,100%{opacity:0.5;transform:scale(1.1)}50%{opacity:1;transform:scale(1)}}
+  @keyframes pulseBadge{0%,100%{opacity:1}50%{opacity:0.6}}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+  @keyframes sweepLight{0%{opacity:0;transform:rotate(-20deg)}30%{opacity:1}50%{transform:rotate(20deg);opacity:1}70%{opacity:0.5}100%{opacity:0;transform:rotate(-20deg)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  nav.top-nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(8,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:26px;background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;}
+  .logo span{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);-webkit-text-fill-color:var(--muted);margin-left:5px;}
+  .nav-pills{display:flex;gap:4px;}
+  .nav-pill{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:6px 12px;border-radius:100px;cursor:pointer;transition:all 0.2s;}
+  .nav-pill:hover,.nav-pill.active{background:var(--border);color:var(--gold);}
+  .nav-right{display:flex;gap:8px;align-items:center;}
+  .badge-live{background:var(--pink);color:white;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;letter-spacing:1px;animation:pulseBadge 2s infinite;}
+  .btn-nav{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;cursor:pointer;}
+  main{padding-top:60px;position:relative;z-index:1;}
+  .hero{padding:50px 20px 36px;text-align:center;}
+  .hero-eyebrow{font-size:11px;letter-spacing:4px;color:var(--gold);font-weight:600;margin-bottom:14px;text-transform:uppercase;}
+  .hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(52px,12vw,100px);line-height:0.9;background:linear-gradient(135deg,#fff 0%,var(--gold) 50%,var(--orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px;}
+  .hero-sub{color:var(--muted);font-size:15px;max-width:480px;margin:0 auto 28px;line-height:1.6;}
+  .hero-stats{display:flex;justify-content:center;gap:36px;margin-bottom:32px;}
+  .stat{text-align:center;}.stat-num{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--gold);}.stat-label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+  .search-bar{max-width:500px;margin:0 auto 44px;display:flex;gap:10px;}
+  .search-input{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:13px 16px;border-radius:13px;outline:none;transition:border-color 0.2s;}
+  .search-input:focus{border-color:rgba(245,197,66,0.4);}.search-input::placeholder{color:var(--muted);}
+  .btn-primary{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;padding:13px 20px;border:none;border-radius:13px;cursor:pointer;white-space:nowrap;}
+  /* AD — only shows real partners; hidden by default */
+  .ad-banner{margin:0 20px 28px;border-radius:16px;overflow:hidden;border:1px solid rgba(245,197,66,0.15);position:relative;height:90px;background:linear-gradient(135deg,#1a1030,#0a1830);cursor:pointer;display:none;}
+  .ad-banner.has-ads{display:block;}
+  .ad-slide{position:absolute;inset:0;display:flex;align-items:center;padding:0 20px;gap:16px;opacity:0;transition:opacity 0.6s;}.ad-slide.active{opacity:1;}
+  .ad-icon{font-size:36px;flex-shrink:0;}.ad-text{flex:1;}
+  .ad-label{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+  .ad-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px;}
+  .ad-sub{font-size:12px;color:var(--muted);}
+  .ad-cta{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;border-radius:10px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+  .filter-tabs{display:flex;gap:8px;padding:0 20px;overflow-x:auto;padding-bottom:4px;margin-bottom:28px;scrollbar-width:none;}
+  .filter-tabs::-webkit-scrollbar{display:none;}
+  .filter-tab{background:var(--card);border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:8px 16px;border-radius:100px;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+  .filter-tab.active{background:linear-gradient(135deg,var(--gold),var(--orange));border-color:transparent;color:#000;font-weight:700;}
+  .section-header{padding:0 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;}
+  .section-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;}.section-title span{color:var(--gold);}
+  .see-all{color:var(--gold);font-size:13px;font-weight:500;cursor:pointer;}
+  .live-section{margin-bottom:44px;}
+  .live-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding:0 20px;}
+  .live-card{background:var(--card);border-radius:18px;overflow:hidden;border:1px solid var(--border);transition:all 0.3s;cursor:pointer;position:relative;}
+  .live-card:hover{transform:translateY(-4px);border-color:rgba(245,197,66,0.2);}
+  .live-card.premium{border-color:rgba(245,197,66,0.3);}
+  .premium-crown{position:absolute;top:0;right:0;background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;font-size:10px;font-weight:800;padding:4px 10px;border-radius:0 0 0 12px;z-index:5;}
+  .live-feed-area{height:170px;position:relative;background:linear-gradient(135deg,#1a0a2e,#0a1a2e);overflow:hidden;}
+  .crowd-sim{width:100%;height:100%;position:relative;overflow:hidden;}
+  .light-beam{position:absolute;top:-20px;width:36px;height:200px;opacity:0;transform-origin:top center;border-radius:0 0 20px 20px;animation:sweepLight 3s ease-in-out infinite;}
+  .light-beam:nth-child(1){left:20%;background:rgba(245,197,66,0.3);animation-delay:0s;}
+  .light-beam:nth-child(2){left:40%;background:rgba(255,61,138,0.25);animation-delay:0.8s;}
+  .light-beam:nth-child(3){left:60%;background:rgba(79,163,255,0.25);animation-delay:1.6s;}
+  .light-beam:nth-child(4){left:75%;background:rgba(57,224,122,0.2);animation-delay:2.4s;}
+  .crowd-dots{position:absolute;bottom:0;left:0;right:0;height:60px;background:repeating-linear-gradient(90deg,transparent 0px,transparent 6px,rgba(255,255,255,0.03) 6px,rgba(255,255,255,0.03) 7px);}
+  .live-badge{position:absolute;top:10px;left:10px;background:rgba(255,61,138,0.9);color:white;font-size:10px;font-weight:800;padding:3px 9px;border-radius:100px;display:flex;align-items:center;gap:4px;z-index:2;}
+  .live-dot{width:6px;height:6px;background:white;border-radius:50%;animation:pulseDot 1s infinite;}
+  .heat-badge{position:absolute;top:10px;right:10px;z-index:2;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);border-radius:9px;padding:4px 9px;font-size:12px;font-weight:700;color:var(--gold);}
+  .activity-bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.05);}
+  .activity-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--orange));transition:width 2s ease;}
+  .camera-status{position:absolute;bottom:10px;left:10px;z-index:2;font-size:10px;padding:3px 8px;border-radius:100px;font-weight:600;}
+  .cam-on{background:rgba(57,224,122,0.2);color:var(--green);border:1px solid rgba(57,224,122,0.3);}
+  .cam-off{background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--border);}
+  .live-card-body{padding:14px;}
+  .venue-name{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px;}
+  .venue-meta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .venue-vibe{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .vibe-tag{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:100px;padding:3px 9px;font-size:11px;color:var(--muted);}
+  .venue-footer{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;}
+  .crowd-level{display:flex;gap:3px;align-items:center;}
+  .crowd-bar{width:7px;height:16px;border-radius:4px;background:var(--border);transition:background 0.5s;}
+  .crowd-bar.filled{background:linear-gradient(180deg,var(--gold),var(--orange));}
+  .crowd-bar.half{background:linear-gradient(180deg,var(--orange),var(--pink));}
+  .crowd-label{font-size:11px;color:var(--muted);margin-left:4px;}
+  .btn-view{background:var(--border);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .btn-view:hover{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border-color:transparent;}
+  .club-promo-card{margin:0 20px 28px;background:linear-gradient(135deg,rgba(245,197,66,0.08),rgba(255,107,53,0.06));border:1px dashed rgba(245,197,66,0.3);border-radius:18px;padding:20px;text-align:center;}
+  .club-promo-card h3{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);margin-bottom:6px;}
+  .club-promo-card p{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+  .btn-register-club{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;border-radius:12px;padding:12px 24px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:14px;cursor:pointer;}
+  .events-section{margin-bottom:44px;}
+  .events-list{display:flex;flex-direction:column;gap:10px;padding:0 20px;}
+  .event-card{background:var(--card);border-radius:14px;border:1px solid var(--border);display:flex;align-items:stretch;overflow:hidden;transition:all 0.25s;cursor:pointer;}
+  .event-card.sponsored{border-color:rgba(245,197,66,0.2);}
+  .event-sponsored-tag{font-size:9px;color:var(--gold);background:rgba(245,197,66,0.1);padding:2px 7px;border-radius:100px;margin-bottom:4px;display:inline-block;letter-spacing:1px;}
+  .event-date-block{min-width:65px;padding:18px 12px;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;flex-direction:column;align-items:center;justify-content:center;color:#000;}
+  .event-day{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;}.event-month{font-size:10px;font-weight:700;letter-spacing:1px;}
+  .event-info{padding:14px 18px;flex:1;}
+  .event-name{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px;}
+  .event-venue{font-size:12px;color:var(--muted);margin-bottom:7px;}
+  .event-tags{display:flex;gap:5px;flex-wrap:wrap;}
+  .event-tag{font-size:11px;padding:2px 8px;border-radius:100px;font-weight:600;}
+  .tag-genre{background:rgba(79,163,255,0.1);color:var(--blue);border:1px solid rgba(79,163,255,0.2);}
+  .tag-price{background:rgba(57,224,122,0.1);color:var(--green);border:1px solid rgba(57,224,122,0.2);}
+  .tag-hot{background:rgba(255,61,138,0.1);color:var(--pink);border:1px solid rgba(255,61,138,0.2);}
+  .event-right{padding:16px 14px;display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;min-width:75px;}
+  .event-time{font-size:11px;color:var(--muted);}
+  .btn-interested{background:none;border:1px solid var(--border);color:var(--text);font-size:12px;padding:5px 12px;border-radius:9px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .btn-interested.liked{background:var(--pink);border-color:var(--pink);color:white;}
+  .map-section{margin-bottom:44px;}
+  #ghanight-map{margin:0 20px;border-radius:18px;overflow:hidden;border:1px solid var(--border);height:420px;}
+  .map-legend{display:flex;gap:12px;padding:10px 20px 0;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+  .legend-dot{width:8px;height:8px;border-radius:50%;}
+  .leaflet-container{background:#0d1117;font-family:'DM Sans',sans-serif;}
+  .leaflet-tile{filter:brightness(0.65) saturate(0.4) hue-rotate(200deg);}
+  .leaflet-popup-content-wrapper{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.6);}
+  .leaflet-popup-tip{background:var(--card);}
+  .leaflet-popup-content{margin:14px 18px;font-family:'DM Sans',sans-serif;min-width:200px;}
+  .leaflet-control-zoom a{background:var(--card);color:var(--text);border-color:var(--border);}
+  .popup-name{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px;color:var(--text);}
+  .popup-meta{font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .popup-heat{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:6px;}
+  .popup-entry{font-size:12px;color:var(--muted);margin-bottom:12px;}
+  .popup-btns{display:flex;gap:6px;flex-wrap:wrap;}
+  .popup-btn{border:none;border-radius:9px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+  .popup-btn-checkin{background:rgba(57,224,122,0.15);color:var(--green);border:1px solid rgba(57,224,122,0.3);}
+  .popup-btn-view{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;}
+  .popup-btn-ride{background:rgba(79,163,255,0.15);color:var(--blue);border:1px solid rgba(79,163,255,0.3);}
+  .popup-btn-ride:disabled{opacity:0.4;cursor:not-allowed;}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:1000;background:rgba(8,8,16,0.95);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:10px 0 20px;}
+  .bnav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 0;font-size:10px;color:var(--muted);transition:color 0.2s;background:none;border:none;font-family:'DM Sans',sans-serif;}
+  .bnav-item.active{color:var(--gold);}.bnav-icon{font-size:19px;}
+  .modal-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:540px;border:1px solid var(--border);border-bottom:none;padding:24px 22px 48px;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);max-height:92vh;overflow-y:auto;}
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal-handle{width:38px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 22px;}
+  .modal-title{font-family:'Bebas Neue',sans-serif;font-size:30px;margin-bottom:4px;}
+  .modal-sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
+  .modal-live{height:150px;border-radius:14px;overflow:hidden;margin-bottom:18px;position:relative;background:linear-gradient(135deg,#1a0a2e,#0a1a2e);}
+  .modal-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+  .modal-info-item{background:rgba(255,255,255,0.03);border-radius:11px;border:1px solid var(--border);padding:11px;}
+  .modal-info-label{font-size:10px;color:var(--muted);margin-bottom:3px;}
+  .modal-info-val{font-size:15px;font-weight:700;}
+  .btn-book{width:100%;background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:14px;color:#000;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;padding:16px;cursor:pointer;margin-bottom:10px;}
+  .auth-modal{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:540px;border:1px solid var(--border);border-bottom:none;padding:28px 24px 48px;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);max-height:92vh;overflow-y:auto;}
+  .modal-overlay.open .auth-modal{transform:translateY(0);}
+  .auth-tabs{display:flex;gap:4px;background:var(--surface);border-radius:12px;padding:4px;margin-bottom:24px;}
+  .auth-tab{flex:1;padding:9px;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;background:none;color:var(--muted);transition:all 0.2s;}
+  .auth-tab.active{background:var(--card);color:var(--text);}
+  .auth-form{display:flex;flex-direction:column;gap:14px;}
+  .form-group{display:flex;flex-direction:column;gap:6px;}
+  .form-label{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
+  .form-input{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:12px 14px;border-radius:11px;outline:none;transition:border-color 0.2s;}
+  .form-input:focus{border-color:rgba(245,197,66,0.4);}
+  .form-select{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:12px 14px;border-radius:11px;outline:none;appearance:none;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .plan-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .plan-card{border:2px solid var(--border);border-radius:12px;padding:14px 12px;cursor:pointer;transition:all 0.2s;text-align:center;}
+  .plan-card.selected{border-color:var(--gold);background:rgba(245,197,66,0.06);}
+  .plan-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px;}
+  .plan-price{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);}
+  .plan-price span{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);}
+  .plan-features{font-size:11px;color:var(--muted);line-height:1.6;margin-top:6px;}
+  .btn-submit{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;border-radius:12px;padding:15px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:15px;cursor:pointer;width:100%;margin-top:4px;}
+  .form-divider{text-align:center;font-size:12px;color:var(--muted);}
+  .form-link{color:var(--gold);cursor:pointer;font-size:13px;text-align:center;display:block;}
+  .auth-error{color:var(--pink);font-size:12px;text-align:center;margin-top:4px;display:none;}
+  .success-screen{text-align:center;padding:20px 0;animation:fadeIn 0.4s ease;}
+  .success-icon{font-size:56px;margin-bottom:16px;}
+  .success-title{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);margin-bottom:8px;}
+  .success-sub{color:var(--muted);font-size:14px;line-height:1.6;}
+  .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(30,30,50,0.96);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:12px;padding:11px 18px;font-size:13px;color:var(--text);opacity:0;transition:all 0.3s;z-index:3000;white-space:nowrap;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+  .empty-state .empty-icon{font-size:40px;margin-bottom:12px;}
+  .empty-state p{font-size:14px;line-height:1.6;}
+  .spacer-bottom{height:88px;}
+  @media(max-width:480px){.hero-stats{gap:20px;}.modal-info-grid,.form-row,.plan-cards{grid-template-columns:1fr;}.live-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="logo">GhaNight<span>ACCRA</span></div>
+  <div class="nav-pills">
+    <button class="nav-pill active" onclick="scrollToSection('live')">Live</button>
+    <button class="nav-pill" onclick="scrollToSection('events')">Events</button>
+    <button class="nav-pill" onclick="scrollToSection('map')">Map</button>
+  </div>
+  <div class="nav-right">
+    <span class="badge-live">LIVE</span>
+    <button class="btn-nav" id="navAuthBtn" onclick="openAuth('user')">Sign Up</button>
+  </div>
+</nav>
+
+<main>
+  <section class="hero">
+    <p class="hero-eyebrow">🇬🇭 Ghana's #1 Nightlife Guide</p>
+    <h1 class="hero-title">GHANIGHT</h1>
+    <p class="hero-sub">Discover the hottest spots in Accra right now. Real check-ins, live crowd levels & tonight's top events.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num" id="venueCount">—</div><div class="stat-label">Live Venues</div></div>
+      <div class="stat"><div class="stat-num" id="eventCount">—</div><div class="stat-label">Events Tonight</div></div>
+      <div class="stat"><div class="stat-num" id="crowdCount">0</div><div class="stat-label">Out Tonight</div></div>
+    </div>
+    <div class="search-bar">
+      <input class="search-input" placeholder="Search venues, events, DJs..." id="searchInput" oninput="handleSearch(this.value)">
+      <button class="btn-primary" onclick="handleSearch(document.getElementById('searchInput').value)">Explore</button>
+    </div>
+  </section>
+
+  <!-- AD BANNER — hidden until real partners sign up (controlled via Supabase ads table) -->
+  <div class="ad-banner" id="adBanner"></div>
+
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="filterVenues('all',this)">All Venues</button>
+    <button class="filter-tab" onclick="filterVenues('club',this)">🎶 Clubs</button>
+    <button class="filter-tab" onclick="filterVenues('lounge',this)">🥂 Lounges</button>
+    <button class="filter-tab" onclick="filterVenues('beach',this)">🏖️ Beach Bars</button>
+    <button class="filter-tab" onclick="filterVenues('rooftop',this)">🌙 Rooftops</button>
+    <button class="filter-tab" onclick="filterVenues('concert',this)">🎤 Concerts</button>
+  </div>
+
+  <section class="live-section" id="live">
+    <div class="section-header"><h2 class="section-title">LIVE <span>FEED</span></h2><span class="see-all" onclick="openAuth('user')">Join to see all →</span></div>
+    <div class="live-grid" id="liveGrid">
+      <div class="empty-state"><div class="empty-icon">🌙</div><p>Loading venues...</p></div>
+    </div>
+  </section>
+
+  <div class="club-promo-card">
+    <h3>📡 List Your Venue on GhaNight</h3>
+    <p>Get real-time crowd visibility, featured placement, ticketing, and camera broadcasting access. Join Ghana's fastest growing nightlife platform.</p>
+    <button class="btn-register-club" onclick="openAuth('club')">Register Your Club / Venue</button>
+  </div>
+
+  <section class="events-section" id="events">
+    <div class="section-header"><h2 class="section-title">TONIGHT'S <span>EVENTS</span></h2><span class="see-all" onclick="openAuth('user')">Sign up to RSVP →</span></div>
+    <div class="events-list" id="eventsList">
+      <div class="empty-state"><div class="empty-icon">🎉</div><p>Loading events...</p></div>
+    </div>
+  </section>
+
+  <section class="map-section" id="map">
+    <div class="section-header"><h2 class="section-title">ACCRA <span>HOTSPOTS</span></h2><span class="see-all" onclick="centerMapOnUser()">📍 Find Me</span></div>
+    <div id="ghanight-map"></div>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#ff3d8a"></div>Packed (80%+)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f5c542"></div>Busy (50–79%)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4fa3ff"></div>Calm (&lt;50%)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#39e07a"></div>You</div>
+    </div>
+  </section>
+
+  <div style="margin:0 20px 28px;background:linear-gradient(135deg,rgba(79,163,255,0.07),rgba(57,224,122,0.05));border:1px solid rgba(79,163,255,0.15);border-radius:16px;padding:20px;text-align:center;">
+    <div style="font-size:11px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">For Businesses</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;margin-bottom:8px;">Advertise on GhaNight</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Reach thousands of Accra's nightlife audience every weekend. Enquire today.</div>
+    <button onclick="openAuth('advertiser')" style="background:linear-gradient(135deg,var(--blue),#2d7fd4);color:white;border:none;border-radius:11px;padding:11px 22px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">Get Advertising Packages →</button>
+  </div>
+  <!-- ALL FEATURES SECTION -->
+  <div style="margin:0 20px 28px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;margin-bottom:16px">EXPLORE <span style="color:var(--gold)">GHANIGHT</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <a href="play.html" style="text-decoration:none">
+        <div style="background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(255,61,138,0.06));border:1px solid rgba(168,85,247,0.2);border-radius:16px;padding:18px;text-align:center">
+          <div style="font-size:28px;margin-bottom:6px">🎮</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Play & Win</div>
+          <div style="font-size:11px;color:var(--muted)">Predictions, trivia & rewards</div>
+        </div>
+      </a>
+      <a href="creators.html" style="text-decoration:none">
+        <div style="background:linear-gradient(135deg,rgba(245,197,66,0.08),rgba(255,107,53,0.06));border:1px solid rgba(245,197,66,0.2);border-radius:16px;padding:18px;text-align:center">
+          <div style="font-size:28px;margin-bottom:6px">✍️</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Creators</div>
+          <div style="font-size:11px;color:var(--muted)">Write posts. Get paid.</div>
+        </div>
+      </a>
+      <a href="corporate.html" style="text-decoration:none">
+        <div style="background:linear-gradient(135deg,rgba(57,224,122,0.08),rgba(79,163,255,0.06));border:1px solid rgba(57,224,122,0.2);border-radius:16px;padding:18px;text-align:center">
+          <div style="font-size:28px;margin-bottom:6px">🏢</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Corporate</div>
+          <div style="font-size:11px;color:var(--muted)">Team discount plans</div>
+        </div>
+      </a>
+      <a href="checkout.html" style="text-decoration:none">
+        <div style="background:linear-gradient(135deg,rgba(79,163,255,0.08),rgba(57,224,122,0.06));border:1px solid rgba(79,163,255,0.2);border-radius:16px;padding:18px;text-align:center">
+          <div style="font-size:28px;margin-bottom:6px">🎟️</div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Tickets</div>
+          <div style="font-size:11px;color:var(--muted)">Buy event tickets</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- SECURITY & LEGAL FOOTER -->
+  <div style="margin:0 20px 28px;padding:18px;border-top:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--muted)">🔒 Secured by Supabase RLS</span>
+      <span style="font-size:11px;color:var(--muted)">·</span>
+      <span style="font-size:11px;color:var(--muted)">💳 Payments by Paystack</span>
+      <span style="font-size:11px;color:var(--muted)">·</span>
+      <span style="font-size:11px;color:var(--muted)">📍 Accra, Ghana</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.6">
+      © 2026 GhaNight. All Rights Reserved. Unauthorised copying or reproduction prohibited under Ghana Copyright Law (GIPC Act 690, 2005).
+    </div>
+    <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
+      <a href="terms.html" style="font-size:11px;color:var(--muted);text-decoration:none">Terms of Use</a>
+      <a href="terms.html#privacy" style="font-size:11px;color:var(--muted);text-decoration:none">Privacy Policy</a>
+      <a href="mailto:hello@ghanight.com" style="font-size:11px;color:var(--muted);text-decoration:none">Contact Us</a>
+    </div>
+  </div>
+
+  <div class="spacer-bottom"></div>
+</main>
+
+<nav class="bottom-nav">
+  <button class="bnav-item active" onclick="scrollToSection('live')"><span class="bnav-icon">🔴</span><span>Live</span></button>
+  <button class="bnav-item" onclick="scrollToSection('events')"><span class="bnav-icon">🎉</span><span>Events</span></button>
+  <button class="bnav-item" onclick="scrollToSection('map')"><span class="bnav-icon">📍</span><span>Map</span></button>
+  <button class="bnav-item" onclick="window.location.href='play.html'"><span class="bnav-icon">🎮</span><span>Play</span></button>
+  <button class="bnav-item" id="profileNavBtn" onclick="handleProfileTap()"><span class="bnav-icon">👤</span><span>Profile</span></button>
+</nav>
+
+<div class="modal-overlay" id="venueModalOverlay" onclick="closeVenueModalOnOutside(event)">
+  <div class="modal"><div class="modal-handle"></div><div id="venueModalContent"></div></div>
+</div>
+<div class="modal-overlay" id="authModalOverlay" onclick="closeAuthModalOnOutside(event)">
+  <div class="auth-modal"><div class="modal-handle"></div><div id="authModalContent"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+const RIDE_PARTNER_ACTIVE = false;
+const RIDE_PARTNER_NAME   = 'Ride Partner';
+const CHECKIN_RADIUS_KM   = 0.5;
+
+// Rate limiting: max 5 check-ins per user per hour (stored in localStorage)
+function canCheckIn() {
+  const key = 'gn_checkins';
+  const now = Date.now();
+  const raw = localStorage.getItem(key);
+  const log = raw ? JSON.parse(raw).filter(t => now - t < 3600000) : [];
+  if (log.length >= 5) return false;
+  log.push(now);
+  localStorage.setItem(key, JSON.stringify(log));
+  return true;
+}
+
+// Real GPS coordinates for each venue
+const VENUE_COORDS = {
+  'Onyx Nightclub':   { lat:5.6361, lng:-0.1569 },
+  'Sky+ Rooftop Bar': { lat:5.6050, lng:-0.1717 },
+  'Twist Lounge':     { lat:5.5560, lng:-0.1969 },
+  'La Palm Beach Bar':{ lat:5.5490, lng:-0.1340 },
+  'Firefly Lounge':   { lat:5.5720, lng:-0.1850 },
+  'Rhapsodys Accra':  { lat:5.6145, lng:-0.1780 },
+};
+
+// ── STATE ─────────────────────────────────────────────
+let db = null, currentUser = null;
+let venues = [], events = [], ads = [];
+let userLat = null, userLng = null;
+let leafletMap = null, userMarker = null, venueMarkers = [];
+let authType = 'user', selectedPlan = 'basic';
+let adInterval = null;
+
+// ── FALLBACK DATA (shown if DB unreachable) ────────────
+const FALLBACK_VENUES = [
+  { name:"Onyx Nightclub", area:"East Legon", type:"club", heat:98, crowd:5, tags:["Afrobeats","Hip-Hop","VIP"], entry:"GHS 50", time:"10pm – 4am", color:"#ff3d8a", premium:true, camOn:true },
+  { name:"Sky+ Rooftop Bar", area:"Airport Hills", type:"rooftop", heat:87, crowd:4, tags:["R&B","Cocktails","Views"], entry:"GHS 30", time:"7pm – 2am", color:"#f5c542", premium:true, camOn:true },
+  { name:"Twist Lounge", area:"Osu", type:"lounge", heat:74, crowd:3, tags:["Highlife","Jazz","Chill"], entry:"Free", time:"8pm – 1am", color:"#4fa3ff", premium:false, camOn:false },
+  { name:"La Palm Beach Bar", area:"La", type:"beach", heat:81, crowd:4, tags:["Beach","Reggae","Sundowner"], entry:"GHS 20", time:"6pm – 12am", color:"#39e07a", premium:false, camOn:true },
+  { name:"Firefly Lounge", area:"Cantonments", type:"lounge", heat:62, crowd:2, tags:["Soul","Wine","Events"], entry:"Free", time:"6pm – 1am", color:"#4fa3ff", premium:false, camOn:false },
+  { name:"Rhapsodys Accra", area:"Accra Mall", type:"club", heat:79, crowd:4, tags:["Afrobeats","Dancehall","Birthday"], entry:"GHS 40", time:"9pm – 3am", color:"#ff6b35", premium:false, camOn:false },
+];
+const FALLBACK_EVENTS = [
+  { day:"10", month:"MAY", name:"AFRO NATION WARMUP — Accra Edition", venue:"Accra Sports Stadium", tags:["Afrobeats","CONCERT","GHS 150"], time:"8:00 PM", sponsored:true },
+  { day:"10", month:"MAY", name:"Rooftop Sundowner with DJ Kess", venue:"Sky+ Rooftop Bar", tags:["R&B","TONIGHT","GHS 30"], time:"7:30 PM", sponsored:false },
+  { day:"10", month:"MAY", name:"Onyx Friday Madness ft. DJ Manzo", venue:"Onyx Nightclub", tags:["Hip-Hop","TONIGHT","GHS 50"], time:"11:00 PM", sponsored:false },
+  { day:"11", month:"MAY", name:"La Palm Beach Bash", venue:"La Palm Beach", tags:["Beach","Reggae","GHS 20"], time:"6:00 PM", sponsored:false },
+  { day:"11", month:"MAY", name:"Highlife Legends Night", venue:"Twist Lounge, Osu", tags:["Highlife","LIVE BAND","Free Entry"], time:"8:30 PM", sponsored:false },
+  { day:"11", month:"MAY", name:"Afrobeats vs Amapiano Showdown", venue:"Rhapsodys Accra", tags:["Amapiano","Afrobeats","GHS 60"], time:"10:00 PM", sponsored:true },
+];
+
+// ── BOOT ──────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  try {
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch(e) { console.warn('Supabase init failed', e); }
+  await checkSession();
+  await loadData();
+  initMap();
+  requestLocation();
+  setInterval(refreshData, 30000);
+});
+
+// ── SESSION ───────────────────────────────────────────
+async function checkSession() {
+  if (!db) return;
+  try {
+    const { data:{ session } } = await db.auth.getSession();
+    if (session) { currentUser = session.user; updateNavForUser(); }
+    db.auth.onAuthStateChange((_, s) => {
+      currentUser = s?.user || null;
+      updateNavForUser();
+    });
+  } catch(e) { console.warn('Session check failed', e); }
+}
+function updateNavForUser() {
+  const btn = document.getElementById('navAuthBtn');
+  if (!btn) return;
+  btn.textContent = currentUser ? '👤 Profile' : 'Sign Up';
+  btn.onclick = () => openAuth(currentUser ? 'profile' : 'user');
+}
+function handleProfileTap() { openAuth(currentUser ? 'profile' : 'user'); }
+
+// ── LOCATION ──────────────────────────────────────────
+function requestLocation() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.watchPosition(
+    pos => { userLat=pos.coords.latitude; userLng=pos.coords.longitude; updateUserMarker(); },
+    () => {},
+    { enableHighAccuracy:true, maximumAge:15000, timeout:10000 }
+  );
+}
+function updateUserMarker() {
+  if (!leafletMap || !userLat) return;
+  const pos = [userLat, userLng];
+  if (userMarker) userMarker.setLatLng(pos);
+  else userMarker = L.circleMarker(pos, { radius:10, fillColor:'#39e07a', color:'#fff', weight:2, opacity:1, fillOpacity:0.9 })
+    .addTo(leafletMap).bindPopup('<b style="color:#39e07a">📍 You are here</b>');
+}
+function centerMapOnUser() {
+  if (!leafletMap) return;
+  if (userLat) { leafletMap.setView([userLat, userLng], 15); showToast('📍 Centred on your location'); }
+  else navigator.geolocation.getCurrentPosition(
+    pos => { userLat=pos.coords.latitude; userLng=pos.coords.longitude; leafletMap.setView([userLat,userLng],15); updateUserMarker(); },
+    () => showToast('📍 Enable location to find yourself')
+  );
+}
+
+// ── MAP ───────────────────────────────────────────────
+function initMap() {
+  leafletMap = L.map('ghanight-map', { center:[5.6037,-0.1870], zoom:13, zoomControl:true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(leafletMap);
+  renderMapMarkers();
+}
+function pinColor(heat) { return heat>=80?'#ff3d8a':heat>=50?'#f5c542':'#4fa3ff'; }
+function renderMapMarkers() {
+  if (!leafletMap) return;
+  venueMarkers.forEach(m => leafletMap.removeLayer(m));
+  venueMarkers = [];
+  venues.forEach((v, idx) => {
+    const c = VENUE_COORDS[v.name] || (v.lat && v.lng ? { lat:v.lat, lng:v.lng } : null);
+    if (!c) return;
+    const marker = L.circleMarker([c.lat, c.lng], {
+      radius:v.premium?14:10, fillColor:pinColor(v.heat), color:'#fff', weight:2, opacity:1, fillOpacity:0.85
+    }).addTo(leafletMap);
+    const rideHtml = RIDE_PARTNER_ACTIVE
+      ? `<button class="popup-btn popup-btn-ride" onclick="bookRide('${v.name}')">🚗 Book Ride</button>`
+      : `<button class="popup-btn popup-btn-ride" disabled>🚗 Ride (Soon)</button>`;
+    marker.bindPopup(`
+      <div class="popup-name">${v.name}${v.premium?' ⭐':''}</div>
+      <div class="popup-meta">📍 ${v.area}</div>
+      <div class="popup-heat">${v.heat>=80?'🔥🔥🔥':v.heat>=50?'🔥🔥':'🔥'} ${v.heat}% capacity</div>
+      <div class="popup-entry">Entry: ${v.entry} · ${v.time}</div>
+      <div class="popup-btns">
+        <button class="popup-btn popup-btn-checkin" onclick="checkInAtVenue(${idx})">📍 I'm Here</button>
+        <button class="popup-btn popup-btn-view" onclick="openVenueModal(${idx})">View →</button>
+        ${rideHtml}
+      </div>`, { maxWidth:260 });
+    venueMarkers.push(marker);
+  });
+  updateUserMarker();
+}
+function bookRide(name) {
+  if (!RIDE_PARTNER_ACTIVE) { showToast('🚗 Ride partner coming soon!'); return; }
+  showToast(`🚗 Opening ${RIDE_PARTNER_NAME} for ${name}...`);
+}
+
+// ── CHECK-IN (with rate limiting) ─────────────────────
+function distanceKm(a,b,c,d){ const R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
+async function checkInAtVenue(idx) {
+  if (!canCheckIn()) { showToast('⏳ Too many check-ins — try again in an hour'); return; }
+  const v = venues[idx]; if (!v) return;
+  const c = VENUE_COORDS[v.name] || (v.lat && v.lng ? {lat:v.lat,lng:v.lng} : null);
+  if (!c) { showToast('📍 Check-in not mapped for this venue yet'); return; }
+  if (!userLat) {
+    navigator.geolocation.getCurrentPosition(
+      async p => { userLat=p.coords.latitude; userLng=p.coords.longitude; await doCheckIn(v,c,idx); },
+      () => showToast('📍 Enable location to check in')
+    );
+    return;
+  }
+  await doCheckIn(v,c,idx);
+}
+async function doCheckIn(v, c, idx) {
+  const dist = distanceKm(userLat, userLng, c.lat, c.lng);
+  if (dist > CHECKIN_RADIUS_KM) { showToast(`📍 ${(dist*1000).toFixed(0)}m away — get closer to ${v.name} to check in`); return; }
+  if (!db) { showToast('⚠️ Check-in unavailable'); return; }
+  try {
+    await db.from('checkins').insert({ venue_id:v.id||null, venue_name:v.name, user_id:currentUser?.id||null, checked_in_at:new Date().toISOString() });
+    showToast('✅ Checked in at ' + v.name + '! 🔥');
+    renderMapMarkers();
+    updateOutTonightCount();
+  } catch(e) { showToast('⚠️ Check-in failed — please try again'); }
+}
+async function updateOutTonightCount() {
+  if (!db) return;
+  try {
+    const t = new Date(); t.setHours(0,0,0,0);
+    const { count } = await db.from('checkins').select('*',{count:'exact',head:true}).gte('checked_in_at',t.toISOString());
+    if (count !== null) document.getElementById('crowdCount').textContent = count>=1000?(count/1000).toFixed(1)+'K':String(count);
+  } catch(e) {}
+}
+
+// ── DATA LOADING ──────────────────────────────────────
+const nV = r => ({ id:r.id, name:r.name, area:r.area, type:r.type, heat:r.heat, crowd:r.crowd, tags:r.tags||[], entry:r.entry, time:r.time, color:r.color, premium:r.premium, camOn:r.cam_on, lat:r.lat, lng:r.lng });
+const nE = r => ({ id:r.id, day:r.event_day, month:r.event_month, name:r.name, venue:r.venue, tags:r.tags||[], time:r.event_time, sponsored:r.sponsored });
+
+async function loadData() {
+  if (db) {
+    try {
+      const {data:vr, error:ve} = await db.from('venues').select('*').eq('active',true).order('premium',{ascending:false}).order('heat',{ascending:false});
+      if (!ve && vr?.length) venues = vr.map(nV);
+      else if (ve) console.warn('Venues error:', ve.message);
+
+      const {data:er, error:ee} = await db.from('events').select('*').eq('active',true).order('sponsored',{ascending:false});
+      if (!ee && er?.length) events = er.map(nE);
+      else if (ee) console.warn('Events error:', ee.message);
+
+      // Real-time venue updates
+      db.channel('vrt').on('postgres_changes',{event:'UPDATE',schema:'public',table:'venues'}, p => {
+        const i = venues.findIndex(v=>v.id===p.new.id);
+        if(i!==-1){venues[i]=nV(p.new);renderVenues(venues);renderMapMarkers();showToast('🔴 Live: '+p.new.name+' updated');}
+      }).subscribe();
+
+      await updateOutTonightCount();
+    } catch(e) { console.warn('Load error:', e); }
+  }
+  // Use fallback if DB returned nothing
+  if (!venues.length) venues = FALLBACK_VENUES;
+  if (!events.length) events = FALLBACK_EVENTS;
+
+  document.getElementById('venueCount').textContent = venues.length;
+  document.getElementById('eventCount').textContent = events.length;
+  renderVenues(venues);
+  renderEvents();
+  if (leafletMap) renderMapMarkers();
+}
+
+async function refreshData() {
+  if (!db) return;
+  try {
+    const {data:vr} = await db.from('venues').select('*').eq('active',true).order('premium',{ascending:false}).order('heat',{ascending:false});
+    if (vr?.length) { venues=vr.map(nV); renderVenues(venues); renderMapMarkers(); }
+    const {data:er} = await db.from('events').select('*').eq('active',true).order('sponsored',{ascending:false});
+    if (er?.length) { events=er.map(nE); renderEvents(); }
+    await updateOutTonightCount();
+  } catch(e) {}
+}
+
+// ── RENDER ────────────────────────────────────────────
+function createLiveCard(v, idx) {
+  const bars = Array.from({length:5},(_,i)=>`<div class="crowd-bar ${i<v.crowd?(v.crowd>=4?'half':'filled'):''}"></div>`).join('');
+  const tags = (v.tags||[]).map(t=>`<span class="vibe-tag">${t}</span>`).join('');
+  const heat = v.heat>=90?'🔥🔥🔥':v.heat>=75?'🔥🔥':'🔥';
+  const cam = v.camOn?`<span class="camera-status cam-on">📹 Live</span>`:`<span class="camera-status cam-off">📷 No Feed</span>`;
+  return `<div class="live-card ${v.premium?'premium':''}" onclick="openVenueModal(${idx})">
+    ${v.premium?'<div class="premium-crown">⭐ FEATURED</div>':''}
+    <div class="live-feed-area"><div class="crowd-sim"><div class="light-beam"></div><div class="light-beam"></div><div class="light-beam"></div><div class="light-beam"></div><div class="crowd-dots"></div></div>
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div><div class="heat-badge">${heat} ${v.heat}%</div>${cam}
+    <div class="activity-bar"><div class="activity-fill" style="width:${v.heat}%"></div></div></div>
+    <div class="live-card-body">
+      <div class="venue-name">${v.name}</div>
+      <div class="venue-meta"><span>📍 ${v.area}</span><span>⏰ ${v.time}</span></div>
+      <div class="venue-vibe">${tags}</div>
+      <div class="venue-footer">
+        <div class="crowd-level">${bars}<span class="crowd-label">${['','Quiet','Picking up','Getting busy','Packed','RAM FULL'][v.crowd]}</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-view" style="background:rgba(57,224,122,0.15);color:#39e07a;border:1px solid rgba(57,224,122,0.3)" onclick="event.stopPropagation();checkInAtVenue(${idx})">📍 I'm Here</button>
+          <button class="btn-view" onclick="event.stopPropagation();openVenueModal(${idx})">View →</button>
+        </div>
+      </div>
+    </div></div>`;
+}
+
+function createEventCard(e, idx) {
+  const tags = (e.tags||[]).map((t,i)=>`<span class="event-tag ${['tag-genre','tag-hot','tag-price'][i]||'tag-genre'}">${t}</span>`).join('');
+  return `<div class="event-card ${e.sponsored?'sponsored':''}">
+    <div class="event-date-block"><div class="event-day">${e.day}</div><div class="event-month">${e.month}</div></div>
+    <div class="event-info">${e.sponsored?'<span class="event-sponsored-tag">SPONSORED</span>':''}<div class="event-name">${e.name}</div><div class="event-venue">📍 ${e.venue}</div><div class="event-tags">${tags}</div></div>
+    <div class="event-right"><div class="event-time">🕐 ${e.time}</div><button class="btn-interested" onclick="handleRSVP(this,'${e.id||''}')">♡ Going</button></div>
+  </div>`;
+}
+
+function renderVenues(list) {
+  const grid = document.getElementById('liveGrid');
+  if (!list.length) { grid.innerHTML='<div class="empty-state"><div class="empty-icon">🌙</div><p>No venues found.<br>Try a different filter.</p></div>'; return; }
+  grid.innerHTML = list.map((v,i)=>createLiveCard(v,i)).join('');
+}
+function renderEvents() {
+  const el = document.getElementById('eventsList');
+  if (!events.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">🎉</div><p>No events tonight.<br>Check back soon.</p></div>'; return; }
+  el.innerHTML = events.map((e,i)=>createEventCard(e,i)).join('');
+}
+function filterVenues(type, btn) {
+  document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderVenues(type==='all'?venues:venues.filter(v=>v.type===type));
+}
+function handleSearch(q) {
+  if(!q){renderVenues(venues);return;}
+  const lq=q.toLowerCase();
+  renderVenues(venues.filter(v=>v.name.toLowerCase().includes(lq)||v.area.toLowerCase().includes(lq)||(v.tags||[]).some(t=>t.toLowerCase().includes(lq))));
+}
+async function handleRSVP(btn, eventId) {
+  btn.classList.toggle('liked');
+  btn.textContent = btn.classList.contains('liked')?'❤️ Going':'♡ Going';
+  if (btn.classList.contains('liked') && db && currentUser && eventId) {
+    try { await db.from('rsvps').insert({ event_id:eventId, user_id:currentUser.id }); } catch(e){}
+    showToast('✅ RSVP saved!');
+  } else if (btn.classList.contains('liked')) {
+    showToast('✅ Sign in to save your RSVP!');
+  }
+}
+
+// ── VENUE MODAL ───────────────────────────────────────
+function openVenueModal(idx) {
+  const v = venues[idx]; if (!v) return;
+  const heat = v.heat>=90?'🔥🔥🔥':v.heat>=75?'🔥🔥':'🔥';
+  document.getElementById('venueModalContent').innerHTML = `
+    <div class="modal-title">${v.name}</div>
+    <div class="modal-sub">📍 ${v.area}, Accra · ${v.premium?'⭐ Featured':'Standard Listing'}</div>
+    <div class="modal-live"><div class="crowd-sim" style="height:100%"><div class="light-beam"></div><div class="light-beam"></div><div class="light-beam"></div><div class="light-beam"></div><div class="crowd-dots"></div></div>
+    <div style="position:absolute;top:10px;left:10px" class="live-badge"><div class="live-dot"></div>${v.camOn?'LIVE FEED':'SIMULATED'}</div>
+    <div style="position:absolute;top:10px;right:10px" class="heat-badge">${heat} ${v.heat}% capacity</div>
+    <div class="activity-bar"><div class="activity-fill" style="width:${v.heat}%"></div></div></div>
+    <div class="modal-info-grid">
+      <div class="modal-info-item"><div class="modal-info-label">ENTRY</div><div class="modal-info-val">${v.entry}</div></div>
+      <div class="modal-info-item"><div class="modal-info-label">OPENS</div><div class="modal-info-val">${v.time}</div></div>
+      <div class="modal-info-item"><div class="modal-info-label">CROWD</div><div class="modal-info-val">${['','Quiet','Picking up','Getting busy','Packed','RAM FULL'][v.crowd]}</div></div>
+      <div class="modal-info-item"><div class="modal-info-label">VIBE</div><div class="modal-info-val">${(v.tags||[])[0]||'—'}</div></div>
+    </div>
+    <button class="btn-view" style="width:100%;margin-bottom:10px;padding:12px;background:rgba(57,224,122,0.15);color:#39e07a;border:1px solid rgba(57,224,122,0.3);border-radius:12px;font-size:14px;font-weight:700" onclick="checkInAtVenue(${idx});closeVenueModal()">📍 Check In Here</button>
+    <button class="btn-book" onclick="openAuth('user');closeVenueModal()">🎟️ Get Tickets / Reserve Table</button>`;
+  document.getElementById('venueModalOverlay').classList.add('open');
+}
+function closeVenueModal() { document.getElementById('venueModalOverlay').classList.remove('open'); }
+function closeVenueModalOnOutside(e) { if(e.target.id==='venueModalOverlay')closeVenueModal(); }
+
+// ── AUTH MODAL ────────────────────────────────────────
+function openAuth(type) { authType=type; closeVenueModal(); renderAuthModal(); document.getElementById('authModalOverlay').classList.add('open'); }
+function closeAuthModal() { document.getElementById('authModalOverlay').classList.remove('open'); }
+function closeAuthModalOnOutside(e) { if(e.target.id==='authModalOverlay')closeAuthModal(); }
+
+function renderAuthModal() {
+  const el = document.getElementById('authModalContent');
+  if (authType==='profile') {
+    if (!currentUser) { authType='user'; renderAuthModal(); return; }
+    el.innerHTML = `
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:48px;margin-bottom:8px">👤</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold)">MY PROFILE</div>
+        <div style="font-size:13px;color:var(--muted)">${currentUser.email}</div>
+      </div>
+      <div style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;letter-spacing:1px">MEMBER SINCE</div>
+        <div style="font-size:15px;font-weight:600">${new Date(currentUser.created_at).toLocaleDateString('en-GH',{day:'numeric',month:'long',year:'numeric'})}</div>
+      </div>
+      <div style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:20px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;letter-spacing:1px">CHECK-INS TODAY</div>
+        <div style="font-size:28px;font-weight:700;color:var(--green)" id="pcheckins">—</div>
+      </div>
+      <button class="btn-submit" style="background:rgba(255,61,138,0.12);color:var(--pink);border:1px solid rgba(255,61,138,0.3)" onclick="signOut()">Sign Out</button>`;
+    if (db) {
+      const t=new Date();t.setHours(0,0,0,0);
+      db.from('checkins').select('*',{count:'exact',head:true}).eq('user_id',currentUser.id).gte('checked_in_at',t.toISOString())
+        .then(({count})=>{ const e=document.getElementById('pcheckins'); if(e)e.textContent=(count||0)+' venues visited'; });
+    }
+    return;
+  }
+  if (authType==='user') {
+    el.innerHTML = `
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold)">JOIN GHANIGHT</div>
+        <div style="font-size:13px;color:var(--muted)">Create your free account</div>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="setAuthTab(this,'signup')">Sign Up</button>
+        <button class="auth-tab" onclick="setAuthTab(this,'login')">Log In</button>
+      </div>
+      <div id="authTabContent">${signupForm()}</div>`;
+  } else if (authType==='club') {
+    el.innerHTML = `<div style="text-align:center;margin-bottom:20px"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold)">LIST YOUR VENUE</div><div style="font-size:13px;color:var(--muted)">Join Ghana's #1 nightlife platform</div></div>${clubForm()}`;
+  } else if (authType==='advertiser') {
+    el.innerHTML = `<div style="text-align:center;margin-bottom:20px"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--blue)">ADVERTISE WITH US</div><div style="font-size:13px;color:var(--muted)">Reach Accra's nightlife audience</div></div>${advertiserForm()}`;
+  }
+}
+
+function setAuthTab(btn, tab) {
+  document.querySelectorAll('.auth-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('authTabContent').innerHTML = tab==='signup'?signupForm():loginForm();
+}
+function showErr(m) { const e=document.getElementById('authErr'); if(e){e.textContent=m;e.style.display='block';} }
+
+function signupForm() {
+  return `<div class="auth-form">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="sfirst" placeholder="Kofi" type="text" autocomplete="given-name"></div>
+      <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="slast" placeholder="Mensah" type="text" autocomplete="family-name"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="semail" placeholder="email@gmail.com" type="email" autocomplete="email"></div>
+    <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="spass" placeholder="Min 6 characters" type="password" autocomplete="new-password"></div>
+    <div class="form-group"><label class="form-label">Favourite Area</label>
+      <select class="form-select" id="sarea">
+        <option>East Legon</option><option>Osu</option><option>Airport Hills</option>
+        <option>Cantonments</option><option>La / Labadi</option><option>Tema</option><option>Everywhere 🇬🇭</option>
+      </select>
+    </div>
+    <button class="btn-submit" onclick="doSignup()">🎉 Create Free Account</button>
+    <div class="auth-error" id="authErr"></div>
+    <div class="form-divider">Already have an account? <span class="form-link" onclick="setAuthTab(document.querySelectorAll('.auth-tab')[1],'login')" style="display:inline">Log in</span></div>
+  </div>`;
+}
+function loginForm() {
+  return `<div class="auth-form">
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="lemail" placeholder="email@gmail.com" type="email" autocomplete="email"></div>
+    <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="lpass" placeholder="Your password" type="password" autocomplete="current-password"></div>
+    <button class="btn-submit" onclick="doLogin()">🔓 Log In</button>
+    <div class="auth-error" id="authErr"></div>
+    <div class="form-divider">No account? <span class="form-link" onclick="setAuthTab(document.querySelectorAll('.auth-tab')[0],'signup')" style="display:inline">Sign up free</span></div>
+  </div>`;
+}
+function clubForm() {
+  return `<div class="auth-form">
+    <div class="form-group"><label class="form-label">Venue / Club Name</label><input class="form-input" id="cname" placeholder="e.g. Onyx Nightclub" type="text"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Area</label><select class="form-select" id="carea"><option>East Legon</option><option>Osu</option><option>Airport Hills</option><option>Cantonments</option><option>La / Labadi</option><option>Accra CBD</option><option>Tema</option><option>Other</option></select></div>
+      <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="ctype"><option>Nightclub</option><option>Lounge</option><option>Rooftop Bar</option><option>Beach Bar</option><option>Restaurant & Bar</option><option>Event Centre</option></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="ccontact" placeholder="Manager / Owner name" type="text"></div>
+    <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="cphone" placeholder="0244 000 000" type="tel"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="cemail" placeholder="venue@email.com" type="email"></div>
+    <div class="form-group"><label class="form-label">Plan</label>
+      <div class="plan-cards">
+        <div class="plan-card selected" onclick="selectPlan(this,'basic')"><div class="plan-name">Basic</div><div class="plan-price">Free <span>/mo</span></div><div class="plan-features">Standard listing · Crowd data</div></div>
+        <div class="plan-card" onclick="selectPlan(this,'premium')"><div class="plan-name">⭐ Premium</div><div class="plan-price">GHS 250 <span>/mo</span></div><div class="plan-features">Featured · Camera · Ticketing</div></div>
+      </div>
+    </div>
+    <button class="btn-submit" onclick="submitClub()">📡 Submit Venue Registration</button>
+    <div class="auth-error" id="authErr"></div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">GhaNight will review within 48 hours.</div>
+  </div>`;
+}
+function advertiserForm() {
+  return `<div class="auth-form">
+    <div class="form-group"><label class="form-label">Company / Brand</label><input class="form-input" id="acompany" placeholder="e.g. Your Brand Ghana" type="text"></div>
+    <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="acontact" placeholder="Your full name" type="text"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="aemail" placeholder="marketing@company.com" type="email"></div>
+    <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="aphone" placeholder="0244 000 000" type="tel"></div>
+    <div class="form-group"><label class="form-label">Ad Type</label><select class="form-select" id="atype"><option>Banner Ad (rotating)</option><option>Sponsored Event</option><option>Featured Venue</option><option>Full Page Takeover</option><option>All Packages</option></select></div>
+    <div class="form-group"><label class="form-label">Monthly Budget</label><select class="form-select" id="abudget"><option>GHS 500 – 1,000</option><option>GHS 1,000 – 3,000</option><option>GHS 3,000 – 5,000</option><option>GHS 5,000+</option></select></div>
+    <button class="btn-submit" onclick="submitAdvertiser()">📩 Send Enquiry</button>
+    <div class="auth-error" id="authErr"></div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">Our team will contact you within 24 hours.</div>
+  </div>`;
+}
+
+async function doSignup() {
+  if (!db) { showErr('Service unavailable'); return; }
+  const email = document.getElementById('semail')?.value?.trim();
+  const pass  = document.getElementById('spass')?.value;
+  if (!email || !pass) { showErr('Please fill in email and password'); return; }
+  if (pass.length < 6) { showErr('Password must be at least 6 characters'); return; }
+  const btn = document.querySelector('#authModalContent .btn-submit');
+  if (btn) { btn.textContent = 'Creating account...'; btn.disabled = true; }
+  const { data, error } = await db.auth.signUp({
+    email, password:pass,
+    options:{ data:{ first_name:document.getElementById('sfirst')?.value?.trim(), last_name:document.getElementById('slast')?.value?.trim(), favourite_area:document.getElementById('sarea')?.value }}
+  });
+  if (btn) { btn.textContent = '🎉 Create Free Account'; btn.disabled = false; }
+  if (error) { showErr(error.message); return; }
+  currentUser = data.user;
+  document.getElementById('authModalContent').innerHTML = `<div class="success-screen"><div class="success-icon">🎉</div><div class="success-title">Welcome to GhaNight!</div><p class="success-sub">Account created! Check your email to verify, then you'll be logged in automatically.</p><button class="btn-submit" style="margin-top:24px" onclick="closeAuthModal()">Start Exploring →</button></div>`;
+  updateNavForUser();
+}
+
+async function doLogin() {
+  if (!db) { showErr('Service unavailable'); return; }
+  const email = document.getElementById('lemail')?.value?.trim();
+  const pass  = document.getElementById('lpass')?.value;
+  if (!email || !pass) { showErr('Please enter email and password'); return; }
+  const btn = document.querySelector('#authModalContent .btn-submit');
+  if (btn) { btn.textContent = 'Logging in...'; btn.disabled = true; }
+  const { data, error } = await db.auth.signInWithPassword({ email, password:pass });
+  if (btn) { btn.textContent = '🔓 Log In'; btn.disabled = false; }
+  if (error) { showErr('Incorrect email or password'); return; }
+  currentUser = data.user;
+  closeAuthModal();
+  showToast('🔓 Welcome back!');
+  updateNavForUser();
+}
+
+async function submitClub() {
+  if (!db) { showErr('Service unavailable'); return; }
+  const name = document.getElementById('cname')?.value?.trim();
+  const contact = document.getElementById('ccontact')?.value?.trim();
+  const phone = document.getElementById('cphone')?.value?.trim();
+  const email = document.getElementById('cemail')?.value?.trim();
+  if (!name || !contact || !phone || !email) { showErr('Please fill in all fields'); return; }
+  try {
+    await db.from('venue_registrations').insert({
+      venue_name:name, area:document.getElementById('carea')?.value,
+      venue_type:document.getElementById('ctype')?.value,
+      contact_name:contact, phone, email, plan:selectedPlan
+    });
+    document.getElementById('authModalContent').innerHTML = `<div class="success-screen"><div class="success-icon">📡</div><div class="success-title">Venue Registered!</div><p class="success-sub">Our team will review and activate your venue within 48 hours. Check your email for next steps.</p><button class="btn-submit" style="margin-top:24px" onclick="closeAuthModal()">Back to GhaNight →</button></div>`;
+  } catch(e) { showErr('Submission failed — please try again'); }
+}
+
+async function submitAdvertiser() {
+  if (!db) { showErr('Service unavailable'); return; }
+  const company = document.getElementById('acompany')?.value?.trim();
+  const contact = document.getElementById('acontact')?.value?.trim();
+  const email   = document.getElementById('aemail')?.value?.trim();
+  if (!company || !contact || !email) { showErr('Please fill in company, contact and email'); return; }
+  try {
+    await db.from('advertiser_enquiries').insert({
+      company_name:company, contact_name:contact, email,
+      phone:document.getElementById('aphone')?.value?.trim()||'',
+      ad_type:document.getElementById('atype')?.value,
+      budget_range:document.getElementById('abudget')?.value
+    });
+    document.getElementById('authModalContent').innerHTML = `<div class="success-screen"><div class="success-icon">📩</div><div class="success-title">Enquiry Sent!</div><p class="success-sub">Our advertising team will contact you within 24 hours with a custom package.</p><button class="btn-submit" style="margin-top:24px" onclick="closeAuthModal()">Back to GhaNight →</button></div>`;
+  } catch(e) { showErr('Submission failed — please try again'); }
+}
+
+async function signOut() {
+  if (db) await db.auth.signOut();
+  currentUser = null;
+  closeAuthModal();
+  showToast('👋 Signed out');
+  updateNavForUser();
+}
+function selectPlan(el, plan) {
+  document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected'); selectedPlan=plan;
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+function scrollToSection(id) { document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'}); }
+</script>
+</body>
+</html>
