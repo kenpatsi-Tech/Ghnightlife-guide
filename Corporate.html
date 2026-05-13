@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GhaNight Corporate — Discount Subscription via Vendor Token</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#080810;--surface:#10101e;--card:#14142a;--gold:#f5c542;--orange:#ff6b35;--pink:#ff3d8a;--green:#39e07a;--blue:#4fa3ff;--text:#f0f0f8;--muted:#7070a0;--border:rgba(255,255,255,0.06);}
+  *{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  .top-nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,8,16,0.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:22px;background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;text-decoration:none;}
+  main{padding-top:56px;}
+  /* HERO */
+  .hero{padding:48px 20px 36px;text-align:center;background:linear-gradient(180deg,rgba(57,224,122,0.05) 0%,transparent 100%);}
+  .hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(38px,9vw,72px);line-height:0.9;background:linear-gradient(135deg,#fff,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:14px;}
+  .hero p{color:var(--muted);font-size:15px;max-width:480px;margin:0 auto 28px;line-height:1.6;}
+  /* HOW IT WORKS */
+  .how-section{padding:0 20px;margin-bottom:44px;}
+  .section-hd{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;margin-bottom:20px;text-align:center;}
+  .section-hd span{color:var(--green);}
+  .flow-steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:32px;}
+  .flow-step{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;position:relative;}
+  .flow-step::after{content:'→';position:absolute;right:-14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:18px;font-weight:700;}
+  .flow-step:last-child::after{display:none;}
+  .step-icon{font-size:32px;margin-bottom:10px;}
+  .step-num{font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--green);letter-spacing:2px;margin-bottom:6px;}
+  .step-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+  .step-desc{font-size:12px;color:var(--muted);line-height:1.5;}
+  /* PLANS */
+  .plans-section{padding:0 20px;margin-bottom:44px;}
+  .plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+  .plan-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;position:relative;transition:all 0.2s;}
+  .plan-card.popular{border-color:rgba(57,224,122,0.4);}
+  .popular-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--green),var(--blue));color:#000;font-size:11px;font-weight:800;padding:3px 14px;border-radius:100px;white-space:nowrap;}
+  .plan-name{font-family:'Bebas Neue',sans-serif;font-size:22px;margin-bottom:4px;}
+  .plan-org{font-size:12px;color:var(--muted);margin-bottom:14px;}
+  .plan-price{font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--green);margin-bottom:4px;}
+  .plan-price span{font-size:14px;color:var(--muted);font-family:'DM Sans',sans-serif;}
+  .plan-original{font-size:13px;color:var(--muted);text-decoration:line-through;margin-bottom:16px;}
+  .plan-features{list-style:none;margin-bottom:20px;}
+  .plan-features li{font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+  .plan-features li:last-child{border-bottom:none;}
+  .plan-features .check{color:var(--green);}
+  .btn-plan{width:100%;background:linear-gradient(135deg,var(--green),var(--blue));color:#000;border:none;border-radius:12px;padding:13px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:14px;cursor:pointer;}
+  /* VENDORS */
+  .vendors-section{padding:0 20px;margin-bottom:44px;}
+  .vendor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+  .vendor-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;cursor:pointer;transition:all 0.2s;}
+  .vendor-card:hover{border-color:rgba(57,224,122,0.3);}
+  .vendor-icon{font-size:32px;margin-bottom:8px;}
+  .vendor-name{font-size:14px;font-weight:700;margin-bottom:4px;}
+  .vendor-type{font-size:11px;color:var(--muted);}
+  .vendor-discount{font-size:12px;color:var(--green);font-weight:600;margin-top:4px;}
+  /* TOKEN INPUT */
+  .token-section{padding:0 20px;margin-bottom:44px;}
+  .token-box{background:var(--card);border:1px solid rgba(57,224,122,0.2);border-radius:20px;padding:28px;}
+  .token-title{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);margin-bottom:8px;}
+  .token-desc{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5;}
+  .token-input-row{display:flex;gap:10px;margin-bottom:12px;}
+  .token-input{flex:1;background:var(--surface);border:2px solid rgba(57,224,122,0.3);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;letter-spacing:4px;padding:14px 18px;border-radius:13px;outline:none;text-transform:uppercase;text-align:center;}
+  .token-input:focus{border-color:var(--green);}
+  .token-input::placeholder{font-size:13px;letter-spacing:1px;color:var(--muted);font-weight:400;}
+  .btn-token{background:linear-gradient(135deg,var(--green),var(--blue));color:#000;border:none;border-radius:13px;padding:14px 24px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;}
+  .token-status{border-radius:12px;padding:14px;font-size:14px;margin-top:12px;display:none;}
+  .token-status.success{background:rgba(57,224,122,0.1);border:1px solid rgba(57,224,122,0.3);color:var(--green);}
+  .token-status.error{background:rgba(255,61,138,0.1);border:1px solid rgba(255,61,138,0.3);color:var(--pink);}
+  .token-status.loading{background:rgba(79,163,255,0.1);border:1px solid rgba(79,163,255,0.2);color:var(--blue);}
+  /* SUBSCRIPTION DISPLAY */
+  .sub-card{background:linear-gradient(135deg,rgba(57,224,122,0.1),rgba(79,163,255,0.06));border:1px solid rgba(57,224,122,0.3);border-radius:18px;padding:24px;margin-bottom:16px;}
+  .sub-badge{font-size:11px;color:var(--green);background:rgba(57,224,122,0.15);padding:3px 10px;border-radius:100px;font-weight:700;letter-spacing:1px;margin-bottom:12px;display:inline-block;}
+  .sub-org{font-family:'Bebas Neue',sans-serif;font-size:26px;margin-bottom:4px;}
+  .sub-plan{font-size:14px;color:var(--muted);margin-bottom:14px;}
+  .sub-features{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+  .sub-feature{background:rgba(255,255,255,0.04);border-radius:10px;padding:10px 12px;font-size:12px;}
+  .sub-feature strong{display:block;font-size:15px;color:var(--green);}
+  .sub-expiry{font-size:12px;color:var(--muted);}
+  /* FORM */
+  .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .form-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
+  .form-input,.form-select{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:12px 14px;border-radius:11px;outline:none;transition:border-color 0.2s;width:100%;}
+  .form-input:focus{border-color:rgba(57,224,122,0.4);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .btn-submit{background:linear-gradient(135deg,var(--green),var(--blue));color:#000;border:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:15px;cursor:pointer;width:100%;margin-top:4px;}
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:540px;border:1px solid var(--border);border-bottom:none;padding:28px 22px 48px;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);max-height:90vh;overflow-y:auto;}
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal-handle{width:38px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(30,30,50,0.96);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:12px;padding:11px 18px;font-size:13px;color:var(--text);opacity:0;transition:all 0.3s;z-index:300;white-space:nowrap;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  @media(max-width:480px){.form-row{grid-template-columns:1fr;}.sub-features{grid-template-columns:1fr;}.token-input-row{flex-direction:column;}.flow-step::after{display:none;}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="index.html" class="logo">GhaNight</a>
+  <button style="background:linear-gradient(135deg,var(--green),var(--blue));color:#000;border:none;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;cursor:pointer" onclick="document.getElementById('tokenSection').scrollIntoView({behavior:'smooth'})">Redeem Token ↓</button>
+</nav>
+
+<main>
+  <!-- HERO -->
+  <div class="hero">
+    <h1>CORPORATE<br>NIGHTLIFE<br>PERKS</h1>
+    <p>Your organisation buys from a GhaNight recommended vendor, gets a token, and unlocks a discounted monthly subscription for your whole team.</p>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-section">
+    <div class="section-hd">HOW IT <span>WORKS</span></div>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="step-icon">🏪</div>
+        <div class="step-num">STEP 01</div>
+        <div class="step-title">Buy from Vendor</div>
+        <div class="step-desc">Purchase from any GhaNight recommended vendor — drinks, catering, events, or tickets.</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">🎫</div>
+        <div class="step-num">STEP 02</div>
+        <div class="step-title">Receive Token</div>
+        <div class="step-desc">The vendor generates a unique token for your organisation and sends it to your email.</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">📲</div>
+        <div class="step-num">STEP 03</div>
+        <div class="step-title">Enter Token Here</div>
+        <div class="step-desc">Paste your token below. Our system verifies it instantly with the vendor's system.</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">🎉</div>
+        <div class="step-num">STEP 04</div>
+        <div class="step-title">Unlock Discount</div>
+        <div class="step-desc">Your team gets a discounted GhaNight Corporate subscription for the full month.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLANS -->
+  <div class="plans-section">
+    <div class="section-hd">SUBSCRIPTION <span>PLANS</span></div>
+    <div class="plans-grid">
+      <div class="plan-card">
+        <div class="plan-name">Starter</div>
+        <div class="plan-org">Up to 10 employees</div>
+        <div class="plan-price">GHS 180 <span>/mo</span></div>
+        <div class="plan-original">Normal: GHS 300/mo</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> 10 premium accounts</li>
+          <li><span class="check">✓</span> Priority event booking</li>
+          <li><span class="check">✓</span> 15% venue entry discount</li>
+          <li><span class="check">✓</span> Monthly events newsletter</li>
+          <li><span class="check">✓</span> Dedicated support line</li>
+        </ul>
+        <button class="btn-plan" onclick="openPurchaseModal('Starter','GHS 180')">Get Started →</button>
+      </div>
+      <div class="plan-card popular">
+        <div class="popular-badge">⭐ MOST POPULAR</div>
+        <div class="plan-name">Business</div>
+        <div class="plan-org">Up to 50 employees</div>
+        <div class="plan-price">GHS 420 <span>/mo</span></div>
+        <div class="plan-original">Normal: GHS 700/mo</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> 50 premium accounts</li>
+          <li><span class="check">✓</span> Priority event + VIP booking</li>
+          <li><span class="check">✓</span> 25% venue entry discount</li>
+          <li><span class="check">✓</span> Reserved tables at partners</li>
+          <li><span class="check">✓</span> Corporate events coordination</li>
+          <li><span class="check">✓</span> Monthly company night out package</li>
+        </ul>
+        <button class="btn-plan" onclick="openPurchaseModal('Business','GHS 420')">Get Started →</button>
+      </div>
+      <div class="plan-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-org">Unlimited employees</div>
+        <div class="plan-price">GHS 850 <span>/mo</span></div>
+        <div class="plan-original">Normal: GHS 1,400/mo</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Unlimited accounts</li>
+          <li><span class="check">✓</span> 35% venue entry discount</li>
+          <li><span class="check">✓</span> Private venue hire options</li>
+          <li><span class="check">✓</span> Dedicated account manager</li>
+          <li><span class="check">✓</span> Custom branded events</li>
+          <li><span class="check">✓</span> Invoice billing available</li>
+        </ul>
+        <button class="btn-plan" onclick="openPurchaseModal('Enterprise','GHS 850')">Get Started →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECOMMENDED VENDORS -->
+  <div class="vendors-section">
+    <div class="section-hd">RECOMMENDED <span>VENDORS</span></div>
+    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:20px">Buy from any of these GhaNight-approved vendors to receive your discount token.</p>
+    <div class="vendor-grid">
+      <div class="vendor-card"><div class="vendor-icon">🍺</div><div class="vendor-name">Accra Drinks Co.</div><div class="vendor-type">Beverages & Events</div><div class="vendor-discount">15–35% off subscriptions</div></div>
+      <div class="vendor-card"><div class="vendor-icon">🎟️</div><div class="vendor-name">EventGH</div><div class="vendor-type">Event Ticketing</div><div class="vendor-discount">15–35% off subscriptions</div></div>
+      <div class="vendor-card"><div class="vendor-icon">🍽️</div><div class="vendor-name">CaterGhana</div><div class="vendor-type">Corporate Catering</div><div class="vendor-discount">15–35% off subscriptions</div></div>
+      <div class="vendor-card"><div class="vendor-icon">🎵</div><div class="vendor-name">SoundSystem GH</div><div class="vendor-type">Event Production</div><div class="vendor-discount">15–35% off subscriptions</div></div>
+      <div class="vendor-card"><div class="vendor-icon">📸</div><div class="vendor-name">Accra Photo Studio</div><div class="vendor-type">Event Photography</div><div class="vendor-discount">15–35% off subscriptions</div></div>
+      <div class="vendor-card"><div class="vendor-icon">🚐</div><div class="vendor-name">GH Corporate Rides</div><div class="vendor-type">Staff Transport</div><div class="vendor-discount">15–35% off subscriptions</div></div>
+    </div>
+    <div style="text-align:center;margin-top:16px">
+      <p style="font-size:13px;color:var(--muted)">Want to become a GhaNight recommended vendor? <span style="color:var(--green);cursor:pointer;font-weight:600" onclick="openVendorModal()">Apply here →</span></p>
+    </div>
+  </div>
+
+  <!-- TOKEN REDEMPTION -->
+  <div class="token-section" id="tokenSection">
+    <div class="token-box">
+      <div class="token-title">🎫 REDEEM YOUR VENDOR TOKEN</div>
+      <div class="token-desc">Enter the token you received from your GhaNight vendor below. Tokens are 12 characters and unique to your purchase. Each token can only be used once.</div>
+      <div id="subDisplay" style="display:none"></div>
+      <div class="token-input-row">
+        <input class="token-input" id="tokenInput" placeholder="e.g. GHN-ABC123-XYZ" maxlength="16" oninput="this.value=this.value.toUpperCase()">
+        <button class="btn-token" onclick="redeemToken()">Verify & Redeem</button>
+      </div>
+      <div class="token-status" id="tokenStatus"></div>
+      <div style="margin-top:16px;padding:12px;background:rgba(255,255,255,0.02);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.6">
+        🔒 Tokens are verified directly with the vendor's system in real time. Invalid or already-used tokens are rejected automatically. One token = one organisation = one month.
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- PURCHASE MODAL (for orgs that don't yet have a vendor token) -->
+<div class="modal-overlay" id="purchaseModal" onclick="if(event.target.id==='purchaseModal')closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);margin-bottom:4px" id="modalPlanName"></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="modalPlanPrice"></div>
+    <div style="background:rgba(57,224,122,0.08);border:1px solid rgba(57,224,122,0.2);border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;color:var(--green);line-height:1.5">
+      📋 <strong>How to get your token:</strong><br>
+      1. We'll connect you with a recommended vendor<br>
+      2. Purchase any qualifying product/service<br>
+      3. Vendor generates your unique token<br>
+      4. Come back here and enter it to activate
+    </div>
+    <div class="form-group"><label class="form-label">Organisation Name *</label><input class="form-input" id="orgName" placeholder="e.g. Accra Tech Solutions Ltd" type="text"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Contact Name *</label><input class="form-input" id="orgContact" placeholder="Your name" type="text"></div>
+      <div class="form-group"><label class="form-label">Role</label><input class="form-input" id="orgRole" placeholder="e.g. HR Manager" type="text"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Work Email *</label><input class="form-input" id="orgEmail" placeholder="you@company.com" type="email"></div>
+    <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="orgPhone" placeholder="0244 000 000" type="tel"></div>
+    <div class="form-group"><label class="form-label">Number of Employees</label>
+      <select class="form-select" id="orgSize">
+        <option>1 – 10</option><option>11 – 50</option><option>51 – 100</option><option>100+</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Preferred Vendor Category</label>
+      <select class="form-select" id="orgVendorPref">
+        <option>Beverages & Events</option><option>Event Ticketing</option><option>Corporate Catering</option>
+        <option>Event Production</option><option>Staff Transport</option><option>Any available vendor</option>
+      </select>
+    </div>
+    <button class="btn-submit" onclick="submitOrgEnquiry()">Send Enquiry — We'll Connect You →</button>
+    <div id="modalErr" style="color:var(--pink);font-size:12px;text-align:center;margin-top:8px;display:none"></div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Our team will match you with a vendor and guide you through the process within 24 hours.</div>
+  </div>
+</div>
+
+<!-- VENDOR APPLICATION MODAL -->
+<div class="modal-overlay" id="vendorModal" onclick="if(event.target.id==='vendorModal')document.getElementById('vendorModal').classList.remove('open')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);margin-bottom:4px">BECOME A VENDOR</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Partner with GhaNight to offer our clients discount subscriptions through your purchases.</div>
+    <div style="background:rgba(57,224,122,0.08);border:1px solid rgba(57,224,122,0.2);border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;line-height:1.6;color:var(--text)">
+      <strong style="color:var(--green)">How vendor partnership works:</strong><br>
+      When your clients buy from you, you generate a GhaNight token in your vendor portal. They enter it here and unlock a discounted subscription. GhaNight pays you a <strong>10% referral commission</strong> on every subscription activated through your tokens.
+    </div>
+    <div class="form-group"><label class="form-label">Business Name *</label><input class="form-input" id="vbName" placeholder="e.g. Accra Drinks Co." type="text"></div>
+    <div class="form-group"><label class="form-label">Business Type *</label>
+      <select class="form-select" id="vbType">
+        <option>Beverages & Drinks</option><option>Event Ticketing</option><option>Catering</option>
+        <option>Event Production</option><option>Transport & Logistics</option><option>Photography & Media</option><option>Other</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Contact Name *</label><input class="form-input" id="vbContact" placeholder="Owner / Manager" type="text"></div>
+    <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="vbEmail" placeholder="business@email.com" type="email"></div>
+    <div class="form-group"><label class="form-label">Phone *</label><input class="form-input" id="vbPhone" placeholder="0244 000 000" type="tel"></div>
+    <div class="form-group"><label class="form-label">Monthly Sales Volume (approx)</label>
+      <select class="form-select" id="vbVolume">
+        <option>Under GHS 5,000</option><option>GHS 5,000 – 20,000</option><option>GHS 20,000 – 50,000</option><option>GHS 50,000+</option>
+      </select>
+    </div>
+    <button class="btn-submit" onclick="submitVendorApp()">Apply as GhaNight Vendor →</button>
+    <div id="vendorErr" style="color:var(--pink);font-size:12px;text-align:center;margin-top:8px;display:none"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+let db = null, currentUser = null;
+
+window.addEventListener('load', async () => {
+  try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
+  if (db) {
+    const { data:{ session } } = await db.auth.getSession();
+    if (session) currentUser = session.user;
+  }
+});
+
+// ── TOKEN REDEMPTION ──────────────────────────────────
+async function redeemToken() {
+  const token = document.getElementById('tokenInput').value.trim().toUpperCase();
+  const status = document.getElementById('tokenStatus');
+  if (!token || token.length < 8) {
+    showStatus('error', '❌ Please enter a valid token (e.g. GHN-ABC123-XYZ)');
+    return;
+  }
+  showStatus('loading', '🔍 Verifying token with vendor system...');
+  if (!db) { showStatus('error', '⚠️ Service unavailable — please try again'); return; }
+  try {
+    // Check if token exists and is unused
+    const { data:tokenData, error } = await db.from('vendor_tokens').select('*').eq('token', token).single();
+    if (error || !tokenData) { showStatus('error', '❌ Token not found. Check the token and try again.'); return; }
+    if (tokenData.used) { showStatus('error', '❌ This token has already been redeemed. Each token can only be used once.'); return; }
+    if (new Date(tokenData.expires_at) < new Date()) { showStatus('error', '❌ This token has expired. Contact your vendor for a new one.'); return; }
+    // Mark token as used
+    await db.from('vendor_tokens').update({ used:true, used_by:currentUser?.id||null, used_at:new Date().toISOString() }).eq('token',token);
+    // Create subscription record
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + 1);
+    await db.from('corporate_subscriptions').insert({
+      org_name: tokenData.org_name || 'Your Organisation',
+      plan: tokenData.plan,
+      discount_pct: tokenData.discount_pct,
+      vendor_name: tokenData.vendor_name,
+      token_used: token,
+      user_id: currentUser?.id || null,
+      activated_at: new Date().toISOString(),
+      expires_at: expiresAt.toISOString(),
+      status: 'active'
+    });
+    // Show success
+    document.getElementById('tokenInput').value = '';
+    showStatus('success', `✅ Token verified! Your ${tokenData.plan} subscription is now active.`);
+    showActiveSubscription(tokenData, expiresAt);
+    showToast('🎉 Subscription activated!');
+  } catch(e) {
+    showStatus('error', '⚠️ Verification failed — please try again or contact support.');
+  }
+}
+
+function showStatus(type, msg) {
+  const el = document.getElementById('tokenStatus');
+  el.className = `token-status ${type}`;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function showActiveSubscription(tokenData, expiresAt) {
+  const discountMap = { Starter:15, Business:25, Enterprise:35 };
+  const el = document.getElementById('subDisplay');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="sub-card">
+      <span class="sub-badge">✅ ACTIVE SUBSCRIPTION</span>
+      <div class="sub-org">${tokenData.org_name||'Your Organisation'}</div>
+      <div class="sub-plan">${tokenData.plan} Plan · via ${tokenData.vendor_name||'GhaNight Vendor'}</div>
+      <div class="sub-features">
+        <div class="sub-feature"><strong>${tokenData.discount_pct||discountMap[tokenData.plan]||15}%</strong>Venue Entry Discount</div>
+        <div class="sub-feature"><strong>✓</strong>Priority Booking</div>
+        <div class="sub-feature"><strong>✓</strong>VIP Event Access</div>
+        <div class="sub-feature"><strong>✓</strong>Team Accounts</div>
+      </div>
+      <div class="sub-expiry">📅 Subscription active until: <strong>${expiresAt.toLocaleDateString('en-GH',{day:'numeric',month:'long',year:'numeric'})}</strong></div>
+    </div>`;
+}
+
+// ── MODALS ────────────────────────────────────────────
+function openPurchaseModal(plan, price) {
+  document.getElementById('modalPlanName').textContent = plan + ' Plan';
+  document.getElementById('modalPlanPrice').textContent = price + '/month · ' + {Starter:'Up to 10 employees',Business:'Up to 50 employees',Enterprise:'Unlimited employees'}[plan];
+  document.getElementById('purchaseModal').classList.add('open');
+}
+function closeModal() { document.getElementById('purchaseModal').classList.remove('open'); }
+function openVendorModal() { document.getElementById('vendorModal').classList.add('open'); }
+
+async function submitOrgEnquiry() {
+  const org = document.getElementById('orgName')?.value?.trim();
+  const contact = document.getElementById('orgContact')?.value?.trim();
+  const email = document.getElementById('orgEmail')?.value?.trim();
+  if (!org || !contact || !email) {
+    document.getElementById('modalErr').textContent='Please fill in organisation name, contact, and email';
+    document.getElementById('modalErr').style.display='block'; return;
+  }
+  if (!db) { document.getElementById('modalErr').textContent='Service unavailable'; document.getElementById('modalErr').style.display='block'; return; }
+  try {
+    await db.from('corporate_enquiries').insert({
+      org_name:org, contact_name:contact, role:document.getElementById('orgRole')?.value||'',
+      email, phone:document.getElementById('orgPhone')?.value||'',
+      org_size:document.getElementById('orgSize')?.value,
+      vendor_pref:document.getElementById('orgVendorPref')?.value,
+      created_at:new Date().toISOString()
+    });
+    document.querySelector('#purchaseModal .modal').innerHTML = `
+      <div class="modal-handle"></div>
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:52px;margin-bottom:16px">🎉</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);margin-bottom:8px">ENQUIRY RECEIVED!</div>
+        <p style="color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:20px">We'll match your organisation with a recommended vendor within 24 hours and guide you through the token process.</p>
+        <button onclick="closeModal()" style="background:linear-gradient(135deg,var(--green),var(--blue));color:#000;border:none;border-radius:12px;padding:14px 28px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer">Got It →</button>
+      </div>`;
+  } catch(e) {
+    document.getElementById('modalErr').textContent='Submission failed — please try again';
+    document.getElementById('modalErr').style.display='block';
+  }
+}
+
+async function submitVendorApp() {
+  const name = document.getElementById('vbName')?.value?.trim();
+  const contact = document.getElementById('vbContact')?.value?.trim();
+  const email = document.getElementById('vbEmail')?.value?.trim();
+  const phone = document.getElementById('vbPhone')?.value?.trim();
+  if (!name || !contact || !email || !phone) {
+    document.getElementById('vendorErr').textContent='Please fill in all required fields';
+    document.getElementById('vendorErr').style.display='block'; return;
+  }
+  if (!db) { document.getElementById('vendorErr').textContent='Service unavailable'; document.getElementById('vendorErr').style.display='block'; return; }
+  try {
+    await db.from('vendor_applications').insert({
+      business_name:name, business_type:document.getElementById('vbType')?.value,
+      contact_name:contact, email, phone,
+      monthly_volume:document.getElementById('vbVolume')?.value,
+      status:'pending', created_at:new Date().toISOString()
+    });
+    document.getElementById('vendorModal').classList.remove('open');
+    showToast('✅ Vendor application submitted! We\'ll contact you within 48 hours.');
+  } catch(e) {
+    document.getElementById('vendorErr').textContent='Submission failed — please try again';
+    document.getElementById('vendorErr').style.display='block';
+  }
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+</script>
+</body>
+</html>
