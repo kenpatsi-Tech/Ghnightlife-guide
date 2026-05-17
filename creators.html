@@ -281,28 +281,47 @@
 <script>
 const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
-const RATE_VIEW = 0.05, RATE_LIKE = 0.02, RATE_COMMENT = 0.10, MIN_PAYOUT = 50;
-const MIN_FOLLOWERS = 50; // Admin can change this value
 const CAT = { review:'Venue Review', guide:'Night Guide', events:'Event Recap', dj:'DJ Spotlight', culture:'Culture' };
 const CAT_CLASS = { review:'cat-review', guide:'cat-guide', events:'cat-events', dj:'cat-dj', culture:'cat-culture' };
 const CAT_EMOJI = { review:'🏛️', guide:'🗺️', events:'🎉', dj:'🎧', culture:'🇬🇭' };
 
 let db = null, currentUser = null, allPosts = [], selectedVenue = null;
 let userFollowing = new Set(), userLiked = new Set();
+// These are loaded from Supabase platform_settings — admin controls them from dashboard
+let RATE_VIEW = 0.05, RATE_LIKE = 0.02, RATE_COMMENT = 0.10, MIN_PAYOUT = 50, MIN_FOLLOWERS = 50, MIN_WORDS = 150;
 
 window.addEventListener('load', async () => {
   try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
   await checkSession();
+  await loadSettings();
   await loadPosts();
   await loadStats();
   document.getElementById('minFollowersDisplay').textContent = MIN_FOLLOWERS;
-  // Word count listener
   document.getElementById('postBody')?.addEventListener('input', function() {
     const words = this.value.trim().split(/\s+/).filter(Boolean).length;
     const el = document.getElementById('wordCount');
-    if (el) { el.textContent = words + ' words'; el.style.color = words >= 150 ? 'var(--green)' : 'var(--muted)'; }
+    if (el) { el.textContent = words + ' words'; el.style.color = words >= MIN_WORDS ? 'var(--green)' : 'var(--muted)'; }
   });
 });
+
+async function loadSettings() {
+  if (!db) return;
+  try {
+    const { data } = await db.from('platform_settings').select('value').eq('key','creator_settings').single();
+    if (data?.value) {
+      const s = JSON.parse(data.value);
+      RATE_VIEW     = parseFloat(s.rate_view     || 0.05);
+      RATE_LIKE     = parseFloat(s.rate_like     || 0.02);
+      RATE_COMMENT  = parseFloat(s.rate_comment  || 0.10);
+      MIN_PAYOUT    = parseInt(s.min_payout      || 50);
+      MIN_FOLLOWERS = parseInt(s.min_followers   || 50);
+      MIN_WORDS     = parseInt(s.min_words       || 150);
+      // Update displayed values
+      const minEl = document.getElementById('minFollowersDisplay');
+      if (minEl) minEl.textContent = MIN_FOLLOWERS;
+    }
+  } catch(e){} // Falls back to defaults if table not yet created
+}
 
 async function checkSession() {
   if (!db) return;
