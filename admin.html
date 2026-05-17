@@ -154,6 +154,8 @@
 
       <div class="sidebar-section">Creators</div>
       <button class="sidebar-item" onclick="show('posts',this)"><span class="icon">✍️</span>Blog Posts<span class="count" id="pendingPostsBadge" style="display:none">0</span></button>
+      <button class="sidebar-item" onclick="show('payouts',this)"><span class="icon">💰</span>Creator Payouts<span class="count" id="payoutsBadge" style="display:none">0</span></button>
+      <button class="sidebar-item" onclick="show('creatorSettings',this)"><span class="icon">⚙️</span>Creator Settings</button>
 
       <div class="sidebar-section">Gaming</div>
       <button class="sidebar-item" onclick="show('predictions',this)"><span class="icon">🔮</span>Predictions</button>
@@ -173,6 +175,7 @@
       <div class="sidebar-section">Users</div>
       <button class="sidebar-item" onclick="show('checkins',this)"><span class="icon">📍</span>Check-ins</button>
       <button class="sidebar-item" onclick="show('users',this)"><span class="icon">👥</span>Users</button>
+      <button class="sidebar-item" onclick="show('auditLog',this)"><span class="icon">📋</span>Audit Log</button>
     </div>
 
     <div class="main-content" id="mainContent"></div>
@@ -227,6 +230,7 @@ function toggleSidebar() {
 async function loadBadges() {
   const checks = [
     { table:'creator_posts', filter:{status:'pending'}, badge:'pendingPostsBadge' },
+    { table:'creator_payouts', filter:{status:'requested'}, badge:'payoutsBadge' },
     { table:'vendor_applications', filter:{status:'pending'}, badge:'vendorBadge' },
     { table:'corporate_enquiries', filter:{status:'new'}, badge:'corpBadge' },
     { table:'venue_registrations', filter:{status:'pending'}, badge:'regBadge' },
@@ -251,11 +255,12 @@ function show(section, btn) {
   if (btn) btn.classList.add('active');
   const map = {
     overview:renderOverview, venues:renderVenues, events:renderEvents,
-    posts:renderPosts, predictions:renderPredictions, leaderboard:renderLeaderboard,
+    posts:renderPosts, payouts:renderPayouts, creatorSettings:renderCreatorSettings,
+    predictions:renderPredictions, leaderboard:renderLeaderboard,
     rewards:renderRewards, tokens:renderTokens, subscriptions:renderSubscriptions,
     vendors:renderVendors, corpEnquiries:renderCorpEnquiries,
     registrations:renderRegistrations, adEnquiries:renderAdEnquiries,
-    checkins:renderCheckins, users:renderUsers
+    checkins:renderCheckins, users:renderUsers, auditLog:renderAuditLog
   };
   if (map[section]) map[section]();
 }
@@ -266,6 +271,7 @@ async function renderOverview() {
   el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
   const today = new Date(); today.setHours(0,0,0,0);
   const queries = [
+    db.from('creator_payouts').select('*',{count:'exact',head:true}).eq('status','requested'),
     db.from('venues').select('*',{count:'exact',head:true}).eq('active',true),
     db.from('events').select('*',{count:'exact',head:true}).eq('active',true),
     db.from('checkins').select('*',{count:'exact',head:true}).gte('checked_in_at',today.toISOString()),
@@ -287,6 +293,7 @@ async function renderOverview() {
       <div class="stat-card"><div class="stat-num">${get(3)}</div><div class="stat-label">Registered Users</div></div>
       <div class="stat-card" style="border-color:rgba(168,85,247,0.3)"><div class="stat-num" style="color:var(--purple)">${get(4)}</div><div class="stat-label">Posts Pending Review</div></div>
       <div class="stat-card" style="border-color:rgba(57,224,122,0.3)"><div class="stat-num" style="color:var(--green)">${get(6)}</div><div class="stat-label">Active Corp Subs</div></div>
+      <div class="stat-card" style="border-color:rgba(245,197,66,0.3)"><div class="stat-num" style="color:var(--gold)">${get(0)}</div><div class="stat-label">Payout Requests</div></div>
       <div class="stat-card" style="border-color:rgba(255,61,138,0.3)"><div class="stat-num" style="color:var(--pink)">${get(5)}</div><div class="stat-label">Vendor Apps Pending</div></div>
       <div class="stat-card" style="border-color:rgba(245,197,66,0.3)"><div class="stat-num" style="color:var(--orange)">${get(7)}</div><div class="stat-label">Venue Regs Pending</div></div>
     </div>
@@ -519,6 +526,81 @@ async function previewPost(id) {
   openModal();
 }
 
+// ── CREATOR PAYOUTS ───────────────────────────────────────
+async function renderPayouts() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  const { data } = await db.from('creator_payouts')
+    .select('*, user_profiles(first_name,last_name)')
+    .order('requested_at',{ascending:false});
+  const pending = (data||[]).filter(p=>p.status==='requested');
+  const paid    = (data||[]).filter(p=>p.status==='paid');
+  const totalPending = pending.reduce((s,p)=>s+parseFloat(p.amount_ghs||0),0);
+  const totalPaid    = paid.reduce((s,p)=>s+parseFloat(p.amount_ghs||0),0);
+  el.innerHTML = `
+    <div class="page-title">💰 Creator Payouts</div>
+    <div class="page-sub">Pay creators their Mobile Money earnings. GHS 0.05 per view, minimum GHS 50 payout.</div>
+    <div class="stats-row">
+      <div class="stat-card" style="border-color:rgba(245,197,66,0.3)"><div class="stat-num" style="color:var(--gold)">${pending.length}</div><div class="stat-label">Awaiting Payment</div></div>
+      <div class="stat-card" style="border-color:rgba(57,224,122,0.3)"><div class="stat-num" style="color:var(--green)">GHS ${totalPending.toFixed(2)}</div><div class="stat-label">Total Pending</div></div>
+      <div class="stat-card"><div class="stat-num">${paid.length}</div><div class="stat-label">Paid Out</div></div>
+      <div class="stat-card"><div class="stat-num">GHS ${totalPaid.toFixed(2)}</div><div class="stat-label">Total Paid</div></div>
+    </div>
+    ${pending.length ? `
+    <div class="panel" style="border-color:rgba(245,197,66,0.3)">
+      <div class="panel-title" style="color:var(--gold)">⏳ Pending Payouts — Action Required</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Send via Mobile Money manually then tap Mark as Paid.</p>
+      ${pending.map(p=>`
+        <div class="card-row" style="border-color:rgba(245,197,66,0.2)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <div>
+              <div class="card-row-title">${p.user_profiles?`${p.user_profiles.first_name||''} ${p.user_profiles.last_name||''}`.trim()||'Creator':'Creator'}</div>
+              <div class="card-row-meta">📱 ${p.momo_number} · ${p.momo_network}<br>👁️ ${(p.views_count||0).toLocaleString()} views · ${new Date(p.requested_at).toLocaleDateString('en-GH')}</div>
+            </div>
+            <div style="text-align:right"><div style="font-size:24px;font-weight:800;color:var(--green)">GHS ${parseFloat(p.amount_ghs).toFixed(2)}</div></div>
+          </div>
+          <div class="card-row-actions">
+            <button class="btn btn-green" onclick="markPayoutPaid('${p.id}','${p.momo_number}','${p.momo_network}',${p.amount_ghs})">✅ Mark as Paid</button>
+            <button class="btn btn-muted" onclick="navigator.clipboard.writeText('${p.momo_number}');toast('📋 Copied!')">📋 Copy Number</button>
+            <button class="btn btn-danger" onclick="rejectPayout('${p.id}')">❌ Reject</button>
+          </div>
+        </div>`).join('')}
+    </div>` : `<div class="panel" style="text-align:center;padding:32px"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-weight:700;margin-bottom:8px">All payouts up to date!</div></div>`}
+    <div class="panel">
+      <div class="panel-title">Payout History</div>
+      ${(data||[]).filter(p=>p.status!=='requested').length ? `
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Creator</th><th>Amount</th><th>MoMo</th><th>Network</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>${(data||[]).filter(p=>p.status!=='requested').map(p=>`<tr>
+          <td>${p.user_profiles?`${p.user_profiles.first_name||''} ${p.user_profiles.last_name||''}`.trim()||'Creator':'Creator'}</td>
+          <td><strong style="color:var(--green)">GHS ${parseFloat(p.amount_ghs).toFixed(2)}</strong></td>
+          <td><code>${p.momo_number}</code></td><td>${p.momo_network}</td>
+          <td><span class="badge ${p.status==='paid'?'bg':'bp'}">${p.status}</span></td>
+          <td>${new Date(p.requested_at).toLocaleDateString('en-GH')}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>` : '<div style="color:var(--muted);font-size:13px">No history yet.</div>'}
+    </div>
+    <div class="panel" style="background:rgba(57,224,122,0.04);border-color:rgba(57,224,122,0.15)">
+      <div class="panel-title">📱 How to Pay</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.9">
+        <strong style="color:var(--text)">MTN MoMo:</strong> Dial *170# → Send Money → Number → Amount → Confirm<br>
+        <strong style="color:var(--text)">Vodafone Cash:</strong> Dial *110# → Send Money → Number → Amount → Confirm<br>
+        <strong style="color:var(--text)">AirtelTigo:</strong> Dial *500# → Send Money → Number → Amount → Confirm
+      </div>
+    </div>`;
+}
+async function markPayoutPaid(id, num, network, amount) {
+  if (!confirm(`Confirm GHS ${parseFloat(amount).toFixed(2)} paid to ${num} (${network})?`)) return;
+  await db.from('creator_payouts').update({ status:'paid', paid_at:new Date().toISOString() }).eq('id',id);
+  toast(`✅ GHS ${parseFloat(amount).toFixed(2)} marked as paid!`);
+  loadBadges(); renderPayouts();
+}
+async function rejectPayout(id) {
+  if (!confirm('Reject this payout?')) return;
+  await db.from('creator_payouts').update({ status:'rejected' }).eq('id',id);
+  toast('❌ Payout rejected'); loadBadges(); renderPayouts();
+}
+
 // ── PREDICTIONS ───────────────────────────────────────
 async function renderPredictions() {
   const el = document.getElementById('mainContent');
@@ -573,6 +655,87 @@ async function markPredictionResult() {
   }
   toast(`✅ Results marked! ${data.filter(p=>p.choice_index===winner).length} correct predictors awarded 50 pts each.`);
   renderPredictions();
+}
+
+// ── CREATOR SETTINGS ─────────────────────────────────────
+async function renderCreatorSettings() {
+  const el = document.getElementById('mainContent');
+  let settings = { rate_view:0.05, rate_like:0.02, rate_comment:0.10, min_payout:50, min_followers:50, min_words:150 };
+  try {
+    const { data } = await db.from('platform_settings').select('*').eq('key','creator_settings').single();
+    if (data?.value) settings = { ...settings, ...JSON.parse(data.value) };
+  } catch(e){}
+  el.innerHTML = `
+    <div class="page-title">⚙️ Creator Settings</div>
+    <div class="page-sub">Control all creator earnings rates and requirements. Changes take effect immediately.</div>
+    <div class="panel" style="border-color:rgba(245,197,66,0.2)">
+      <div class="panel-title">💰 Earnings Rates</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">How much creators earn per action on their posts.</p>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">GHS Per View</label><input class="form-input" id="rateView" type="number" step="0.01" min="0" value="${settings.rate_view}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Every time someone reads a post</div></div>
+        <div class="form-group"><label class="form-label">GHS Per Like</label><input class="form-input" id="rateLike" type="number" step="0.01" min="0" value="${settings.rate_like}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Every like a post receives</div></div>
+        <div class="form-group"><label class="form-label">GHS Per Comment</label><input class="form-input" id="rateComment" type="number" step="0.01" min="0" value="${settings.rate_comment}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Every genuine comment on a post</div></div>
+        <div class="form-group"><label class="form-label">Minimum Payout (GHS)</label><input class="form-input" id="minPayout" type="number" step="1" min="1" value="${settings.min_payout}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Minimum balance before MoMo payout</div></div>
+      </div>
+    </div>
+    <div class="panel" style="border-color:rgba(79,163,255,0.2)">
+      <div class="panel-title">👥 Creator Requirements</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Min Followers to Post</label><input class="form-input" id="minFollowers" type="number" step="1" min="0" value="${settings.min_followers}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Set to 0 to allow anyone to post</div></div>
+        <div class="form-group"><label class="form-label">Min Words Per Post</label><input class="form-input" id="minWords" type="number" step="10" min="50" value="${settings.min_words}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Minimum word count for approval</div></div>
+      </div>
+    </div>
+    <div class="panel" style="background:rgba(57,224,122,0.04);border-color:rgba(57,224,122,0.15)">
+      <div class="panel-title">📊 Earnings Preview</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px" id="earningsPreview">
+        <div class="stat-card"><div class="stat-num" style="color:var(--green)">GHS ${(1000*settings.rate_view).toFixed(2)}</div><div class="stat-label">from 1,000 views</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--pink)">GHS ${(100*settings.rate_like).toFixed(2)}</div><div class="stat-label">from 100 likes</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--blue)">GHS ${(50*settings.rate_comment).toFixed(2)}</div><div class="stat-label">from 50 comments</div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-gold btn-lg" style="flex:1" onclick="saveCreatorSettings()">💾 Save All Settings</button>
+    </div>
+    <div id="settingsMsg" style="font-size:13px;text-align:center;margin-top:10px;display:none"></div>
+    <div class="panel" style="margin-top:20px">
+      <div class="panel-title">📈 Creator Stats</div>
+      <div id="creatorStats" style="color:var(--muted);font-size:13px">Loading...</div>
+    </div>`;
+  loadCreatorStats();
+}
+async function saveCreatorSettings() {
+  const settings = {
+    rate_view:parseFloat(document.getElementById('rateView')?.value||0.05),
+    rate_like:parseFloat(document.getElementById('rateLike')?.value||0.02),
+    rate_comment:parseFloat(document.getElementById('rateComment')?.value||0.10),
+    min_payout:parseInt(document.getElementById('minPayout')?.value||50),
+    min_followers:parseInt(document.getElementById('minFollowers')?.value||50),
+    min_words:parseInt(document.getElementById('minWords')?.value||150),
+  };
+  const msg = document.getElementById('settingsMsg');
+  try {
+    await db.from('platform_settings').upsert({ key:'creator_settings', value:JSON.stringify(settings), updated_at:new Date().toISOString() });
+    msg.textContent='✅ Settings saved! Creators page now uses these rates.'; msg.style.color='var(--green)'; msg.style.display='block';
+    toast('✅ Creator settings saved!');
+    setTimeout(()=>msg.style.display='none',4000);
+  } catch(e) { msg.textContent='⚠️ Save failed — run settings_table.sql in Supabase first'; msg.style.color='var(--pink)'; msg.style.display='block'; }
+}
+async function loadCreatorStats() {
+  const el = document.getElementById('creatorStats'); if (!el) return;
+  try {
+    const [p,f,l,c] = await Promise.all([
+      db.from('creator_posts').select('*',{count:'exact',head:true}).eq('status','approved'),
+      db.from('creator_follows').select('*',{count:'exact',head:true}),
+      db.from('post_likes').select('*',{count:'exact',head:true}),
+      db.from('post_comments').select('*',{count:'exact',head:true}),
+    ]);
+    el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
+      <div class="stat-card"><div class="stat-num">${p.count||0}</div><div class="stat-label">Published Posts</div></div>
+      <div class="stat-card"><div class="stat-num">${f.count||0}</div><div class="stat-label">Total Follows</div></div>
+      <div class="stat-card"><div class="stat-num">${l.count||0}</div><div class="stat-label">Total Likes</div></div>
+      <div class="stat-card"><div class="stat-num">${c.count||0}</div><div class="stat-label">Total Comments</div></div>
+    </div>`;
+  } catch(e) { el.textContent='Run creator_social.sql to enable stats'; }
 }
 
 // ── LEADERBOARD ───────────────────────────────────────
@@ -875,6 +1038,55 @@ async function renderUsers() {
         </tbody>
       </table></div>
     </div>`;
+}
+
+// ── AUDIT LOG ─────────────────────────────────────────────
+async function renderAuditLog() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  try {
+    const { data } = await db.from('audit_log').select('*').order('created_at',{ascending:false}).limit(100);
+    const actionColor = a => {
+      if (a.includes('deleted')) return 'bp';
+      if (a.includes('added')) return 'bg';
+      if (a.includes('approved')) return 'bg';
+      if (a.includes('rejected')) return 'bp';
+      if (a.includes('paid')) return 'bg';
+      return 'bo';
+    };
+    el.innerHTML = `
+      <div class="page-title">📋 Audit Log</div>
+      <div class="page-sub">Every admin action is recorded here automatically. Cannot be edited or deleted.</div>
+      <div class="panel">
+        <div class="panel-title">Recent Actions (${(data||[]).length})</div>
+        ${!(data||[]).length ? '<div style="color:var(--muted);font-size:13px">No actions logged yet. Run settings_table.sql to enable audit logging.</div>' : `
+        <div class="table-wrap"><table class="data-table">
+          <thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Table</th><th>Detail</th></tr></thead>
+          <tbody>
+            ${data.map(log=>`<tr>
+              <td style="white-space:nowrap;font-size:11px;color:var(--muted)">${new Date(log.created_at).toLocaleString('en-GH')}</td>
+              <td style="font-size:12px">${log.admin_email}</td>
+              <td><span class="badge ${actionColor(log.action)}">${log.action.replace(/_/g,' ')}</span></td>
+              <td style="font-size:12px;color:var(--muted)">${log.table_name||'—'}</td>
+              <td style="font-size:11px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                ${log.new_data ? Object.entries(log.new_data).map(([k,v])=>`${k}: ${v}`).join(' · ') : log.old_data ? 'Deleted record' : '—'}
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+      <div class="panel" style="background:rgba(57,224,122,0.04);border-color:rgba(57,224,122,0.15)">
+        <div class="panel-title">🔒 About the Audit Log</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8">
+          <strong style="color:var(--text)">What gets logged:</strong> Every venue add/edit/delete, every event change, every post approval/rejection, every payout decision.<br>
+          <strong style="color:var(--text)">Who can see it:</strong> Only you (baninikwami9@gmail.com). No other user can access this.<br>
+          <strong style="color:var(--text)">Can it be deleted:</strong> No. Records are permanent for accountability.<br>
+          <strong style="color:var(--text)">Why it matters:</strong> If anything ever goes wrong, you can see exactly what happened, when, and who did it.
+        </div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="panel"><div class="page-title">📋 Audit Log</div><p style="color:var(--muted);margin-top:8px">Run <strong>settings_table.sql</strong> in Supabase to enable the audit log. Once enabled, every admin action will be recorded here automatically.</p></div>`;
+  }
 }
 
 // ── UTILS ─────────────────────────────────────────────
