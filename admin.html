@@ -384,90 +384,62 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+const SUPABASE_URL  = 'https://lkuprzwbscuaitktlhrp.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+const R2_PUBLIC_URL = 'https://pub-f0cbdd413769407f905b9542aa8daae6.r2.dev';
 
-// ── HYBRID: R2 for video storage, Supabase for everything else ──
-const R2_ACCOUNT_ID   = '0b21e115b34472ace97b67aacfb44d57';
-const R2_ACCESS_KEY   = '44b1c4723f8fe5e3f3b95b794a349f18';
-const R2_SECRET_KEY   = '205e2cc833aadd57b85de16be10e8b0a2d9887b0d9c62da84180659ab21fa32b';
-const R2_BUCKET       = 'ghanight-videos';
-const R2_PUBLIC_URL   = 'https://pub-f0cbdd413769407f905b9542aa8daae6.r2.dev';
-const R2_ENDPOINT     = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+// ── WORKER URL: set this after deploying ghanight-worker.js ──
+// See HYBRID-SETUP-GUIDE.md for deployment steps
+let WORKER_URL = localStorage.getItem('ghanight_worker_url') || '';
 
 let db = null, adminUser = null, editId = null, editType = null;
 let selectedVideoFile = null, videoDuration = 0, currentFilter = 'none';
-let videoMaxDuration = 0; // 0 = no limit
+let videoMaxDuration = 0;
 
-// ── AWS Signature v4 for R2 direct upload ──────────────────────
-async function hmacSha256(key, data) {
-  const k = typeof key === 'string' ? new TextEncoder().encode(key) : key;
-  const ck = await crypto.subtle.importKey('raw', k, { name:'HMAC', hash:'SHA-256' }, false, ['sign']);
-  return new Uint8Array(await crypto.subtle.sign('HMAC', ck, new TextEncoder().encode(data)));
-}
-async function sha256Hex(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-function toHex(buf) { return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+// ── HYBRID UPLOAD ─────────────────────────────────────────────
+// Step 1: Ask Worker to generate a presigned R2 URL (server-side signing)
+// Step 2: Browser PUTs file directly to R2 using that URL
+// Step 3: Save metadata to Supabase database
+// Works on every browser including Safari iPhone.
+// ─────────────────────────────────────────────────────────────
 
-async function r2UploadFile(file, key) {
-  const now      = new Date();
-  const dateStr  = now.toISOString().slice(0,10).replace(/-/g,'');
-  const amzDate  = now.toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
-  const region   = 'auto';
-  const service  = 's3';
-  const host     = `${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
-  const url      = `${R2_ENDPOINT}/${R2_BUCKET}/${key}`;
-
-  // Read file as ArrayBuffer
-  const fileBuffer = await file.arrayBuffer();
-  const bodyHash   = await sha256Hex(new TextDecoder().decode(fileBuffer).slice(0,0)); // use UNSIGNED
-
-  const credScope  = `${dateStr}/${region}/${service}/aws4_request`;
-  const signedHdrs = 'content-type;host;x-amz-content-sha256;x-amz-date';
-
-  const canonicalReq = [
-    'PUT',
-    `/${R2_BUCKET}/${key}`,
-    '',
-    `content-type:${file.type}\nhost:${host}\nx-amz-content-sha256:UNSIGNED-PAYLOAD\nx-amz-date:${amzDate}\n`,
-    signedHdrs,
-    'UNSIGNED-PAYLOAD'
-  ].join('\n');
-
-  const stringToSign = [
-    'AWS4-HMAC-SHA256',
-    amzDate,
-    credScope,
-    await sha256Hex(canonicalReq)
-  ].join('\n');
-
-  const kDate    = await hmacSha256('AWS4' + R2_SECRET_KEY, dateStr);
-  const kRegion  = await hmacSha256(kDate, region);
-  const kService = await hmacSha256(kRegion, service);
-  const kSigning = await hmacSha256(kService, 'aws4_request');
-  const signature = toHex(await hmacSha256(kSigning, stringToSign));
-
-  const authHeader = `AWS4-HMAC-SHA256 Credential=${R2_ACCESS_KEY}/${credScope}, SignedHeaders=${signedHdrs}, Signature=${signature}`;
-
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Content-Type':           file.type,
-      'x-amz-date':             amzDate,
-      'x-amz-content-sha256':   'UNSIGNED-PAYLOAD',
-      'Authorization':          authHeader,
-    },
-    body: fileBuffer,
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`R2 upload failed (${response.status}): ${errText}`);
+async function uploadToR2(file, title, uploaderType) {
+  if (!WORKER_URL) {
+    throw new Error('Worker URL not set. Go to Videos → Settings and enter your Worker URL.');
   }
 
-  return `${R2_PUBLIC_URL}/${key}`;
+  // Step 1 — Get presigned URL from Worker
+  const presignRes = await fetch(`${WORKER_URL}/presign`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      filename:     file.name,
+      contentType:  file.type,
+      title,
+      uploaderType: uploaderType || 'admin',
+    }),
+  });
+
+  if (!presignRes.ok) {
+    const err = await presignRes.json().catch(()=>({error:'Worker error'}));
+    throw new Error(err.error || 'Failed to get upload URL from Worker');
+  }
+
+  const { presignedUrl, publicUrl, key } = await presignRes.json();
+
+  // Step 2 — PUT file directly to R2 using presigned URL
+  // This works on Safari because it is a simple PUT — no AWS signing in browser
+  const uploadRes = await fetch(presignedUrl, {
+    method:  'PUT',
+    headers: { 'Content-Type': file.type },
+    body:    file,
+  });
+
+  if (!uploadRes.ok) {
+    throw new Error(`R2 upload failed (${uploadRes.status})`);
+  }
+
+  return { publicUrl, key };
 }
 
 window.addEventListener('load', async () => {
@@ -626,6 +598,23 @@ async function renderVideos() {
       <div id="vidSettingsMsg" style="font-size:12px;margin-top:8px;display:none;"></div>
     </div>
 
+    <!-- WORKER URL PANEL -->
+    <div class="panel" style="border-color:${WORKER_URL ? 'rgba(57,224,122,0.3)' : 'rgba(255,61,138,0.3)'};">
+      <div class="panel-title">${WORKER_URL ? '🟢 Worker Connected' : '🔴 Worker Not Connected'}</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">
+        ${WORKER_URL
+          ? 'Your Cloudflare Worker is connected. Video uploads will go directly to R2.'
+          : 'Paste your Cloudflare Worker URL below to enable video uploads. See the setup guide for instructions.'}
+      </p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input class="form-input" id="workerUrlInput" placeholder="https://ghanight-upload.YOUR-SUBDOMAIN.workers.dev"
+          value="${WORKER_URL}" style="flex:1;min-width:200px;">
+        <button class="btn btn-gold" onclick="saveWorkerUrl()">Save URL</button>
+        ${WORKER_URL ? `<button class="btn btn-green" onclick="testWorker()">Test Connection</button>` : ''}
+      </div>
+      <div id="workerTestResult" style="font-size:12px;margin-top:8px;display:none;"></div>
+    </div>
+
     <!-- STATS -->
     <div class="stats-row" style="margin-bottom:20px;">
       <div class="stat-card"><div class="stat-num">${(videos||[]).length}</div><div class="stat-label">Total Videos</div></div>
@@ -666,6 +655,39 @@ async function renderVideos() {
         `).join('')}
       </div>`}
     </div>`;
+}
+
+// ── WORKER URL MANAGEMENT ─────────────────────────────────────
+function saveWorkerUrl() {
+  const url = document.getElementById('workerUrlInput').value.trim().replace(/\/$/, '');
+  if (!url) { toast('⚠️ Please enter a Worker URL'); return; }
+  if (!url.startsWith('https://')) { toast('⚠️ URL must start with https://'); return; }
+  WORKER_URL = url;
+  localStorage.setItem('ghanight_worker_url', url);
+  toast('✅ Worker URL saved!');
+  renderVideos();
+}
+
+async function testWorker() {
+  const el = document.getElementById('workerTestResult');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.color = 'var(--muted)';
+  el.textContent = '⏳ Testing connection...';
+  try {
+    const res = await fetch(`${WORKER_URL}/health`, { method: 'GET' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      el.style.color = 'var(--green)';
+      el.textContent = '✅ Worker is online and responding correctly!';
+    } else {
+      el.style.color = 'var(--pink)';
+      el.textContent = '⚠️ Worker responded but returned unexpected data.';
+    }
+  } catch(err) {
+    el.style.color = 'var(--pink)';
+    el.textContent = `❌ Cannot reach Worker: ${err.message}. Check the URL is correct.`;
+  }
 }
 
 async function saveVideoSettings() {
@@ -815,32 +837,27 @@ async function uploadVideoNow() {
   setVidProgress(15);
 
   try {
-    const ext    = selectedVideoFile.name.split('.').pop();
-    const safe   = title.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
-    const folder = uploaderType === 'blogger' ? 'recaps' : 'venues';
-    const key    = `${folder}/${Date.now()}-${safe}.${ext}`;
+    setVidProgress(15);
 
-    setVidProgress(20);
+    // Step 1 — Worker generates presigned URL, browser uploads to R2
+    const { publicUrl, key } = await uploadToR2(selectedVideoFile, title, uploaderType);
 
-    // ── Step 1: Upload file directly to Cloudflare R2 ──
-    const publicUrl = await r2UploadFile(selectedVideoFile, key);
+    setVidProgress(75);
 
-    setVidProgress(70);
-
-    // ── Step 2: Save metadata to Supabase database ──
+    // Step 2 — Save metadata to Supabase database
     const { error: dbError } = await db.from('venue_videos').insert({
-      venue_name:    venueName || 'General',
+      venue_name:       venueName || 'General',
       title,
       description,
-      storage_path:  key,
-      public_url:    publicUrl,
-      file_size:     selectedVideoFile.size,
-      duration_sec:  videoDuration,
-      uploader_type: uploaderType,
+      storage_path:     key,
+      public_url:       publicUrl,
+      file_size:        selectedVideoFile.size,
+      duration_sec:     videoDuration,
+      uploader_type:    uploaderType,
       caption,
-      edit_settings: JSON.stringify({ trimStart, trimEnd, brightness, contrast, filter: currentFilter, muteAudio }),
+      edit_settings:    JSON.stringify({ trimStart, trimEnd, brightness, contrast, filter: currentFilter, muteAudio }),
       storage_provider: 'r2',
-      is_active: true,
+      is_active:        true,
     });
     if (dbError) throw dbError;
 
@@ -849,7 +866,7 @@ async function uploadVideoNow() {
     setTimeout(()=>{ closeVideoModal(); renderVideos(); }, 1500);
 
   } catch(err) {
-    vidStatus('❌ Upload failed: '+err.message, 'error');
+    vidStatus('❌ ' + err.message, 'error');
     btn.disabled = false; btn.textContent = '🚀 Upload Video';
   }
 }
@@ -885,28 +902,15 @@ async function toggleVideo(id, currentState) {
 async function deleteVideo(id, storagePath) {
   if (!confirm('Delete this video permanently?')) return;
 
-  // Delete from R2
-  if (storagePath) {
+  // Delete from R2 via Worker (Worker has R2 binding — no AWS signing needed)
+  if (storagePath && WORKER_URL) {
     try {
-      const now      = new Date();
-      const dateStr  = now.toISOString().slice(0,10).replace(/-/g,'');
-      const amzDate  = now.toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
-      const host     = `${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
-      const credScope = `${dateStr}/auto/s3/aws4_request`;
-      const signedHdrs = 'host;x-amz-content-sha256;x-amz-date';
-      const emptyHash = await sha256Hex('');
-      const canonicalReq = ['DELETE',`/${R2_BUCKET}/${storagePath}`,'',`host:${host}\nx-amz-content-sha256:${emptyHash}\nx-amz-date:${amzDate}\n`,signedHdrs,emptyHash].join('\n');
-      const stringToSign = ['AWS4-HMAC-SHA256',amzDate,credScope,await sha256Hex(canonicalReq)].join('\n');
-      const kDate    = await hmacSha256('AWS4'+R2_SECRET_KEY, dateStr);
-      const kRegion  = await hmacSha256(kDate,'auto');
-      const kService = await hmacSha256(kRegion,'s3');
-      const kSign    = await hmacSha256(kService,'aws4_request');
-      const sig      = toHex(await hmacSha256(kSign, stringToSign));
-      await fetch(`${R2_ENDPOINT}/${R2_BUCKET}/${storagePath}`, {
-        method:'DELETE',
-        headers:{ 'host':host,'x-amz-date':amzDate,'x-amz-content-sha256':emptyHash,'Authorization':`AWS4-HMAC-SHA256 Credential=${R2_ACCESS_KEY}/${credScope}, SignedHeaders=${signedHdrs}, Signature=${sig}` }
+      await fetch(`${WORKER_URL}/delete`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ key: storagePath }),
       });
-    } catch(e){ console.warn('R2 delete failed:', e); }
+    } catch(e) { console.warn('R2 delete via Worker failed:', e); }
   }
 
   // Always remove from Supabase database
