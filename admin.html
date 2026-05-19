@@ -107,6 +107,33 @@
   .toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px 16px;font-size:13px;opacity:0;transition:all 0.25s;z-index:600;pointer-events:none;}
   .toast.show{opacity:1;}
 
+  /* VIDEO STYLES */
+  .video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:16px;}
+  .video-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color 0.2s;}
+  .video-card:hover{border-color:rgba(245,197,66,0.4);}
+  .video-card video{width:100%;height:150px;object-fit:cover;display:block;background:#000;}
+  .video-card-body{padding:12px;}
+  .video-card-title{color:var(--text);font-weight:700;font-size:13px;margin:0 0 3px;}
+  .video-card-venue{color:var(--gold);font-size:12px;margin:0 0 3px;}
+  .video-card-meta{color:var(--muted);font-size:11px;margin:0 0 10px;}
+  .video-card-actions{display:flex;gap:6px;flex-wrap:wrap;}
+
+  /* UPLOAD PROGRESS */
+  .upload-progress-wrap{margin-top:10px;}
+  .upload-bar-track{background:var(--surface);border-radius:99px;height:6px;overflow:hidden;}
+  .upload-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--orange));border-radius:99px;width:0%;transition:width 0.3s;}
+
+  /* VIDEO EDITOR */
+  .editor-tool{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;}
+  .editor-tool-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+  .editor-preview{width:100%;max-height:200px;border-radius:8px;background:#000;display:block;margin-bottom:8px;}
+  .range-row{display:flex;align-items:center;gap:10px;}
+  .range-row input[type=range]{flex:1;accent-color:var(--gold);}
+  .range-val{font-size:12px;color:var(--gold);min-width:40px;text-align:right;}
+  .filter-btns{display:flex;gap:6px;flex-wrap:wrap;}
+  .filter-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+  .filter-btn.active{background:rgba(245,197,66,0.15);border-color:rgba(245,197,66,0.4);color:var(--gold);}
+
   @media(max-width:768px){.sidebar{display:none;}.form-grid{grid-template-columns:1fr;}.form-group.full{grid-column:1;}.stats-row{grid-template-columns:1fr 1fr;}}
   @media(max-width:768px){.sidebar.mobile-open{display:block;position:fixed;top:54px;left:0;bottom:0;z-index:200;width:240px;overflow-y:auto;}}
   .mobile-menu-btn{display:none;background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;}
@@ -151,6 +178,7 @@
       <div class="sidebar-section">Nightlife</div>
       <button class="sidebar-item" onclick="show('venues',this)"><span class="icon">🏛️</span>Venues</button>
       <button class="sidebar-item" onclick="show('events',this)"><span class="icon">🎉</span>Events</button>
+      <button class="sidebar-item" onclick="show('videos',this)"><span class="icon">🎬</span>Videos</button>
 
       <div class="sidebar-section">Creators</div>
       <button class="sidebar-item" onclick="show('posts',this)"><span class="icon">✍️</span>Blog Posts<span class="count" id="pendingPostsBadge" style="display:none">0</span></button>
@@ -187,17 +215,270 @@
   <div class="modal-box"><div class="modal-title" id="modalTitle"></div><div id="modalBody"></div></div>
 </div>
 
+<!-- VIDEO UPLOAD MODAL -->
+<div class="modal-overlay" id="videoModal" onclick="if(event.target.id==='videoModal')closeVideoModal()">
+  <div class="modal-box" style="max-width:600px;">
+    <div class="modal-title">🎬 Upload Venue Video</div>
+    <div id="videoModalBody">
+
+      <!-- STEP 1: File Select -->
+      <div id="vidStep1">
+        <div class="form-grid" style="margin-bottom:14px;">
+          <div class="form-group">
+            <label class="form-label">Venue Name</label>
+            <input class="form-input" id="vidVenueName" placeholder="e.g. Onyx Nightclub">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Video Title *</label>
+            <input class="form-input" id="vidTitle" placeholder="e.g. Saturday Night Vibes">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" id="vidDescription" style="min-height:60px" placeholder="Short description..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Uploader Type</label>
+            <select class="form-select" id="vidUploaderType">
+              <option value="admin">Admin</option>
+              <option value="blogger">Blogger / Creator</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Drop zone -->
+        <div id="vidDropZone" onclick="document.getElementById('vidFileInput').click()"
+          style="border:2px dashed rgba(245,197,66,0.4);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:background 0.2s;margin-bottom:14px;"
+          onmouseover="this.style.background='rgba(245,197,66,0.05)'"
+          onmouseout="this.style.background='transparent'">
+          <div style="font-size:36px;margin-bottom:8px;">📹</div>
+          <p style="color:var(--muted);font-size:13px;margin:0;">Tap to select video<br><span style="font-size:11px;color:#555">MP4, MOV, WebM</span></p>
+        </div>
+        <input id="vidFileInput" type="file" accept="video/mp4,video/mov,video/webm,video/quicktime" style="display:none;" onchange="onVideoFileSelected(this)">
+
+        <!-- File info -->
+        <div id="vidFileInfo" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;">
+          <div id="vidFileName" style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:2px;"></div>
+          <div id="vidFileSize" style="color:var(--muted);font-size:12px;"></div>
+          <div id="vidDurationInfo" style="color:var(--muted);font-size:12px;margin-top:2px;"></div>
+          <div id="vidLimitWarning" style="color:var(--pink);font-size:12px;margin-top:4px;display:none;"></div>
+        </div>
+
+        <!-- EDITING TOOLS -->
+        <div id="vidEditorWrap" style="display:none;margin-bottom:14px;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">🎨 Editing Tools</div>
+
+          <!-- Preview -->
+          <video id="vidPreview" class="editor-preview" controls muted playsinline></video>
+
+          <!-- Trim -->
+          <div class="editor-tool">
+            <div class="editor-tool-title">✂️ Trim (Start → End)</div>
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px;color:var(--muted);">Start (seconds)</label>
+              <div class="range-row">
+                <input type="range" id="trimStart" min="0" value="0" step="0.1" oninput="updateTrim()">
+                <span class="range-val" id="trimStartVal">0s</span>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);">End (seconds)</label>
+              <div class="range-row">
+                <input type="range" id="trimEnd" min="0" value="0" step="0.1" oninput="updateTrim()">
+                <span class="range-val" id="trimEndVal">0s</span>
+              </div>
+            </div>
+            <div id="trimInfo" style="font-size:11px;color:var(--muted);margin-top:6px;"></div>
+            <p style="font-size:11px;color:#555;margin-top:6px;">⚠️ Trim is applied on upload — the full file is stored, trim points are saved as metadata.</p>
+          </div>
+
+          <!-- Brightness & Contrast -->
+          <div class="editor-tool">
+            <div class="editor-tool-title">☀️ Brightness & Contrast</div>
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px;color:var(--muted);">Brightness</label>
+              <div class="range-row">
+                <input type="range" id="vidBrightness" min="0.5" max="2" step="0.05" value="1" oninput="applyFilters()">
+                <span class="range-val" id="vidBrightnessVal">1.0</span>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);">Contrast</label>
+              <div class="range-row">
+                <input type="range" id="vidContrast" min="0.5" max="2" step="0.05" value="1" oninput="applyFilters()">
+                <span class="range-val" id="vidContrastVal">1.0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Colour Filters -->
+          <div class="editor-tool">
+            <div class="editor-tool-title">🎨 Colour Filter</div>
+            <div class="filter-btns">
+              <button class="filter-btn active" onclick="setFilter(this,'none')">None</button>
+              <button class="filter-btn" onclick="setFilter(this,'saturate(1.8) hue-rotate(0deg)')">Vivid</button>
+              <button class="filter-btn" onclick="setFilter(this,'grayscale(1)')">B&W</button>
+              <button class="filter-btn" onclick="setFilter(this,'sepia(0.8)')">Warm</button>
+              <button class="filter-btn" onclick="setFilter(this,'hue-rotate(180deg) saturate(1.5)')">Cool</button>
+              <button class="filter-btn" onclick="setFilter(this,'contrast(1.4) saturate(1.3)')">Drama</button>
+              <button class="filter-btn" onclick="setFilter(this,'brightness(0.8) contrast(1.6)')">Moody</button>
+              <button class="filter-btn" onclick="setFilter(this,'saturate(0.4) brightness(1.1)')">Faded</button>
+            </div>
+          </div>
+
+          <!-- Caption -->
+          <div class="editor-tool">
+            <div class="editor-tool-title">💬 Caption Overlay</div>
+            <input class="form-input" id="vidCaption" placeholder="e.g. Onyx Friday — The Night Never Ends" style="margin-bottom:8px;">
+            <div style="display:flex;gap:8px;">
+              <div class="form-group" style="flex:1;">
+                <label class="form-label">Position</label>
+                <select class="form-select" id="vidCaptionPos">
+                  <option value="bottom">Bottom</option>
+                  <option value="top">Top</option>
+                  <option value="center">Center</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex:1;">
+                <label class="form-label">Colour</label>
+                <input type="color" class="form-input" id="vidCaptionColor" value="#ffffff">
+              </div>
+            </div>
+          </div>
+
+          <!-- Mute toggle -->
+          <div class="editor-tool" style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div class="editor-tool-title" style="margin-bottom:0;">🔇 Mute Audio</div>
+              <div style="font-size:11px;color:#555;margin-top:3px;">Upload video without audio</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;">
+              <input type="checkbox" id="vidMuteAudio" style="opacity:0;width:0;height:0;">
+              <span onclick="this.previousElementSibling.click()" style="position:absolute;inset:0;background:var(--surface);border:1px solid var(--border);border-radius:11px;transition:0.2s;"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div id="vidProgressWrap" style="display:none;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <span style="font-size:12px;color:var(--muted);">Uploading...</span>
+            <span id="vidProgressPct" style="font-size:12px;color:var(--gold);">0%</span>
+          </div>
+          <div class="upload-bar-track">
+            <div class="upload-bar-fill" id="vidProgressBar"></div>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div id="vidStatusMsg" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;"></div>
+
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-gold btn-lg" style="flex:1;" onclick="uploadVideoNow()">🚀 Upload Video</button>
+          <button class="btn btn-muted btn-lg" onclick="closeVideoModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+
+// ── HYBRID: R2 for video storage, Supabase for everything else ──
+const R2_ACCOUNT_ID   = '0b21e115b34472ace97b67aacfb44d57';
+const R2_ACCESS_KEY   = '44b1c4723f8fe5e3f3b95b794a349f18';
+const R2_SECRET_KEY   = '3b30b0869ce40b16284f9c1b611d8e6af24e16420b977fe12c4a600887a5ee15';
+const R2_BUCKET       = 'ghanight-videos';
+const R2_PUBLIC_URL   = 'https://pub-f0cbdd413769407f905b9542aa8daae6.r2.dev';
+const R2_ENDPOINT     = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+
 let db = null, adminUser = null, editId = null, editType = null;
+let selectedVideoFile = null, videoDuration = 0, currentFilter = 'none';
+let videoMaxDuration = 0; // 0 = no limit
+
+// ── AWS Signature v4 for R2 direct upload ──────────────────────
+async function hmacSha256(key, data) {
+  const k = typeof key === 'string' ? new TextEncoder().encode(key) : key;
+  const ck = await crypto.subtle.importKey('raw', k, { name:'HMAC', hash:'SHA-256' }, false, ['sign']);
+  return new Uint8Array(await crypto.subtle.sign('HMAC', ck, new TextEncoder().encode(data)));
+}
+async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function toHex(buf) { return Array.from(buf).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+
+async function r2UploadFile(file, key) {
+  const now      = new Date();
+  const dateStr  = now.toISOString().slice(0,10).replace(/-/g,'');
+  const amzDate  = now.toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
+  const region   = 'auto';
+  const service  = 's3';
+  const host     = `${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  const url      = `${R2_ENDPOINT}/${R2_BUCKET}/${key}`;
+
+  // Read file as ArrayBuffer
+  const fileBuffer = await file.arrayBuffer();
+  const bodyHash   = await sha256Hex(new TextDecoder().decode(fileBuffer).slice(0,0)); // use UNSIGNED
+
+  const credScope  = `${dateStr}/${region}/${service}/aws4_request`;
+  const signedHdrs = 'content-type;host;x-amz-content-sha256;x-amz-date';
+
+  const canonicalReq = [
+    'PUT',
+    `/${R2_BUCKET}/${key}`,
+    '',
+    `content-type:${file.type}\nhost:${host}\nx-amz-content-sha256:UNSIGNED-PAYLOAD\nx-amz-date:${amzDate}\n`,
+    signedHdrs,
+    'UNSIGNED-PAYLOAD'
+  ].join('\n');
+
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    amzDate,
+    credScope,
+    await sha256Hex(canonicalReq)
+  ].join('\n');
+
+  const kDate    = await hmacSha256('AWS4' + R2_SECRET_KEY, dateStr);
+  const kRegion  = await hmacSha256(kDate, region);
+  const kService = await hmacSha256(kRegion, service);
+  const kSigning = await hmacSha256(kService, 'aws4_request');
+  const signature = toHex(await hmacSha256(kSigning, stringToSign));
+
+  const authHeader = `AWS4-HMAC-SHA256 Credential=${R2_ACCESS_KEY}/${credScope}, SignedHeaders=${signedHdrs}, Signature=${signature}`;
+
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type':           file.type,
+      'x-amz-date':             amzDate,
+      'x-amz-content-sha256':   'UNSIGNED-PAYLOAD',
+      'Authorization':          authHeader,
+    },
+    body: fileBuffer,
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`R2 upload failed (${response.status}): ${errText}`);
+  }
+
+  return `${R2_PUBLIC_URL}/${key}`;
+}
 
 window.addEventListener('load', async () => {
   db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const { data:{ session } } = await db.auth.getSession();
   if (session) { adminUser = session.user; showAdmin(); }
+  // Load video settings
+  try {
+    const { data } = await db.from('platform_settings').select('value').eq('key','video_settings').single();
+    if (data?.value) { const s = JSON.parse(data.value); videoMaxDuration = parseInt(s.max_duration_sec||0); }
+  } catch(e){}
 });
 
 // ── AUTH ──────────────────────────────────────────────
@@ -255,6 +536,7 @@ function show(section, btn) {
   if (btn) btn.classList.add('active');
   const map = {
     overview:renderOverview, venues:renderVenues, events:renderEvents,
+    videos:renderVideos,
     posts:renderPosts, payouts:renderPayouts, creatorSettings:renderCreatorSettings,
     predictions:renderPredictions, leaderboard:renderLeaderboard,
     rewards:renderRewards, tokens:renderTokens, subscriptions:renderSubscriptions,
@@ -280,6 +562,7 @@ async function renderOverview() {
     db.from('vendor_applications').select('*',{count:'exact',head:true}).eq('status','pending'),
     db.from('corporate_subscriptions').select('*',{count:'exact',head:true}).eq('status','active'),
     db.from('venue_registrations').select('*',{count:'exact',head:true}).eq('status','pending'),
+    db.from('venue_videos').select('*',{count:'exact',head:true}).eq('is_active',true),
   ];
   const results = await Promise.allSettled(queries);
   const get = i => results[i].value?.count || 0;
@@ -287,26 +570,349 @@ async function renderOverview() {
     <div class="page-title">Dashboard</div>
     <div class="page-sub">Welcome back. Here's what's happening on GhaNight right now.</div>
     <div class="stats-row">
-      <div class="stat-card"><div class="stat-num">${get(0)}</div><div class="stat-label">Active Venues</div></div>
-      <div class="stat-card"><div class="stat-num">${get(1)}</div><div class="stat-label">Active Events</div></div>
-      <div class="stat-card"><div class="stat-num">${get(2)}</div><div class="stat-label">Check-ins Today</div></div>
-      <div class="stat-card"><div class="stat-num">${get(3)}</div><div class="stat-label">Registered Users</div></div>
-      <div class="stat-card" style="border-color:rgba(168,85,247,0.3)"><div class="stat-num" style="color:var(--purple)">${get(4)}</div><div class="stat-label">Posts Pending Review</div></div>
-      <div class="stat-card" style="border-color:rgba(57,224,122,0.3)"><div class="stat-num" style="color:var(--green)">${get(6)}</div><div class="stat-label">Active Corp Subs</div></div>
+      <div class="stat-card"><div class="stat-num">${get(1)}</div><div class="stat-label">Active Venues</div></div>
+      <div class="stat-card"><div class="stat-num">${get(2)}</div><div class="stat-label">Active Events</div></div>
+      <div class="stat-card"><div class="stat-num">${get(3)}</div><div class="stat-label">Check-ins Today</div></div>
+      <div class="stat-card"><div class="stat-num">${get(4)}</div><div class="stat-label">Registered Users</div></div>
+      <div class="stat-card" style="border-color:rgba(168,85,247,0.3)"><div class="stat-num" style="color:var(--purple)">${get(5)}</div><div class="stat-label">Posts Pending</div></div>
+      <div class="stat-card" style="border-color:rgba(57,224,122,0.3)"><div class="stat-num" style="color:var(--green)">${get(7)}</div><div class="stat-label">Active Corp Subs</div></div>
       <div class="stat-card" style="border-color:rgba(245,197,66,0.3)"><div class="stat-num" style="color:var(--gold)">${get(0)}</div><div class="stat-label">Payout Requests</div></div>
-      <div class="stat-card" style="border-color:rgba(255,61,138,0.3)"><div class="stat-num" style="color:var(--pink)">${get(5)}</div><div class="stat-label">Vendor Apps Pending</div></div>
-      <div class="stat-card" style="border-color:rgba(245,197,66,0.3)"><div class="stat-num" style="color:var(--orange)">${get(7)}</div><div class="stat-label">Venue Regs Pending</div></div>
+      <div class="stat-card" style="border-color:rgba(255,61,138,0.3)"><div class="stat-num" style="color:var(--pink)">${get(6)}</div><div class="stat-label">Vendor Apps Pending</div></div>
+      <div class="stat-card" style="border-color:rgba(79,163,255,0.3)"><div class="stat-num" style="color:var(--blue)">${get(9)}</div><div class="stat-label">Active Videos</div></div>
     </div>
     <div class="panel">
       <div class="panel-title">Quick Actions</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn-gold" onclick="show('venues',null);setTimeout(()=>openVenueForm({}),100)">+ Add Venue</button>
         <button class="btn btn-gold" onclick="show('events',null);setTimeout(()=>openEventForm({}),100)">+ Add Event</button>
+        <button class="btn btn-blue" onclick="show('videos',null);setTimeout(openVideoModal,100)">🎬 Upload Video</button>
         <button class="btn btn-green" onclick="show('tokens',null);setTimeout(generateToken,100)">🎫 Generate Token</button>
-        <button class="btn btn-purple" onclick="show('posts',null)">✍️ Review Posts (${get(4)})</button>
-        <button class="btn btn-blue" onclick="show('vendors',null)">🏪 Vendor Apps (${get(5)})</button>
+        <button class="btn btn-purple" onclick="show('posts',null)">✍️ Review Posts (${get(5)})</button>
       </div>
     </div>`;
+}
+
+// ── VIDEOS ────────────────────────────────────────────
+async function renderVideos() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+
+  // Load video settings
+  let maxDur = 0;
+  try {
+    const { data } = await db.from('platform_settings').select('value').eq('key','video_settings').single();
+    if (data?.value) { const s = JSON.parse(data.value); maxDur = parseInt(s.max_duration_sec||0); videoMaxDuration = maxDur; }
+  } catch(e){}
+
+  const { data:videos, error } = await db.from('venue_videos').select('*').order('created_at',{ascending:false});
+
+  el.innerHTML = `
+    <div class="page-title">🎬 Venue Videos</div>
+    <div class="page-sub">Upload and manage videos for venues and blogger recaps.</div>
+
+    <!-- VIDEO SETTINGS PANEL -->
+    <div class="panel" style="border-color:rgba(245,197,66,0.2);">
+      <div class="panel-title">⚙️ Video Settings</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end;">
+        <div class="form-group">
+          <label class="form-label">Max Video Duration (seconds)</label>
+          <input class="form-input" id="vidMaxDurInput" type="number" min="0" step="1" value="${maxDur}" placeholder="0 = no limit">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">Set to 0 for no limit. Example: 30 = max 30 seconds per video.</div>
+        </div>
+        <div>
+          <button class="btn btn-gold" onclick="saveVideoSettings()">💾 Save Settings</button>
+        </div>
+      </div>
+      <div id="vidSettingsMsg" style="font-size:12px;margin-top:8px;display:none;"></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-num">${(videos||[]).length}</div><div class="stat-label">Total Videos</div></div>
+      <div class="stat-card"><div class="stat-num">${(videos||[]).filter(v=>v.is_active).length}</div><div class="stat-label">Active</div></div>
+      <div class="stat-card"><div class="stat-num">${(videos||[]).filter(v=>v.uploader_type==='blogger').length}</div><div class="stat-label">Blogger Recaps</div></div>
+      <div class="stat-card"><div class="stat-num">${maxDur > 0 ? maxDur+'s' : '∞'}</div><div class="stat-label">Max Duration</div></div>
+    </div>
+
+    <!-- UPLOAD BUTTON -->
+    <div class="panel">
+      <div class="panel-title">
+        <span>All Videos (${(videos||[]).length})</span>
+        <button class="btn btn-gold" onclick="openVideoModal()">+ Upload Video</button>
+      </div>
+
+      ${!(videos||[]).length ? `<div style="text-align:center;padding:40px;color:var(--muted);">No videos uploaded yet. Be the first!</div>` : `
+      <div class="video-grid">
+        ${(videos||[]).map(v=>`
+          <div class="video-card" id="vcard-${v.id}">
+            <video src="${v.public_url}" preload="metadata" muted playsinline style="width:100%;height:150px;object-fit:cover;display:block;background:#000;"></video>
+            <div class="video-card-body">
+              <p class="video-card-title">${v.title||'Untitled'}</p>
+              <p class="video-card-venue">📍 ${v.venue_name||'General'} ${v.uploader_type==='blogger'?'<span class="badge bpu">Blogger</span>':''}</p>
+              <p class="video-card-meta">
+                ${new Date(v.created_at).toLocaleDateString('en-GH')} ·
+                ${v.duration_sec ? v.duration_sec+'s' : '—'} ·
+                ${v.file_size ? (v.file_size/1024/1024).toFixed(1)+'MB' : '—'} ·
+                ${v.is_active ? '<span style="color:var(--green)">🟢 Active</span>' : '<span style="color:var(--pink)">🔴 Hidden</span>'}
+              </p>
+              ${v.caption ? `<p style="font-size:11px;color:var(--muted);font-style:italic;margin-bottom:6px;">"${v.caption}"</p>` : ''}
+              <div class="video-card-actions">
+                <button class="btn btn-muted" onclick="previewVideo('${v.public_url}','${(v.title||'').replace(/'/g,"\\'")}')">▶ Play</button>
+                <button class="btn ${v.is_active?'btn-muted':'btn-green'}" onclick="toggleVideo('${v.id}',${v.is_active})">${v.is_active?'Hide':'Show'}</button>
+                <button class="btn btn-danger" onclick="deleteVideo('${v.id}','${v.storage_path||''}')">Delete</button>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>`}
+    </div>`;
+}
+
+async function saveVideoSettings() {
+  const maxDur = parseInt(document.getElementById('vidMaxDurInput').value||0);
+  videoMaxDuration = maxDur;
+  const msg = document.getElementById('vidSettingsMsg');
+  try {
+    await db.from('platform_settings').upsert({ key:'video_settings', value:JSON.stringify({ max_duration_sec: maxDur }), updated_at:new Date().toISOString() });
+    msg.textContent = `✅ Saved! Max duration: ${maxDur > 0 ? maxDur+' seconds' : 'No limit'}`;
+    msg.style.color = 'var(--green)'; msg.style.display = 'block';
+    toast('✅ Video settings saved!');
+    setTimeout(()=>msg.style.display='none', 3000);
+  } catch(e) {
+    msg.textContent = '⚠️ Failed — run supabase-videos-table.sql first';
+    msg.style.color = 'var(--pink)'; msg.style.display = 'block';
+  }
+}
+
+// ── VIDEO MODAL ───────────────────────────────────────
+function openVideoModal() {
+  resetVideoModal();
+  document.getElementById('videoModal').classList.add('open');
+}
+function closeVideoModal() {
+  document.getElementById('videoModal').classList.remove('open');
+  resetVideoModal();
+}
+function resetVideoModal() {
+  selectedVideoFile = null; videoDuration = 0; currentFilter = 'none';
+  ['vidVenueName','vidTitle','vidDescription','vidCaption'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('vidFileInfo').style.display = 'none';
+  document.getElementById('vidEditorWrap').style.display = 'none';
+  document.getElementById('vidProgressWrap').style.display = 'none';
+  document.getElementById('vidStatusMsg').style.display = 'none';
+  document.getElementById('vidFileInput').value = '';
+  const bar = document.getElementById('vidProgressBar'); if(bar) bar.style.width='0%';
+}
+
+function onVideoFileSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const vid = document.createElement('video');
+  vid.preload = 'metadata';
+  vid.onloadedmetadata = () => {
+    videoDuration = Math.round(vid.duration);
+    window.URL.revokeObjectURL(vid.src);
+
+    // Check duration limit
+    const limitWarn = document.getElementById('vidLimitWarning');
+    if (videoMaxDuration > 0 && videoDuration > videoMaxDuration) {
+      limitWarn.textContent = `⚠️ Video is ${videoDuration}s but limit is ${videoMaxDuration}s. Please trim or choose a shorter clip.`;
+      limitWarn.style.display = 'block';
+    } else {
+      limitWarn.style.display = 'none';
+    }
+
+    document.getElementById('vidDurationInfo').textContent = `Duration: ${videoDuration}s`;
+
+    // Set trim sliders
+    const ts = document.getElementById('trimStart');
+    const te = document.getElementById('trimEnd');
+    ts.max = videoDuration; ts.value = 0;
+    te.max = videoDuration; te.value = videoDuration;
+    document.getElementById('trimStartVal').textContent = '0s';
+    document.getElementById('trimEndVal').textContent = videoDuration+'s';
+    updateTrimInfo();
+  };
+  vid.src = URL.createObjectURL(file);
+
+  selectedVideoFile = file;
+  const mb = (file.size/1024/1024).toFixed(1);
+  document.getElementById('vidFileName').textContent = file.name;
+  document.getElementById('vidFileSize').textContent = `${mb} MB`;
+  document.getElementById('vidFileInfo').style.display = 'block';
+
+  // Show editor & preview
+  const preview = document.getElementById('vidPreview');
+  preview.src = URL.createObjectURL(file);
+  document.getElementById('vidEditorWrap').style.display = 'block';
+}
+
+// ── EDITOR TOOLS ──────────────────────────────────────
+function applyFilters() {
+  const brightness = document.getElementById('vidBrightness').value;
+  const contrast   = document.getElementById('vidContrast').value;
+  document.getElementById('vidBrightnessVal').textContent = parseFloat(brightness).toFixed(1);
+  document.getElementById('vidContrastVal').textContent   = parseFloat(contrast).toFixed(1);
+  const preview = document.getElementById('vidPreview');
+  const base = `brightness(${brightness}) contrast(${contrast})`;
+  preview.style.filter = currentFilter !== 'none' ? base+' '+currentFilter : base;
+}
+
+function setFilter(btn, filter) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = filter;
+  applyFilters();
+}
+
+function updateTrim() {
+  const s = parseFloat(document.getElementById('trimStart').value);
+  const e = parseFloat(document.getElementById('trimEnd').value);
+  // Prevent start > end
+  if (s >= e) { document.getElementById('trimStart').value = Math.max(0, e-0.1); }
+  document.getElementById('trimStartVal').textContent = parseFloat(document.getElementById('trimStart').value).toFixed(1)+'s';
+  document.getElementById('trimEndVal').textContent   = parseFloat(e).toFixed(1)+'s';
+  updateTrimInfo();
+  // Seek preview
+  const preview = document.getElementById('vidPreview');
+  if (preview) preview.currentTime = parseFloat(document.getElementById('trimStart').value);
+}
+
+function updateTrimInfo() {
+  const s = parseFloat(document.getElementById('trimStart').value||0);
+  const e = parseFloat(document.getElementById('trimEnd').value||0);
+  const dur = (e - s).toFixed(1);
+  const infoEl = document.getElementById('trimInfo');
+  if (infoEl) infoEl.textContent = `Clip duration after trim: ${dur}s`;
+}
+
+// ── UPLOAD ─────────────────────────────────────────────
+async function uploadVideoNow() {
+  if (!selectedVideoFile) { vidStatus('Please select a video file first.','error'); return; }
+
+  const title = document.getElementById('vidTitle').value.trim();
+  if (!title) { vidStatus('Please enter a video title.','error'); return; }
+
+  // Enforce max duration
+  if (videoMaxDuration > 0 && videoDuration > videoMaxDuration) {
+    vidStatus(`Video is ${videoDuration}s. Max allowed is ${videoMaxDuration}s.`, 'error'); return;
+  }
+
+  const venueName    = document.getElementById('vidVenueName').value.trim();
+  const description  = document.getElementById('vidDescription').value.trim();
+  const uploaderType = document.getElementById('vidUploaderType').value;
+  const caption      = document.getElementById('vidCaption').value.trim();
+  const trimStart    = parseFloat(document.getElementById('trimStart').value||0);
+  const trimEnd      = parseFloat(document.getElementById('trimEnd').value||videoDuration);
+  const brightness   = parseFloat(document.getElementById('vidBrightness').value||1);
+  const contrast     = parseFloat(document.getElementById('vidContrast').value||1);
+  const muteAudio    = document.getElementById('vidMuteAudio').checked;
+
+  const btn = document.querySelector('#videoModal .btn-gold');
+  btn.disabled = true; btn.textContent = 'Uploading...';
+  document.getElementById('vidProgressWrap').style.display = 'block';
+  setVidProgress(15);
+
+  try {
+    const ext    = selectedVideoFile.name.split('.').pop();
+    const safe   = title.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
+    const folder = uploaderType === 'blogger' ? 'recaps' : 'venues';
+    const key    = `${folder}/${Date.now()}-${safe}.${ext}`;
+
+    setVidProgress(20);
+
+    // ── Step 1: Upload file directly to Cloudflare R2 ──
+    const publicUrl = await r2UploadFile(selectedVideoFile, key);
+
+    setVidProgress(70);
+
+    // ── Step 2: Save metadata to Supabase database ──
+    const { error: dbError } = await db.from('venue_videos').insert({
+      venue_name:    venueName || 'General',
+      title,
+      description,
+      storage_path:  key,
+      public_url:    publicUrl,
+      file_size:     selectedVideoFile.size,
+      duration_sec:  videoDuration,
+      uploader_type: uploaderType,
+      caption,
+      edit_settings: JSON.stringify({ trimStart, trimEnd, brightness, contrast, filter: currentFilter, muteAudio }),
+      storage_provider: 'r2',
+      is_active: true,
+    });
+    if (dbError) throw dbError;
+
+    setVidProgress(100);
+    vidStatus('✅ Video uploaded to R2 successfully!', 'success');
+    setTimeout(()=>{ closeVideoModal(); renderVideos(); }, 1500);
+
+  } catch(err) {
+    vidStatus('❌ Upload failed: '+err.message, 'error');
+    btn.disabled = false; btn.textContent = '🚀 Upload Video';
+  }
+}
+
+function setVidProgress(pct) {
+  document.getElementById('vidProgressBar').style.width = pct+'%';
+  document.getElementById('vidProgressPct').textContent = pct+'%';
+}
+function vidStatus(msg, type) {
+  const el = document.getElementById('vidStatusMsg');
+  el.style.display = 'block';
+  el.style.background = type==='success' ? 'rgba(57,224,122,0.12)' : 'rgba(255,61,138,0.12)';
+  el.style.color = type==='success' ? 'var(--green)' : 'var(--pink)';
+  el.style.border = `1px solid ${type==='success'?'rgba(57,224,122,0.3)':'rgba(255,61,138,0.3)'}`;
+  el.textContent = msg;
+}
+
+function previewVideo(url, title) {
+  document.getElementById('modalTitle').textContent = title || 'Video Preview';
+  document.getElementById('modalBody').innerHTML = `
+    <video src="${url}" controls autoplay playsinline style="width:100%;border-radius:10px;max-height:400px;background:#000;"></video>
+    <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+      <button class="btn btn-muted" onclick="closeModal()">Close</button>
+    </div>`;
+  openModal();
+}
+
+async function toggleVideo(id, currentState) {
+  await db.from('venue_videos').update({ is_active: !currentState }).eq('id', id);
+  toast(currentState ? '👁️ Video hidden' : '✅ Video now visible');
+  renderVideos();
+}
+async function deleteVideo(id, storagePath) {
+  if (!confirm('Delete this video permanently?')) return;
+
+  // Delete from R2
+  if (storagePath) {
+    try {
+      const now      = new Date();
+      const dateStr  = now.toISOString().slice(0,10).replace(/-/g,'');
+      const amzDate  = now.toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
+      const host     = `${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+      const credScope = `${dateStr}/auto/s3/aws4_request`;
+      const signedHdrs = 'host;x-amz-content-sha256;x-amz-date';
+      const emptyHash = await sha256Hex('');
+      const canonicalReq = ['DELETE',`/${R2_BUCKET}/${storagePath}`,'',`host:${host}\nx-amz-content-sha256:${emptyHash}\nx-amz-date:${amzDate}\n`,signedHdrs,emptyHash].join('\n');
+      const stringToSign = ['AWS4-HMAC-SHA256',amzDate,credScope,await sha256Hex(canonicalReq)].join('\n');
+      const kDate    = await hmacSha256('AWS4'+R2_SECRET_KEY, dateStr);
+      const kRegion  = await hmacSha256(kDate,'auto');
+      const kService = await hmacSha256(kRegion,'s3');
+      const kSign    = await hmacSha256(kService,'aws4_request');
+      const sig      = toHex(await hmacSha256(kSign, stringToSign));
+      await fetch(`${R2_ENDPOINT}/${R2_BUCKET}/${storagePath}`, {
+        method:'DELETE',
+        headers:{ 'host':host,'x-amz-date':amzDate,'x-amz-content-sha256':emptyHash,'Authorization':`AWS4-HMAC-SHA256 Credential=${R2_ACCESS_KEY}/${credScope}, SignedHeaders=${signedHdrs}, Signature=${sig}` }
+      });
+    } catch(e){ console.warn('R2 delete failed:', e); }
+  }
+
+  // Always remove from Supabase database
+  await db.from('venue_videos').delete().eq('id', id);
+  toast('🗑️ Video deleted');
+  renderVideos();
 }
 
 // ── VENUES ────────────────────────────────────────────
@@ -548,8 +1154,7 @@ async function renderPayouts() {
     </div>
     ${pending.length ? `
     <div class="panel" style="border-color:rgba(245,197,66,0.3)">
-      <div class="panel-title" style="color:var(--gold)">⏳ Pending Payouts — Action Required</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Send via Mobile Money manually then tap Mark as Paid.</p>
+      <div class="panel-title" style="color:var(--gold)">⏳ Pending Payouts</div>
       ${pending.map(p=>`
         <div class="card-row" style="border-color:rgba(245,197,66,0.2)">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">
@@ -565,7 +1170,7 @@ async function renderPayouts() {
             <button class="btn btn-danger" onclick="rejectPayout('${p.id}')">❌ Reject</button>
           </div>
         </div>`).join('')}
-    </div>` : `<div class="panel" style="text-align:center;padding:32px"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-weight:700;margin-bottom:8px">All payouts up to date!</div></div>`}
+    </div>` : `<div class="panel" style="text-align:center;padding:32px"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-weight:700">All payouts up to date!</div></div>`}
     <div class="panel">
       <div class="panel-title">Payout History</div>
       ${(data||[]).filter(p=>p.status!=='requested').length ? `
@@ -579,14 +1184,6 @@ async function renderPayouts() {
           <td>${new Date(p.requested_at).toLocaleDateString('en-GH')}</td>
         </tr>`).join('')}</tbody>
       </table></div>` : '<div style="color:var(--muted);font-size:13px">No history yet.</div>'}
-    </div>
-    <div class="panel" style="background:rgba(57,224,122,0.04);border-color:rgba(57,224,122,0.15)">
-      <div class="panel-title">📱 How to Pay</div>
-      <div style="font-size:13px;color:var(--muted);line-height:1.9">
-        <strong style="color:var(--text)">MTN MoMo:</strong> Dial *170# → Send Money → Number → Amount → Confirm<br>
-        <strong style="color:var(--text)">Vodafone Cash:</strong> Dial *110# → Send Money → Number → Amount → Confirm<br>
-        <strong style="color:var(--text)">AirtelTigo:</strong> Dial *500# → Send Money → Number → Amount → Confirm
-      </div>
     </div>`;
 }
 async function markPayoutPaid(id, num, network, amount) {
@@ -607,7 +1204,7 @@ async function renderPredictions() {
   const { data } = await db.from('predictions').select('*').order('created_at',{ascending:false}).limit(50);
   el.innerHTML = `
     <div class="page-title">Predictions</div>
-    <div class="page-sub">See what users are predicting. You can mark outcomes correct/incorrect and award points.</div>
+    <div class="page-sub">See what users are predicting. Mark outcomes and award points.</div>
     <div class="panel">
       <div class="panel-title">Recent Predictions (${(data||[]).length})</div>
       <div class="table-wrap"><table class="data-table">
@@ -625,7 +1222,6 @@ async function renderPredictions() {
     </div>
     <div class="panel">
       <div class="panel-title">Mark Prediction Results</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Enter the prediction ID and winning option to award points to correct predictors.</p>
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Prediction ID</label><input class="form-input" id="predId" placeholder="e.g. p1"></div>
         <div class="form-group"><label class="form-label">Winning Option (0-indexed)</label><input class="form-input" id="predWinner" type="number" min="0" placeholder="0"></div>
@@ -638,16 +1234,13 @@ async function markPredictionResult() {
   const predId = document.getElementById('predId').value.trim();
   const winner = parseInt(document.getElementById('predWinner').value);
   if (!predId) { toast('⚠️ Enter a prediction ID'); return; }
-  // Get all predictions for this ID
   const { data } = await db.from('predictions').select('*').eq('prediction_id', predId);
   if (!data?.length) { toast('No predictions found for that ID'); return; }
-  // Mark correct/wrong and award points
   for (const p of data) {
     const isCorrect = p.choice_index === winner;
     const pts = isCorrect ? 50 : 0;
     await db.from('predictions').update({ correct:isCorrect, pts_awarded:pts }).eq('id',p.id);
     if (isCorrect && pts > 0) {
-      // Add points to user
       const { data:existing } = await db.from('user_points').select('points').eq('user_id',p.user_id).single().catch(()=>({data:null}));
       const newPts = (existing?.points||0) + pts;
       await db.from('user_points').upsert({ user_id:p.user_id, points:newPts, updated_at:new Date().toISOString() });
@@ -667,41 +1260,27 @@ async function renderCreatorSettings() {
   } catch(e){}
   el.innerHTML = `
     <div class="page-title">⚙️ Creator Settings</div>
-    <div class="page-sub">Control all creator earnings rates and requirements. Changes take effect immediately.</div>
+    <div class="page-sub">Control all creator earnings rates and requirements.</div>
     <div class="panel" style="border-color:rgba(245,197,66,0.2)">
       <div class="panel-title">💰 Earnings Rates</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">How much creators earn per action on their posts.</p>
       <div class="form-grid">
-        <div class="form-group"><label class="form-label">GHS Per View</label><input class="form-input" id="rateView" type="number" step="0.01" min="0" value="${settings.rate_view}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Every time someone reads a post</div></div>
-        <div class="form-group"><label class="form-label">GHS Per Like</label><input class="form-input" id="rateLike" type="number" step="0.01" min="0" value="${settings.rate_like}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Every like a post receives</div></div>
-        <div class="form-group"><label class="form-label">GHS Per Comment</label><input class="form-input" id="rateComment" type="number" step="0.01" min="0" value="${settings.rate_comment}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Every genuine comment on a post</div></div>
-        <div class="form-group"><label class="form-label">Minimum Payout (GHS)</label><input class="form-input" id="minPayout" type="number" step="1" min="1" value="${settings.min_payout}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Minimum balance before MoMo payout</div></div>
+        <div class="form-group"><label class="form-label">GHS Per View</label><input class="form-input" id="rateView" type="number" step="0.01" min="0" value="${settings.rate_view}"></div>
+        <div class="form-group"><label class="form-label">GHS Per Like</label><input class="form-input" id="rateLike" type="number" step="0.01" min="0" value="${settings.rate_like}"></div>
+        <div class="form-group"><label class="form-label">GHS Per Comment</label><input class="form-input" id="rateComment" type="number" step="0.01" min="0" value="${settings.rate_comment}"></div>
+        <div class="form-group"><label class="form-label">Minimum Payout (GHS)</label><input class="form-input" id="minPayout" type="number" step="1" min="1" value="${settings.min_payout}"></div>
       </div>
     </div>
     <div class="panel" style="border-color:rgba(79,163,255,0.2)">
       <div class="panel-title">👥 Creator Requirements</div>
       <div class="form-grid">
-        <div class="form-group"><label class="form-label">Min Followers to Post</label><input class="form-input" id="minFollowers" type="number" step="1" min="0" value="${settings.min_followers}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Set to 0 to allow anyone to post</div></div>
-        <div class="form-group"><label class="form-label">Min Words Per Post</label><input class="form-input" id="minWords" type="number" step="10" min="50" value="${settings.min_words}"><div style="font-size:11px;color:var(--muted);margin-top:4px">Minimum word count for approval</div></div>
-      </div>
-    </div>
-    <div class="panel" style="background:rgba(57,224,122,0.04);border-color:rgba(57,224,122,0.15)">
-      <div class="panel-title">📊 Earnings Preview</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px" id="earningsPreview">
-        <div class="stat-card"><div class="stat-num" style="color:var(--green)">GHS ${(1000*settings.rate_view).toFixed(2)}</div><div class="stat-label">from 1,000 views</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--pink)">GHS ${(100*settings.rate_like).toFixed(2)}</div><div class="stat-label">from 100 likes</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--blue)">GHS ${(50*settings.rate_comment).toFixed(2)}</div><div class="stat-label">from 50 comments</div></div>
+        <div class="form-group"><label class="form-label">Min Followers to Post</label><input class="form-input" id="minFollowers" type="number" step="1" min="0" value="${settings.min_followers}"></div>
+        <div class="form-group"><label class="form-label">Min Words Per Post</label><input class="form-input" id="minWords" type="number" step="10" min="50" value="${settings.min_words}"></div>
       </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:8px">
       <button class="btn btn-gold btn-lg" style="flex:1" onclick="saveCreatorSettings()">💾 Save All Settings</button>
     </div>
-    <div id="settingsMsg" style="font-size:13px;text-align:center;margin-top:10px;display:none"></div>
-    <div class="panel" style="margin-top:20px">
-      <div class="panel-title">📈 Creator Stats</div>
-      <div id="creatorStats" style="color:var(--muted);font-size:13px">Loading...</div>
-    </div>`;
-  loadCreatorStats();
+    <div id="settingsMsg" style="font-size:13px;text-align:center;margin-top:10px;display:none"></div>`;
 }
 async function saveCreatorSettings() {
   const settings = {
@@ -715,27 +1294,10 @@ async function saveCreatorSettings() {
   const msg = document.getElementById('settingsMsg');
   try {
     await db.from('platform_settings').upsert({ key:'creator_settings', value:JSON.stringify(settings), updated_at:new Date().toISOString() });
-    msg.textContent='✅ Settings saved! Creators page now uses these rates.'; msg.style.color='var(--green)'; msg.style.display='block';
+    msg.textContent='✅ Settings saved!'; msg.style.color='var(--green)'; msg.style.display='block';
     toast('✅ Creator settings saved!');
     setTimeout(()=>msg.style.display='none',4000);
-  } catch(e) { msg.textContent='⚠️ Save failed — run settings_table.sql in Supabase first'; msg.style.color='var(--pink)'; msg.style.display='block'; }
-}
-async function loadCreatorStats() {
-  const el = document.getElementById('creatorStats'); if (!el) return;
-  try {
-    const [p,f,l,c] = await Promise.all([
-      db.from('creator_posts').select('*',{count:'exact',head:true}).eq('status','approved'),
-      db.from('creator_follows').select('*',{count:'exact',head:true}),
-      db.from('post_likes').select('*',{count:'exact',head:true}),
-      db.from('post_comments').select('*',{count:'exact',head:true}),
-    ]);
-    el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
-      <div class="stat-card"><div class="stat-num">${p.count||0}</div><div class="stat-label">Published Posts</div></div>
-      <div class="stat-card"><div class="stat-num">${f.count||0}</div><div class="stat-label">Total Follows</div></div>
-      <div class="stat-card"><div class="stat-num">${l.count||0}</div><div class="stat-label">Total Likes</div></div>
-      <div class="stat-card"><div class="stat-num">${c.count||0}</div><div class="stat-label">Total Comments</div></div>
-    </div>`;
-  } catch(e) { el.textContent='Run creator_social.sql to enable stats'; }
+  } catch(e) { msg.textContent='⚠️ Save failed — run settings_table.sql first'; msg.style.color='var(--pink)'; msg.style.display='block'; }
 }
 
 // ── LEADERBOARD ───────────────────────────────────────
@@ -744,7 +1306,7 @@ async function renderLeaderboard() {
   const { data } = await db.from('user_points').select('user_id,points,user_profiles(first_name,last_name)').order('points',{ascending:false}).limit(30);
   el.innerHTML = `
     <div class="page-title">Leaderboard</div>
-    <div class="page-sub">Top players by points. You can adjust points manually if needed.</div>
+    <div class="page-sub">Top players by points.</div>
     <div class="panel">
       <div class="table-wrap"><table class="data-table">
         <thead><tr><th>Rank</th><th>Player</th><th>Points</th><th>Actions</th></tr></thead>
@@ -759,11 +1321,10 @@ async function renderLeaderboard() {
       </table></div>
     </div>`;
 }
-
 function adjustPoints(userId, current) {
   document.getElementById('modalTitle').textContent = 'Adjust User Points';
   document.getElementById('modalBody').innerHTML = `
-    <p style="color:var(--muted);margin-bottom:14px">Current balance: <strong style="color:var(--purple)">${current} pts</strong></p>
+    <p style="color:var(--muted);margin-bottom:14px">Current: <strong style="color:var(--purple)">${current} pts</strong></p>
     <div class="form-group"><label class="form-label">New Points Total</label><input class="form-input" id="newPts" type="number" value="${current}" min="0"></div>
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="btn btn-gold btn-lg" style="flex:1" onclick="savePoints('${userId}')">Save</button>
@@ -783,15 +1344,14 @@ async function renderRewards() {
   const { data } = await db.from('redemptions').select('*,user_profiles(first_name,last_name,favourite_area)').order('created_at',{ascending:false});
   el.innerHTML = `
     <div class="page-title">Reward Claims</div>
-    <div class="page-sub">Users who have redeemed points for rewards. Mark as fulfilled once delivered.</div>
+    <div class="page-sub">Users who have redeemed points for rewards.</div>
     <div class="panel">
       <div class="table-wrap"><table class="data-table">
         <thead><tr><th>User</th><th>Reward</th><th>Points Spent</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
         <tbody>
           ${(data||[]).map(r=>`<tr>
             <td>${r.user_profiles?`${r.user_profiles.first_name||''} ${r.user_profiles.last_name||''}`.trim()||'User':'User'}</td>
-            <td>${r.reward}</td>
-            <td>${r.points_spent} pts</td>
+            <td>${r.reward}</td><td>${r.points_spent} pts</td>
             <td><span class="badge ${r.status==='fulfilled'?'bg':r.status==='pending'?'bo':'bp'}">${r.status}</span></td>
             <td>${new Date(r.created_at).toLocaleDateString()}</td>
             <td style="display:flex;gap:5px">
@@ -814,17 +1374,17 @@ async function renderTokens() {
   const { data } = await db.from('vendor_tokens').select('*').order('created_at',{ascending:false});
   el.innerHTML = `
     <div class="page-title">Vendor Tokens</div>
-    <div class="page-sub">Generate tokens for vendors to give to their clients. Each token unlocks a discounted subscription.</div>
+    <div class="page-sub">Generate tokens for vendors to give to their clients.</div>
     <div class="panel" style="border-color:rgba(57,224,122,0.2)">
       <div class="panel-title">Generate New Token</div>
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Vendor Name *</label><input class="form-input" id="tvendor" placeholder="e.g. Accra Drinks Co."></div>
         <div class="form-group"><label class="form-label">Organisation (optional)</label><input class="form-input" id="torg" placeholder="e.g. TechCorp Ghana"></div>
-        <div class="form-group"><label class="form-label">Subscription Plan</label>
+        <div class="form-group"><label class="form-label">Plan</label>
           <select class="form-select" id="tplan"><option>Starter</option><option>Business</option><option>Enterprise</option></select>
         </div>
         <div class="form-group"><label class="form-label">Discount %</label>
-          <select class="form-select" id="tdisc"><option value="15">15% (Starter)</option><option value="25">25% (Business)</option><option value="35">35% (Enterprise)</option></select>
+          <select class="form-select" id="tdisc"><option value="15">15%</option><option value="25">25%</option><option value="35">35%</option></select>
         </div>
         <div class="form-group"><label class="form-label">Valid For (days)</label>
           <select class="form-select" id="tdays"><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select>
@@ -840,8 +1400,7 @@ async function renderTokens() {
         <tbody>
           ${(data||[]).map(t=>`<tr>
             <td><code style="font-family:monospace;color:var(--green);letter-spacing:1px">${t.token}</code></td>
-            <td>${t.vendor_name}</td>
-            <td><span class="badge bo">${t.plan}</span></td>
+            <td>${t.vendor_name}</td><td><span class="badge bo">${t.plan}</span></td>
             <td>${new Date(t.expires_at).toLocaleDateString()}</td>
             <td><span class="badge ${t.used?'bp':'bg'}">${t.used?'Used':'Available'}</span></td>
           </tr>`).join('')}
@@ -853,191 +1412,124 @@ async function renderTokens() {
 async function generateToken() {
   const vendor = document.getElementById('tvendor')?.value?.trim();
   if (!vendor) { toast('⚠️ Vendor name required'); return; }
-  // Generate unique token: GHN-XXXXX-XXX
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const rand = n => Array.from({length:n},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
   const token = `GHN-${rand(5)}-${rand(3)}`;
   const days = parseInt(document.getElementById('tdays')?.value||'30');
   const expires = new Date(); expires.setDate(expires.getDate()+days);
-  const payload = {
-    token, vendor_name:vendor, org_name:document.getElementById('torg')?.value?.trim()||null,
-    plan:document.getElementById('tplan')?.value||'Business',
-    discount_pct:parseInt(document.getElementById('tdisc')?.value||'25'),
-    used:false, expires_at:expires.toISOString()
-  };
+  const payload = { token, vendor_name:vendor, org_name:document.getElementById('torg')?.value?.trim()||null, plan:document.getElementById('tplan')?.value||'Business', discount_pct:parseInt(document.getElementById('tdisc')?.value||'25'), used:false, expires_at:expires.toISOString() };
   const { error } = await db.from('vendor_tokens').insert(payload);
-  if (error) { toast('⚠️ Failed to save token: '+error.message); return; }
+  if (error) { toast('⚠️ Failed: '+error.message); return; }
   const el = document.getElementById('generatedToken');
   el.style.display = 'block';
-  el.innerHTML = `
-    <div class="token-display">
-      <div class="token-code">${token}</div>
-      <div class="token-meta">${payload.plan} Plan · ${payload.discount_pct}% off · Valid ${days} days · Send this to ${vendor}</div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:center">
-      <button class="btn btn-green" onclick="navigator.clipboard.writeText('${token}');toast('📋 Token copied!')">📋 Copy Token</button>
-    </div>`;
-  toast('✅ Token generated and saved!');
+  el.innerHTML = `<div class="token-display"><div class="token-code">${token}</div><div class="token-meta">${payload.plan} · ${payload.discount_pct}% off · ${days} days</div></div><div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-green" onclick="navigator.clipboard.writeText('${token}');toast('📋 Copied!')">📋 Copy</button></div>`;
+  toast('✅ Token generated!');
 }
 
 // ── SUBSCRIPTIONS ─────────────────────────────────────
 async function renderSubscriptions() {
   const el = document.getElementById('mainContent');
   const { data } = await db.from('corporate_subscriptions').select('*').order('activated_at',{ascending:false});
-  el.innerHTML = `
-    <div class="page-title">Corporate Subscriptions</div>
-    <div class="page-sub">Organisations that have activated a subscription via vendor token.</div>
-    <div class="panel">
-      <div class="table-wrap"><table class="data-table">
-        <thead><tr><th>Organisation</th><th>Plan</th><th>Discount</th><th>Vendor</th><th>Expires</th><th>Status</th></tr></thead>
-        <tbody>
-          ${(data||[]).map(s=>`<tr>
-            <td><strong>${s.org_name}</strong></td>
-            <td><span class="badge bo">${s.plan}</span></td>
-            <td><span style="color:var(--green);font-weight:700">${s.discount_pct}% off</span></td>
-            <td>${s.vendor_name||'—'}</td>
-            <td>${new Date(s.expires_at).toLocaleDateString('en-GH')}</td>
-            <td><span class="badge ${s.status==='active'?'bg':'bp'}">${s.status}</span></td>
-          </tr>`).join('')}
-        </tbody>
-      </table></div>
-    </div>`;
+  el.innerHTML = `<div class="page-title">Corporate Subscriptions</div><div class="page-sub">Organisations with active subscriptions.</div>
+    <div class="panel"><div class="table-wrap"><table class="data-table">
+      <thead><tr><th>Organisation</th><th>Plan</th><th>Discount</th><th>Vendor</th><th>Expires</th><th>Status</th></tr></thead>
+      <tbody>${(data||[]).map(s=>`<tr><td><strong>${s.org_name}</strong></td><td><span class="badge bo">${s.plan}</span></td><td><span style="color:var(--green);font-weight:700">${s.discount_pct}% off</span></td><td>${s.vendor_name||'—'}</td><td>${new Date(s.expires_at).toLocaleDateString('en-GH')}</td><td><span class="badge ${s.status==='active'?'bg':'bp'}">${s.status}</span></td></tr>`).join('')}</tbody>
+    </table></div></div>`;
 }
 
 // ── VENDOR APPLICATIONS ───────────────────────────────
 async function renderVendors() {
   const el = document.getElementById('mainContent');
   const { data } = await db.from('vendor_applications').select('*').order('created_at',{ascending:false});
-  el.innerHTML = `
-    <div class="page-title">Vendor Applications</div>
-    <div class="page-sub">Businesses applying to become GhaNight recommended vendors.</div>
-    <div class="panel">
-      ${(data||[]).map(v=>`<div class="card-row">
-        <div class="card-row-title">${v.business_name} <span class="badge bm">${v.business_type}</span> <span class="badge ${v.status==='pending'?'bo':v.status==='approved'?'bg':'bp'}">${v.status}</span></div>
-        <div class="card-row-meta">${v.contact_name} · ${v.email} · ${v.phone}<br>Monthly volume: ${v.monthly_volume||'—'} · Applied: ${new Date(v.created_at).toLocaleDateString()}</div>
-        <div class="card-row-actions">
-          ${v.status==='pending'?`<button class="btn btn-green" onclick="updateVendorApp('${v.id}','approved')">✅ Approve</button><button class="btn btn-danger" onclick="updateVendorApp('${v.id}','rejected')">❌ Reject</button>`:''}
-          <button class="btn btn-muted" onclick="copyEmail('${v.email}')">Copy Email</button>
-        </div>
-      </div>`).join('')||'<div style="color:var(--muted)">No vendor applications yet.</div>'}
-    </div>`;
+  el.innerHTML = `<div class="page-title">Vendor Applications</div><div class="page-sub">Businesses applying to become GhaNight vendors.</div>
+    <div class="panel">${(data||[]).map(v=>`<div class="card-row">
+      <div class="card-row-title">${v.business_name} <span class="badge bm">${v.business_type}</span> <span class="badge ${v.status==='pending'?'bo':v.status==='approved'?'bg':'bp'}">${v.status}</span></div>
+      <div class="card-row-meta">${v.contact_name} · ${v.email} · ${v.phone}</div>
+      <div class="card-row-actions">
+        ${v.status==='pending'?`<button class="btn btn-green" onclick="updateVendorApp('${v.id}','approved')">✅ Approve</button><button class="btn btn-danger" onclick="updateVendorApp('${v.id}','rejected')">❌ Reject</button>`:''}
+        <button class="btn btn-muted" onclick="copyEmail('${v.email}')">Copy Email</button>
+      </div></div>`).join('')||'<div style="color:var(--muted)">No vendor applications yet.</div>'}</div>`;
 }
 async function updateVendorApp(id, status) {
   await db.from('vendor_applications').update({ status }).eq('id',id);
-  toast(`✅ Vendor application ${status}`); renderVendors(); loadBadges();
+  toast(`✅ Vendor ${status}`); renderVendors(); loadBadges();
 }
 
 // ── CORPORATE ENQUIRIES ───────────────────────────────
 async function renderCorpEnquiries() {
   const el = document.getElementById('mainContent');
   const { data } = await db.from('corporate_enquiries').select('*').order('created_at',{ascending:false});
-  el.innerHTML = `
-    <div class="page-title">Corporate Enquiries</div>
-    <div class="page-sub">Organisations requesting to be matched with a vendor for a discount subscription.</div>
-    <div class="panel">
-      ${(data||[]).map(c=>`<div class="card-row">
-        <div class="card-row-title">${c.org_name} <span class="badge ${c.status==='new'?'bo':c.status==='matched'?'bg':'bm'}">${c.status}</span></div>
-        <div class="card-row-meta">${c.contact_name}${c.role?' ('+c.role+')':''} · ${c.email} · ${c.phone||'—'}<br>Size: ${c.org_size||'—'} · Vendor pref: ${c.vendor_pref||'—'} · ${new Date(c.created_at).toLocaleDateString()}</div>
-        <div class="card-row-actions">
-          ${c.status==='new'?`<button class="btn btn-green" onclick="updateCorpEnq('${c.id}','contacted')">Mark Contacted</button>`:''}
-          ${c.status==='contacted'?`<button class="btn btn-blue" onclick="updateCorpEnq('${c.id}','matched')">Mark Matched</button>`:''}
-          <button class="btn btn-muted" onclick="copyEmail('${c.email}')">Copy Email</button>
-        </div>
-      </div>`).join('')||'<div style="color:var(--muted)">No corporate enquiries yet.</div>'}
-    </div>`;
+  el.innerHTML = `<div class="page-title">Corporate Enquiries</div><div class="page-sub">Organisations requesting vendor matches.</div>
+    <div class="panel">${(data||[]).map(c=>`<div class="card-row">
+      <div class="card-row-title">${c.org_name} <span class="badge ${c.status==='new'?'bo':c.status==='matched'?'bg':'bm'}">${c.status}</span></div>
+      <div class="card-row-meta">${c.contact_name} · ${c.email}</div>
+      <div class="card-row-actions">
+        ${c.status==='new'?`<button class="btn btn-green" onclick="updateCorpEnq('${c.id}','contacted')">Mark Contacted</button>`:''}
+        ${c.status==='contacted'?`<button class="btn btn-blue" onclick="updateCorpEnq('${c.id}','matched')">Mark Matched</button>`:''}
+        <button class="btn btn-muted" onclick="copyEmail('${c.email}')">Copy Email</button>
+      </div></div>`).join('')||'<div style="color:var(--muted)">No enquiries yet.</div>'}</div>`;
 }
 async function updateCorpEnq(id, status) {
   await db.from('corporate_enquiries').update({ status }).eq('id',id);
-  toast(`✅ Status updated to ${status}`); renderCorpEnquiries(); loadBadges();
+  toast(`✅ Status: ${status}`); renderCorpEnquiries(); loadBadges();
 }
 
 // ── VENUE REGISTRATIONS ───────────────────────────────
 async function renderRegistrations() {
   const el = document.getElementById('mainContent');
   const { data } = await db.from('venue_registrations').select('*').order('created_at',{ascending:false});
-  el.innerHTML = `
-    <div class="page-title">Venue Registrations</div>
-    <div class="page-sub">Venues that have applied to be listed on GhaNight.</div>
-    <div class="panel">
-      ${(data||[]).map(r=>`<div class="card-row">
-        <div class="card-row-title">${r.venue_name} <span class="badge bm">${r.venue_type}</span> <span class="badge ${r.plan==='premium'?'bo':'bm'}">${r.plan}</span> <span class="badge ${r.status==='pending'?'bo':r.status==='approved'?'bg':'bp'}">${r.status}</span></div>
-        <div class="card-row-meta">📍 ${r.area} · ${r.contact_name} · ${r.phone} · ${r.email}<br>Applied: ${new Date(r.created_at).toLocaleDateString()}</div>
-        <div class="card-row-actions">
-          ${r.status==='pending'?`<button class="btn btn-green" onclick="updateReg('${r.id}','approved')">✅ Approve</button><button class="btn btn-danger" onclick="updateReg('${r.id}','rejected')">❌ Reject</button>`:''}
-          <button class="btn btn-muted" onclick="copyEmail('${r.email}')">Copy Email</button>
-        </div>
-      </div>`).join('')||'<div style="color:var(--muted)">No registrations yet.</div>'}
-    </div>`;
+  el.innerHTML = `<div class="page-title">Venue Registrations</div><div class="page-sub">Venues applying to be listed on GhaNight.</div>
+    <div class="panel">${(data||[]).map(r=>`<div class="card-row">
+      <div class="card-row-title">${r.venue_name} <span class="badge bm">${r.venue_type}</span> <span class="badge ${r.status==='pending'?'bo':r.status==='approved'?'bg':'bp'}">${r.status}</span></div>
+      <div class="card-row-meta">📍 ${r.area} · ${r.contact_name} · ${r.phone}</div>
+      <div class="card-row-actions">
+        ${r.status==='pending'?`<button class="btn btn-green" onclick="updateReg('${r.id}','approved')">✅ Approve</button><button class="btn btn-danger" onclick="updateReg('${r.id}','rejected')">❌ Reject</button>`:''}
+        <button class="btn btn-muted" onclick="copyEmail('${r.email}')">Copy Email</button>
+      </div></div>`).join('')||'<div style="color:var(--muted)">No registrations yet.</div>'}</div>`;
 }
 async function updateReg(id, status) {
   await db.from('venue_registrations').update({ status }).eq('id',id);
-  toast(`✅ Registration ${status}`); renderRegistrations(); loadBadges();
+  toast(`✅ ${status}`); renderRegistrations(); loadBadges();
 }
 
 // ── AD ENQUIRIES ──────────────────────────────────────
 async function renderAdEnquiries() {
   const el = document.getElementById('mainContent');
   const { data } = await db.from('advertiser_enquiries').select('*').order('created_at',{ascending:false});
-  el.innerHTML = `
-    <div class="page-title">Advertiser Enquiries</div>
-    <div class="page-sub">Businesses enquiring about advertising on GhaNight.</div>
-    <div class="panel">
-      ${(data||[]).map(a=>`<div class="card-row">
-        <div class="card-row-title">${a.company_name} <span class="badge ${a.status==='new'?'bo':a.status==='contacted'?'bg':'bm'}">${a.status}</span></div>
-        <div class="card-row-meta">${a.contact_name} · ${a.email} · ${a.phone||'—'}<br>📢 ${a.ad_type} · 💰 ${a.budget_range} · ${new Date(a.created_at).toLocaleDateString()}</div>
-        <div class="card-row-actions">
-          ${a.status==='new'?`<button class="btn btn-green" onclick="updateAd('${a.id}','contacted')">Mark Contacted</button>`:''}
-          ${a.status==='contacted'?`<button class="btn btn-muted" onclick="updateAd('${a.id}','closed')">Mark Closed</button>`:''}
-          <button class="btn btn-muted" onclick="copyEmail('${a.email}')">Copy Email</button>
-        </div>
-      </div>`).join('')||'<div style="color:var(--muted)">No enquiries yet.</div>'}
-    </div>`;
+  el.innerHTML = `<div class="page-title">Advertiser Enquiries</div><div class="page-sub">Businesses enquiring about advertising on GhaNight.</div>
+    <div class="panel">${(data||[]).map(a=>`<div class="card-row">
+      <div class="card-row-title">${a.company_name} <span class="badge ${a.status==='new'?'bo':a.status==='contacted'?'bg':'bm'}">${a.status}</span></div>
+      <div class="card-row-meta">${a.contact_name} · ${a.email} · ${a.ad_type} · ${a.budget_range}</div>
+      <div class="card-row-actions">
+        ${a.status==='new'?`<button class="btn btn-green" onclick="updateAd('${a.id}','contacted')">Mark Contacted</button>`:''}
+        <button class="btn btn-muted" onclick="copyEmail('${a.email}')">Copy Email</button>
+      </div></div>`).join('')||'<div style="color:var(--muted)">No enquiries yet.</div>'}</div>`;
 }
 async function updateAd(id, status) {
   await db.from('advertiser_enquiries').update({ status }).eq('id',id);
-  toast(`✅ Status updated`); renderAdEnquiries(); loadBadges();
+  toast('✅ Status updated'); renderAdEnquiries(); loadBadges();
 }
 
 // ── CHECK-INS ─────────────────────────────────────────
 async function renderCheckins() {
   const el = document.getElementById('mainContent');
   const { data } = await db.from('checkins').select('*').order('checked_in_at',{ascending:false}).limit(100);
-  el.innerHTML = `
-    <div class="page-title">Check-ins</div>
-    <div class="page-sub">Real location-verified check-ins from users at venues. This drives the crowd counter.</div>
-    <div class="panel">
-      <div class="table-wrap"><table class="data-table">
-        <thead><tr><th>Venue</th><th>Time</th><th>User</th></tr></thead>
-        <tbody>
-          ${(data||[]).map(c=>`<tr>
-            <td><strong>${c.venue_name}</strong></td>
-            <td>${new Date(c.checked_in_at).toLocaleString('en-GH')}</td>
-            <td style="color:var(--muted);font-size:12px">${c.user_id?c.user_id.substring(0,12)+'...':'Anonymous'}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table></div>
-    </div>`;
+  el.innerHTML = `<div class="page-title">Check-ins</div><div class="page-sub">Real location-verified check-ins from users.</div>
+    <div class="panel"><div class="table-wrap"><table class="data-table">
+      <thead><tr><th>Venue</th><th>Time</th><th>User</th></tr></thead>
+      <tbody>${(data||[]).map(c=>`<tr><td><strong>${c.venue_name}</strong></td><td>${new Date(c.checked_in_at).toLocaleString('en-GH')}</td><td style="color:var(--muted);font-size:12px">${c.user_id?c.user_id.substring(0,12)+'...':'Anonymous'}</td></tr>`).join('')}</tbody>
+    </table></div></div>`;
 }
 
 // ── USERS ─────────────────────────────────────────────
 async function renderUsers() {
   const el = document.getElementById('mainContent');
   const { data } = await db.from('user_profiles').select('*').order('created_at',{ascending:false}).limit(100);
-  el.innerHTML = `
-    <div class="page-title">Registered Users</div>
-    <div class="page-sub">Everyone who has signed up to GhaNight.</div>
-    <div class="panel">
-      <div class="table-wrap"><table class="data-table">
-        <thead><tr><th>Name</th><th>Favourite Area</th><th>Joined</th></tr></thead>
-        <tbody>
-          ${(data||[]).map(u=>`<tr>
-            <td><strong>${u.first_name||''} ${u.last_name||''}</strong></td>
-            <td>${u.favourite_area||'—'}</td>
-            <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('en-GH')}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table></div>
-    </div>`;
+  el.innerHTML = `<div class="page-title">Registered Users</div><div class="page-sub">Everyone who has signed up to GhaNight.</div>
+    <div class="panel"><div class="table-wrap"><table class="data-table">
+      <thead><tr><th>Name</th><th>Favourite Area</th><th>Joined</th></tr></thead>
+      <tbody>${(data||[]).map(u=>`<tr><td><strong>${u.first_name||''} ${u.last_name||''}</strong></td><td>${u.favourite_area||'—'}</td><td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('en-GH')}</td></tr>`).join('')}</tbody>
+    </table></div></div>`;
 }
 
 // ── AUDIT LOG ─────────────────────────────────────────────
@@ -1046,46 +1538,25 @@ async function renderAuditLog() {
   el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
   try {
     const { data } = await db.from('audit_log').select('*').order('created_at',{ascending:false}).limit(100);
-    const actionColor = a => {
-      if (a.includes('deleted')) return 'bp';
-      if (a.includes('added')) return 'bg';
-      if (a.includes('approved')) return 'bg';
-      if (a.includes('rejected')) return 'bp';
-      if (a.includes('paid')) return 'bg';
-      return 'bo';
-    };
+    const actionColor = a => { if(a.includes('deleted'))return'bp'; if(a.includes('added')||a.includes('approved')||a.includes('paid'))return'bg'; if(a.includes('rejected'))return'bp'; return'bo'; };
     el.innerHTML = `
       <div class="page-title">📋 Audit Log</div>
-      <div class="page-sub">Every admin action is recorded here automatically. Cannot be edited or deleted.</div>
+      <div class="page-sub">Every admin action is recorded here automatically.</div>
       <div class="panel">
-        <div class="panel-title">Recent Actions (${(data||[]).length})</div>
-        ${!(data||[]).length ? '<div style="color:var(--muted);font-size:13px">No actions logged yet. Run settings_table.sql to enable audit logging.</div>' : `
+        ${!(data||[]).length ? '<div style="color:var(--muted);font-size:13px">No actions logged yet.</div>' : `
         <div class="table-wrap"><table class="data-table">
           <thead><tr><th>Time</th><th>Admin</th><th>Action</th><th>Table</th><th>Detail</th></tr></thead>
-          <tbody>
-            ${data.map(log=>`<tr>
-              <td style="white-space:nowrap;font-size:11px;color:var(--muted)">${new Date(log.created_at).toLocaleString('en-GH')}</td>
-              <td style="font-size:12px">${log.admin_email}</td>
-              <td><span class="badge ${actionColor(log.action)}">${log.action.replace(/_/g,' ')}</span></td>
-              <td style="font-size:12px;color:var(--muted)">${log.table_name||'—'}</td>
-              <td style="font-size:11px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                ${log.new_data ? Object.entries(log.new_data).map(([k,v])=>`${k}: ${v}`).join(' · ') : log.old_data ? 'Deleted record' : '—'}
-              </td>
-            </tr>`).join('')}
-          </tbody>
+          <tbody>${data.map(log=>`<tr>
+            <td style="white-space:nowrap;font-size:11px;color:var(--muted)">${new Date(log.created_at).toLocaleString('en-GH')}</td>
+            <td style="font-size:12px">${log.admin_email}</td>
+            <td><span class="badge ${actionColor(log.action)}">${log.action.replace(/_/g,' ')}</span></td>
+            <td style="font-size:12px;color:var(--muted)">${log.table_name||'—'}</td>
+            <td style="font-size:11px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${log.new_data?Object.entries(log.new_data).map(([k,v])=>`${k}: ${v}`).join(' · '):log.old_data?'Deleted record':'—'}</td>
+          </tr>`).join('')}</tbody>
         </table></div>`}
-      </div>
-      <div class="panel" style="background:rgba(57,224,122,0.04);border-color:rgba(57,224,122,0.15)">
-        <div class="panel-title">🔒 About the Audit Log</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.8">
-          <strong style="color:var(--text)">What gets logged:</strong> Every venue add/edit/delete, every event change, every post approval/rejection, every payout decision.<br>
-          <strong style="color:var(--text)">Who can see it:</strong> Only you (baninikwami9@gmail.com). No other user can access this.<br>
-          <strong style="color:var(--text)">Can it be deleted:</strong> No. Records are permanent for accountability.<br>
-          <strong style="color:var(--text)">Why it matters:</strong> If anything ever goes wrong, you can see exactly what happened, when, and who did it.
-        </div>
       </div>`;
   } catch(e) {
-    el.innerHTML = `<div class="panel"><div class="page-title">📋 Audit Log</div><p style="color:var(--muted);margin-top:8px">Run <strong>settings_table.sql</strong> in Supabase to enable the audit log. Once enabled, every admin action will be recorded here automatically.</p></div>`;
+    el.innerHTML = `<div class="panel"><div class="page-title">📋 Audit Log</div><p style="color:var(--muted);margin-top:8px">Run settings_table.sql to enable audit logging.</p></div>`;
   }
 }
 
