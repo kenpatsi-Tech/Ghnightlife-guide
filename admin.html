@@ -405,41 +405,31 @@ let videoMaxDuration = 0;
 
 async function uploadToR2(file, title, uploaderType) {
   if (!WORKER_URL) {
-    throw new Error('Worker URL not set. Go to Videos → Settings and enter your Worker URL.');
+    throw new Error('Worker URL not set. Go to Videos and enter your Worker URL.');
   }
 
-  // Step 1 — Get presigned URL from Worker
-  const presignRes = await fetch(`${WORKER_URL}/presign`, {
+  // Send file directly to Worker — Worker stores it in R2 using binding
+  // No AWS signing anywhere — works on every browser including Safari
+  const res = await fetch(`${WORKER_URL}/upload`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      filename:     file.name,
-      contentType:  file.type,
-      title,
-      uploaderType: uploaderType || 'admin',
-    }),
+    headers: {
+      'Content-Type':      file.type,
+      'X-File-Name':       file.name,
+      'X-Title':           title,
+      'X-Uploader-Type':   uploaderType || 'admin',
+    },
+    body: file,
   });
 
-  if (!presignRes.ok) {
-    const err = await presignRes.json().catch(()=>({error:'Worker error'}));
-    throw new Error(err.error || 'Failed to get upload URL from Worker');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `Upload failed (${res.status})` }));
+    throw new Error(err.error || `Upload failed (${res.status})`);
   }
 
-  const { presignedUrl, publicUrl, key } = await presignRes.json();
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || 'Upload failed');
 
-  // Step 2 — PUT file directly to R2 using presigned URL
-  // This works on Safari because it is a simple PUT — no AWS signing in browser
-  const uploadRes = await fetch(presignedUrl, {
-    method:  'PUT',
-    headers: { 'Content-Type': file.type },
-    body:    file,
-  });
-
-  if (!uploadRes.ok) {
-    throw new Error(`R2 upload failed (${uploadRes.status})`);
-  }
-
-  return { publicUrl, key };
+  return { publicUrl: data.publicUrl, key: data.key };
 }
 
 window.addEventListener('load', async () => {
