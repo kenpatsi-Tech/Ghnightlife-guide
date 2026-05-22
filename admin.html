@@ -385,11 +385,11 @@
 
 <script>
 const SUPABASE_URL  = 'https://lkuprzwbscuaitktlhrp.supabase.co';
-const SUPABASE_KEY  = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
-const R2_PUBLIC_URL = 'https://pub-f0cbdd413769407f905b9542aa8daae6.r2.dev';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrdXByendic2N1YWl0a3RsaHJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzcxNzgsImV4cCI6MjA5MzY1MzE3OH0.u4ptPk9lbFhAzw4HoHl5uyffgG9RMkev6ktUyu9VZfg';
+const VIDEO_BUCKET  = 'venue-media';
 
-// ── WORKER URL ────────────────────────────────────────────────
-let WORKER_URL = localStorage.getItem('ghanight_worker_url') || '';
+// No Worker needed — Supabase Storage handles everything
+let WORKER_URL = '';
 
 let db = null, adminUser = null, editId = null, editType = null;
 let selectedVideoFile = null, videoDuration = 0, currentFilter = 'none';
@@ -403,32 +403,24 @@ let videoMaxDuration = 0;
 // ─────────────────────────────────────────────────────────────
 
 async function uploadToR2(file, title, uploaderType) {
-  if (!WORKER_URL) {
-    throw new Error('Worker URL not set. Go to Videos and enter your Worker URL.');
-  }
+  // Upload directly to Supabase Storage — works on every browser including Safari
+  const ext    = file.name.split('.').pop().toLowerCase();
+  const safe   = title.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+  const folder = (uploaderType || 'admin') === 'blogger' ? 'recaps' : 'venues';
+  const key    = `${folder}/${Date.now()}-${safe}.${ext}`;
 
-  // Send file directly to Worker — Worker stores it in R2 using binding
-  // No AWS signing anywhere — works on every browser including Safari
-  const res = await fetch(`${WORKER_URL}/upload`, {
-    method: 'POST',
-    headers: {
-      'Content-Type':      file.type,
-      'X-File-Name':       file.name,
-      'X-Title':           title,
-      'X-Uploader-Type':   uploaderType || 'admin',
-    },
-    body: file,
-  });
+  const { error } = await db.storage
+    .from(VIDEO_BUCKET)
+    .upload(key, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+    });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: `Upload failed (${res.status})` }));
-    throw new Error(err.error || `Upload failed (${res.status})`);
-  }
+  if (error) throw new Error(error.message);
 
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error || 'Upload failed');
-
-  return { publicUrl: data.publicUrl, key: data.key };
+  const { data } = db.storage.from(VIDEO_BUCKET).getPublicUrl(key);
+  return { publicUrl: data.publicUrl, key };
 }
 
 window.addEventListener('load', async () => {
@@ -587,21 +579,12 @@ async function renderVideos() {
       <div id="vidSettingsMsg" style="font-size:12px;margin-top:8px;display:none;"></div>
     </div>
 
-    <!-- WORKER URL PANEL -->
-    <div class="panel" style="border-color:${WORKER_URL ? 'rgba(57,224,122,0.3)' : 'rgba(255,61,138,0.3)'};">
-      <div class="panel-title">${WORKER_URL ? '🟢 Worker Connected' : '🔴 Worker Not Connected'}</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">
-        ${WORKER_URL
-          ? 'Your Cloudflare Worker is connected. Video uploads will go directly to R2.'
-          : 'Paste your Cloudflare Worker URL below to enable video uploads. See the setup guide for instructions.'}
+    <!-- STORAGE STATUS -->
+    <div class="panel" style="border-color:rgba(57,224,122,0.3);">
+      <div class="panel-title">🟢 Supabase Storage Connected</div>
+      <p style="font-size:13px;color:var(--muted);margin:0;">
+        Videos upload directly to Supabase Storage bucket <strong style="color:var(--green);">venue-media</strong>. Works on every browser including Safari iPhone.
       </p>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <input class="form-input" id="workerUrlInput" placeholder="https://ghanight-upload.YOUR-SUBDOMAIN.workers.dev"
-          value="${WORKER_URL}" style="flex:1;min-width:200px;">
-        <button class="btn btn-gold" onclick="saveWorkerUrl()">Save URL</button>
-        ${WORKER_URL ? `<button class="btn btn-green" onclick="testWorker()">Test Connection</button>` : ''}
-      </div>
-      <div id="workerTestResult" style="font-size:12px;margin-top:8px;display:none;"></div>
     </div>
 
     <!-- STATS -->
@@ -845,13 +828,13 @@ async function uploadVideoNow() {
       uploader_type:    uploaderType,
       caption,
       edit_settings:    JSON.stringify({ trimStart, trimEnd, brightness, contrast, filter: currentFilter, muteAudio }),
-      storage_provider: 'r2',
+      storage_provider: 'supabase',
       is_active:        true,
     });
     if (dbError) throw dbError;
 
     setVidProgress(100);
-    vidStatus('✅ Video uploaded to R2 successfully!', 'success');
+    vidStatus('✅ Video uploaded successfully!', 'success');
     setTimeout(()=>{ closeVideoModal(); renderVideos(); }, 1500);
 
   } catch(err) {
@@ -891,18 +874,14 @@ async function toggleVideo(id, currentState) {
 async function deleteVideo(id, storagePath) {
   if (!confirm('Delete this video permanently?')) return;
 
-  // Delete from R2 via Worker (Worker has R2 binding — no AWS signing needed)
-  if (storagePath && WORKER_URL) {
+  // Delete file from Supabase Storage
+  if (storagePath) {
     try {
-      await fetch(`${WORKER_URL}/delete`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ key: storagePath }),
-      });
-    } catch(e) { console.warn('R2 delete via Worker failed:', e); }
+      await db.storage.from(VIDEO_BUCKET).remove([storagePath]);
+    } catch(e) { console.warn('Storage delete failed:', e); }
   }
 
-  // Always remove from Supabase database
+  // Remove record from database
   await db.from('venue_videos').delete().eq('id', id);
   toast('🗑️ Video deleted');
   renderVideos();
