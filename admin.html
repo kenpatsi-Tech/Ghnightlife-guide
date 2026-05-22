@@ -388,8 +388,7 @@ const SUPABASE_URL  = 'https://lkuprzwbscuaitktlhrp.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrdXByendic2N1YWl0a3RsaHJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzcxNzgsImV4cCI6MjA5MzY1MzE3OH0.u4ptPk9lbFhAzw4HoHl5uyffgG9RMkev6ktUyu9VZfg';
 const VIDEO_BUCKET  = 'venue-media';
 
-// No Worker needed — Supabase Storage handles everything
-let WORKER_URL = '';
+
 
 let db = null, adminUser = null, editId = null, editType = null;
 let selectedVideoFile = null, videoDuration = 0, currentFilter = 'none';
@@ -402,7 +401,7 @@ let videoMaxDuration = 0;
 // Works on every browser including Safari iPhone.
 // ─────────────────────────────────────────────────────────────
 
-async function uploadToR2(file, title, uploaderType) {
+async function uploadVideo(file, title, uploaderType) {
   // Upload directly to Supabase Storage — works on every browser including Safari
   const ext    = file.name.split('.').pop().toLowerCase();
   const safe   = title.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
@@ -629,39 +628,6 @@ async function renderVideos() {
     </div>`;
 }
 
-// ── WORKER URL MANAGEMENT ─────────────────────────────────────
-function saveWorkerUrl() {
-  const url = document.getElementById('workerUrlInput').value.trim().replace(/\/$/, '');
-  if (!url) { toast('⚠️ Please enter a Worker URL'); return; }
-  if (!url.startsWith('https://')) { toast('⚠️ URL must start with https://'); return; }
-  WORKER_URL = url;
-  localStorage.setItem('ghanight_worker_url', url);
-  toast('✅ Worker URL saved!');
-  renderVideos();
-}
-
-async function testWorker() {
-  const el = document.getElementById('workerTestResult');
-  if (!el) return;
-  el.style.display = 'block';
-  el.style.color = 'var(--muted)';
-  el.textContent = '⏳ Testing connection...';
-  try {
-    const res = await fetch(`${WORKER_URL}/health`, { method: 'GET' });
-    const data = await res.json();
-    if (data.status === 'ok') {
-      el.style.color = 'var(--green)';
-      el.textContent = '✅ Worker is online and responding correctly!';
-    } else {
-      el.style.color = 'var(--pink)';
-      el.textContent = '⚠️ Worker responded but returned unexpected data.';
-    }
-  } catch(err) {
-    el.style.color = 'var(--pink)';
-    el.textContent = `❌ Cannot reach Worker: ${err.message}. Check the URL is correct.`;
-  }
-}
-
 async function saveVideoSettings() {
   const maxDur = parseInt(document.getElementById('vidMaxDurInput').value||0);
   videoMaxDuration = maxDur;
@@ -811,8 +777,8 @@ async function uploadVideoNow() {
   try {
     setVidProgress(15);
 
-    // Step 1 — Worker generates presigned URL, browser uploads to R2
-    const { publicUrl, key } = await uploadToR2(selectedVideoFile, title, uploaderType);
+    // Upload to Supabase Storage
+    const { publicUrl, key } = await uploadVideo(selectedVideoFile, title, uploaderType);
 
     setVidProgress(75);
 
