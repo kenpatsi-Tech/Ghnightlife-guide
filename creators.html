@@ -16,7 +16,6 @@
   .btn-nav{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;cursor:pointer;white-space:nowrap;}
   .btn-outline{background:none;border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:7px 12px;border-radius:10px;cursor:pointer;white-space:nowrap;}
   main{padding-top:56px;}
-  /* HERO */
   .hero{padding:40px 20px 28px;text-align:center;background:linear-gradient(180deg,rgba(245,197,66,0.04) 0%,transparent 100%);}
   .hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(40px,10vw,80px);line-height:0.9;background:linear-gradient(135deg,#fff,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;}
   .hero p{color:var(--muted);font-size:14px;max-width:440px;margin:0 auto 20px;line-height:1.6;}
@@ -26,7 +25,7 @@
   .btn-cta{padding:12px 22px;border-radius:13px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;border:none;cursor:pointer;}
   .btn-gold{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;}
   .btn-cta-outline{background:none;border:1px solid rgba(245,197,66,0.3);color:var(--gold);}
-  /* REQUIREMENTS BAND */
+  .btn-video{background:linear-gradient(135deg,#4fa3ff,#a855f7);color:#fff;}
   .req-band{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:20px;margin-bottom:28px;}
   .req-title{font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;margin-bottom:14px;letter-spacing:1px;}
   .req-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-width:600px;margin:0 auto;}
@@ -34,7 +33,6 @@
   .req-icon{font-size:22px;margin-bottom:6px;}
   .req-val{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin-bottom:2px;}
   .req-label{font-size:11px;color:var(--muted);}
-  /* EARNINGS */
   .earn-band{padding:0 20px;margin-bottom:28px;}
   .earn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
   .earn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
@@ -42,12 +40,11 @@
   .earn-rate{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin:6px 0 4px;}
   .earn-title{font-size:13px;font-weight:700;margin-bottom:4px;}
   .earn-desc{font-size:11px;color:var(--muted);line-height:1.4;}
-  /* FILTERS */
   .filter-row{padding:0 20px;display:flex;gap:8px;overflow-x:auto;margin-bottom:20px;scrollbar-width:none;padding-bottom:4px;}
   .filter-row::-webkit-scrollbar{display:none;}
   .filter-chip{background:var(--card);border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;padding:7px 14px;border-radius:100px;cursor:pointer;white-space:nowrap;transition:all 0.2s;}
   .filter-chip.active{background:linear-gradient(135deg,var(--gold),var(--orange));border-color:transparent;color:#000;font-weight:700;}
-  /* POSTS */
+  .filter-chip.video-chip.active{background:linear-gradient(135deg,#4fa3ff,#a855f7);}
   .posts-wrap{padding:0 20px;margin-bottom:40px;}
   .post-card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:16px;transition:all 0.2s;}
   .post-card.featured{border-color:rgba(245,197,66,0.3);}
@@ -71,18 +68,14 @@
   .post-title{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px;cursor:pointer;line-height:1.3;}
   .post-title:hover{color:var(--gold);}
   .post-excerpt{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-  /* VENUE TAG */
   .venue-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(79,163,255,0.1);border:1px solid rgba(79,163,255,0.2);border-radius:100px;padding:3px 10px;font-size:11px;color:var(--blue);margin-bottom:10px;cursor:pointer;}
-  .venue-tag:hover{background:rgba(79,163,255,0.2);}
-  /* POST ACTIONS */
   .post-actions{display:flex;align-items:center;gap:12px;padding-top:10px;border-top:1px solid var(--border);}
   .action-btn{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;padding:4px 0;transition:color 0.2s;}
   .action-btn:hover{color:var(--text);}
   .action-btn.liked{color:var(--pink);}
-  .action-btn.liked .heart{animation:heartPop 0.3s ease;}
   @keyframes heartPop{0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1)}}
+  .action-btn.liked .heart{animation:heartPop 0.3s ease;}
   .read-btn{margin-left:auto;font-size:12px;font-weight:600;color:var(--gold);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;}
-  /* COMMENTS SECTION */
   .comments-wrap{background:var(--surface);border-top:1px solid var(--border);padding:14px;display:none;}
   .comment-row{display:flex;gap:8px;margin-bottom:12px;}
   .comment-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--green));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;}
@@ -94,6 +87,18 @@
   .comment-input{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;border-radius:10px;outline:none;}
   .comment-input:focus{border-color:rgba(245,197,66,0.4);}
   .btn-comment-send{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;border-radius:10px;padding:9px 14px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;}
+  /* VIDEO RECAP CARDS */
+  .video-recap-card{background:var(--card);border:1px solid rgba(79,163,255,0.2);border-radius:18px;overflow:hidden;margin-bottom:16px;transition:all 0.2s;}
+  .video-recap-card:hover{border-color:rgba(79,163,255,0.4);}
+  .video-recap-thumb{position:relative;height:180px;background:#000;overflow:hidden;cursor:pointer;}
+  .video-recap-thumb video{width:100%;height:100%;object-fit:cover;pointer-events:none;}
+  .video-recap-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);}
+  .video-recap-play-btn{width:52px;height:52px;background:rgba(79,163,255,0.9);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}
+  .video-recap-card:hover .video-recap-play-btn{transform:scale(1.1);}
+  .video-recap-badge{position:absolute;top:10px;left:10px;background:rgba(79,163,255,0.9);color:white;font-size:10px;font-weight:800;padding:3px 9px;border-radius:100px;letter-spacing:1px;}
+  .video-recap-body{padding:14px;}
+  .video-recap-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px;}
+  .video-recap-meta{font-size:12px;color:var(--muted);margin-bottom:8px;}
   /* CREATOR PROMO */
   .creator-promo{margin:0 20px 32px;background:linear-gradient(135deg,rgba(245,197,66,0.08),rgba(255,107,53,0.06));border:1px solid rgba(245,197,66,0.2);border-radius:18px;padding:24px;text-align:center;}
   .creator-promo h2{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold);margin-bottom:8px;}
@@ -103,7 +108,7 @@
   .step-num{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold);margin-bottom:4px;}
   .step-title{font-size:12px;font-weight:700;margin-bottom:4px;}
   .step-desc{font-size:11px;color:var(--muted);line-height:1.4;}
-  /* WRITE MODAL */
+  /* MODALS */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;}
   .modal-overlay.open{opacity:1;pointer-events:all;}
   .modal-sheet{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:640px;border:1px solid var(--border);border-bottom:none;padding:24px 20px 48px;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);max-height:95vh;overflow-y:auto;}
@@ -118,23 +123,35 @@
   .venue-chip{background:rgba(79,163,255,0.1);border:1px solid rgba(79,163,255,0.25);border-radius:100px;padding:5px 12px;font-size:12px;color:var(--blue);cursor:pointer;transition:all 0.2s;}
   .venue-chip.selected{background:rgba(79,163,255,0.25);border-color:var(--blue);font-weight:700;}
   .btn-submit{background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:15px;cursor:pointer;width:100%;margin-top:4px;}
-  /* AUTH MODAL */
   .auth-sheet{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:480px;border:1px solid var(--border);border-bottom:none;padding:28px 22px 48px;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);max-height:90vh;overflow-y:auto;}
   .modal-overlay.open .auth-sheet{transform:translateY(0);}
-  /* READ MODAL */
   .read-sheet{background:var(--bg);border-radius:22px 22px 0 0;width:100%;max-width:700px;border:1px solid var(--border);border-bottom:none;padding:24px 20px 60px;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);max-height:95vh;overflow-y:auto;}
   .modal-overlay.open .read-sheet{transform:translateY(0);}
   .read-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:800;margin-bottom:12px;line-height:1.3;}
   .read-body{font-size:14px;line-height:1.8;color:rgba(240,240,248,0.85);}
   .read-body p{margin-bottom:14px;}
-  /* DASHBOARD */
+  /* VIDEO UPLOAD MODAL STYLES */
+  .vid-drop-zone{border:2px dashed rgba(79,163,255,0.4);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:background 0.2s;margin-bottom:14px;}
+  .vid-drop-zone:hover{background:rgba(79,163,255,0.05);}
+  .vid-progress-track{background:var(--surface);border-radius:99px;height:6px;overflow:hidden;margin-bottom:4px;}
+  .vid-progress-fill{height:100%;background:linear-gradient(90deg,#4fa3ff,#a855f7);border-radius:99px;width:0%;transition:width 0.3s;}
+  .editor-tool{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;}
+  .editor-tool-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+  .range-row{display:flex;align-items:center;gap:10px;}
+  .range-row input[type=range]{flex:1;accent-color:#4fa3ff;}
+  .range-val{font-size:12px;color:#4fa3ff;min-width:36px;text-align:right;}
+  .filter-btns{display:flex;gap:6px;flex-wrap:wrap;}
+  .filter-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+  .filter-btn.active{background:rgba(79,163,255,0.15);border-color:rgba(79,163,255,0.4);color:#4fa3ff;}
   .dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
   .dash-stat{background:var(--surface);border-radius:12px;padding:12px;text-align:center;}
   .dash-stat-num{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);}
   .dash-stat-label{font-size:10px;color:var(--muted);}
-  /* TOAST */
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(30,30,50,0.96);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:12px;padding:10px 16px;font-size:13px;color:var(--text);opacity:0;transition:all 0.3s;z-index:300;white-space:nowrap;pointer-events:none;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  /* LIGHTBOX */
+  #vidLightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:20px;}
+  #vidLightbox video{max-width:100%;max-height:75vh;border-radius:12px;outline:none;background:#000;}
   @media(max-width:480px){.steps-row{grid-template-columns:1fr;}.earn-grid{grid-template-columns:1fr 1fr;}.hero-stats{gap:16px;}.dash-stats{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -150,7 +167,7 @@
 <main>
   <div class="hero">
     <h1>WRITE.<br>GET PAID.</h1>
-    <p>Share your Accra nightlife experiences and earn real money every time someone reads, likes or comments on your post.</p>
+    <p>Share your Accra nightlife experiences and earn real money every time someone reads, likes or comments on your post. Now with video recaps.</p>
     <div class="hero-stats">
       <div class="hstat"><div class="hstat-num" id="statCreators">—</div><div class="hstat-label">Creators</div></div>
       <div class="hstat"><div class="hstat-num" id="statPosts">—</div><div class="hstat-label">Posts</div></div>
@@ -158,11 +175,11 @@
     </div>
     <div class="cta-row">
       <button class="btn-cta btn-gold" onclick="openWrite()">✍️ Write a Post</button>
+      <button class="btn-cta btn-video" onclick="openVideoUpload()">🎬 Upload Recap Video</button>
       <button class="btn-cta btn-cta-outline" onclick="document.getElementById('reqBand').scrollIntoView({behavior:'smooth'})">Requirements ↓</button>
     </div>
   </div>
 
-  <!-- CREATOR REQUIREMENTS -->
   <div class="req-band" id="reqBand">
     <div class="req-title">TO BECOME A CREATOR YOU NEED</div>
     <div class="req-grid">
@@ -171,39 +188,36 @@
       <div class="req-card"><div class="req-icon">🇬🇭</div><div class="req-val">GH</div><div class="req-label">Ghana Based</div></div>
       <div class="req-card"><div class="req-icon">📝</div><div class="req-val">150+</div><div class="req-label">Words Per Post</div></div>
     </div>
-    <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:14px">Minimum follower count is set by GhaNight admin and may change. Build your audience first!</p>
+    <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:14px">Minimum follower count is set by GhaNight admin and may change.</p>
   </div>
 
-  <!-- EARNINGS -->
   <div class="earn-band">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:14px;text-align:center">HOW YOU <span style="color:var(--gold)">EARN</span></div>
     <div class="earn-grid">
       <div class="earn-card"><div class="earn-icon">👁️</div><div class="earn-title">Per View</div><div class="earn-rate">GHS 0.05</div><div class="earn-desc">Every time someone reads your post</div></div>
       <div class="earn-card"><div class="earn-icon">❤️</div><div class="earn-title">Per Like</div><div class="earn-rate">GHS 0.02</div><div class="earn-desc">Every like your post receives</div></div>
       <div class="earn-card"><div class="earn-icon">💬</div><div class="earn-title">Per Comment</div><div class="earn-rate">GHS 0.10</div><div class="earn-desc">Every genuine comment on your post</div></div>
-      <div class="earn-card"><div class="earn-icon">⭐</div><div class="earn-title">Featured Bonus</div><div class="earn-rate">GHS 50</div><div class="earn-desc">Top post of the week bonus</div></div>
+      <div class="earn-card"><div class="earn-icon">🎬</div><div class="earn-title">Video Recap</div><div class="earn-rate">Free</div><div class="earn-desc">Upload event recap videos — pending admin approval</div></div>
     </div>
   </div>
 
-  <!-- FILTER -->
   <div class="filter-row">
-    <button class="filter-chip active" onclick="filterPosts('all',this)">All Posts</button>
-    <button class="filter-chip" onclick="filterPosts('review',this)">🏛️ Reviews</button>
-    <button class="filter-chip" onclick="filterPosts('guide',this)">🗺️ Guides</button>
-    <button class="filter-chip" onclick="filterPosts('events',this)">🎉 Events</button>
-    <button class="filter-chip" onclick="filterPosts('dj',this)">🎧 DJs</button>
-    <button class="filter-chip" onclick="filterPosts('culture',this)">🇬🇭 Culture</button>
+    <button class="filter-chip active" onclick="filterContent('all',this)">All</button>
+    <button class="filter-chip" onclick="filterContent('review',this)">🏛️ Reviews</button>
+    <button class="filter-chip" onclick="filterContent('guide',this)">🗺️ Guides</button>
+    <button class="filter-chip" onclick="filterContent('events',this)">🎉 Events</button>
+    <button class="filter-chip" onclick="filterContent('dj',this)">🎧 DJs</button>
+    <button class="filter-chip" onclick="filterContent('culture',this)">🇬🇭 Culture</button>
+    <button class="filter-chip video-chip" onclick="filterContent('videos',this)">🎬 Videos</button>
   </div>
 
-  <!-- POSTS -->
   <div class="posts-wrap" id="postsWrap">
-    <div style="text-align:center;padding:40px;color:var(--muted)">Loading posts...</div>
+    <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
   </div>
 
-  <!-- CREATOR PROMO -->
   <div class="creator-promo">
     <h2>START EARNING TODAY</h2>
-    <p>You don't need a big following to start. Build your audience on GhaNight and earn as you grow.</p>
+    <p>Write posts or upload video recaps from your favourite Accra nightlife spots.</p>
     <div class="steps-row">
       <div class="step"><div class="step-num">01</div><div class="step-title">Sign Up Free</div><div class="step-desc">Create your creator account</div></div>
       <div class="step"><div class="step-num">02</div><div class="step-title">Build Followers</div><div class="step-desc">Get 50+ followers to unlock creator status</div></div>
@@ -241,7 +255,7 @@
       </div>
     </div>
     <div class="form-group"><label class="form-label">Your Post * (min 150 words)</label>
-      <textarea class="form-textarea" id="postBody" placeholder="Write your full post here. Be honest and detailed — tell readers what to expect, what you loved, what could be better..."></textarea>
+      <textarea class="form-textarea" id="postBody" placeholder="Write your full post here..."></textarea>
       <div style="font-size:11px;color:var(--muted);margin-top:4px" id="wordCount">0 words</div>
     </div>
     <div style="background:rgba(57,224,122,0.08);border:1px solid rgba(57,224,122,0.2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--green)">
@@ -252,49 +266,145 @@
   </div>
 </div>
 
+<!-- VIDEO UPLOAD MODAL -->
+<div class="modal-overlay" id="videoUploadOverlay" onclick="closeOnOutside(event,'videoUploadOverlay')">
+  <div class="modal-sheet" id="videoUploadSheet">
+    <div class="modal-handle"></div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;margin-bottom:4px;background:linear-gradient(135deg,#4fa3ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🎬 UPLOAD RECAP VIDEO</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:18px">Share your nightlife video recap — pending admin review</div>
+
+    <div class="form-group"><label class="form-label">Video Title *</label><input class="form-input" id="vidTitle" placeholder="e.g. Onyx Saturday Night Recap"></div>
+    <div class="form-group"><label class="form-label">Venue (optional)</label><input class="form-input" id="vidVenue" placeholder="e.g. Onyx Nightclub"></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="vidDesc" style="min-height:70px" placeholder="Short description of the video..."></textarea></div>
+
+    <!-- Drop zone -->
+    <div class="vid-drop-zone" onclick="document.getElementById('vidFileInput').click()">
+      <div style="font-size:36px;margin-bottom:8px;">🎬</div>
+      <p style="color:var(--muted);font-size:13px;margin:0;">Tap to select video<br><span style="font-size:11px;color:#444;">MP4, MOV, WebM · Max 200MB</span></p>
+    </div>
+    <input id="vidFileInput" type="file" accept="video/mp4,video/mov,video/webm,video/quicktime" style="display:none;" onchange="onVidFileSelected(this)">
+
+    <!-- File info -->
+    <div id="vidFileInfo" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;">
+      <div id="vidFileName" style="color:#4fa3ff;font-weight:700;font-size:13px;margin-bottom:2px;"></div>
+      <div id="vidFileMeta" style="color:var(--muted);font-size:12px;"></div>
+    </div>
+
+    <!-- Preview + editing tools -->
+    <div id="vidEditorWrap" style="display:none;margin-bottom:14px;">
+      <video id="vidPreviewEl" style="width:100%;border-radius:10px;background:#000;margin-bottom:10px;max-height:200px;object-fit:cover;" controls muted playsinline></video>
+
+      <!-- Brightness/Contrast -->
+      <div class="editor-tool">
+        <div class="editor-tool-title">☀️ Brightness & Contrast</div>
+        <div style="margin-bottom:8px;">
+          <label style="font-size:11px;color:var(--muted);">Brightness</label>
+          <div class="range-row">
+            <input type="range" id="vBrightness" min="0.5" max="2" step="0.05" value="1" oninput="applyVidFilter()">
+            <span class="range-val" id="vBrightnessVal">1.0</span>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);">Contrast</label>
+          <div class="range-row">
+            <input type="range" id="vContrast" min="0.5" max="2" step="0.05" value="1" oninput="applyVidFilter()">
+            <span class="range-val" id="vContrastVal">1.0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colour filters -->
+      <div class="editor-tool">
+        <div class="editor-tool-title">🎨 Colour Filter</div>
+        <div class="filter-btns">
+          <button class="filter-btn active" onclick="setVidColorFilter(this,'none')">None</button>
+          <button class="filter-btn" onclick="setVidColorFilter(this,'saturate(1.8)')">Vivid</button>
+          <button class="filter-btn" onclick="setVidColorFilter(this,'grayscale(1)')">B&W</button>
+          <button class="filter-btn" onclick="setVidColorFilter(this,'sepia(0.8)')">Warm</button>
+          <button class="filter-btn" onclick="setVidColorFilter(this,'hue-rotate(180deg) saturate(1.5)')">Cool</button>
+          <button class="filter-btn" onclick="setVidColorFilter(this,'contrast(1.4) saturate(1.3)')">Drama</button>
+          <button class="filter-btn" onclick="setVidColorFilter(this,'brightness(0.8) contrast(1.6)')">Moody</button>
+        </div>
+      </div>
+
+      <!-- Caption -->
+      <div class="editor-tool">
+        <div class="editor-tool-title">💬 Caption Overlay</div>
+        <input class="form-input" id="vidCaption" placeholder="e.g. Onyx Friday — The Night Never Ends" style="margin-bottom:0;">
+      </div>
+
+      <!-- Mute toggle -->
+      <div class="editor-tool" style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="editor-tool-title" style="margin-bottom:0;">🔇 Mute Audio</div>
+          <div style="font-size:11px;color:#555;margin-top:3px;">Upload without audio</div>
+        </div>
+        <input type="checkbox" id="vidMuteAudio" style="width:20px;height:20px;accent-color:#4fa3ff;cursor:pointer;">
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div id="vidUploadProgress" style="display:none;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:12px;color:var(--muted);">Uploading...</span>
+        <span id="vidProgressPct" style="font-size:12px;color:#4fa3ff;">0%</span>
+      </div>
+      <div class="vid-progress-track">
+        <div class="vid-progress-fill" id="vidProgressFill"></div>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div id="vidUploadStatus" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;"></div>
+
+    <button class="btn-submit" style="background:linear-gradient(135deg,#4fa3ff,#a855f7);" onclick="submitVideoRecap()">🚀 Upload Recap Video</button>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;">Your video will be reviewed by GhaNight admin before going live.</div>
+  </div>
+</div>
+
 <!-- READ MODAL -->
 <div class="modal-overlay" id="readOverlay" onclick="closeOnOutside(event,'readOverlay')">
-  <div class="read-sheet">
-    <div class="modal-handle"></div>
-    <div id="readContent"></div>
-  </div>
+  <div class="read-sheet"><div class="modal-handle"></div><div id="readContent"></div></div>
 </div>
 
 <!-- AUTH MODAL -->
 <div class="modal-overlay" id="authOverlay" onclick="closeOnOutside(event,'authOverlay')">
-  <div class="auth-sheet">
-    <div class="modal-handle"></div>
-    <div id="authContent"></div>
-  </div>
+  <div class="auth-sheet"><div class="modal-handle"></div><div id="authContent"></div></div>
 </div>
 
 <!-- DASHBOARD MODAL -->
 <div class="modal-overlay" id="dashOverlay" onclick="closeOnOutside(event,'dashOverlay')">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div id="dashContent"></div>
-  </div>
+  <div class="modal-sheet"><div class="modal-handle"></div><div id="dashContent"></div></div>
+</div>
+
+<!-- VIDEO LIGHTBOX -->
+<div id="vidLightbox" onclick="closeLightbox()">
+  <button onclick="closeLightbox()" style="position:absolute;top:16px;right:20px;background:none;border:none;color:#fff;font-size:36px;cursor:pointer;line-height:1;">×</button>
+  <video id="vidLightboxVideo" controls autoplay playsinline></video>
+  <p id="vidLightboxTitle" style="color:#fff;font-size:16px;font-weight:700;margin-top:14px;text-align:center;"></p>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://lkuprzwbscuaitktlhrp.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+const SUPABASE_URL  = 'https://lkuprzwbscuaitktlhrp.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
+const VIDEO_BUCKET  = 'venue-media';
 const CAT = { review:'Venue Review', guide:'Night Guide', events:'Event Recap', dj:'DJ Spotlight', culture:'Culture' };
 const CAT_CLASS = { review:'cat-review', guide:'cat-guide', events:'cat-events', dj:'cat-dj', culture:'cat-culture' };
 const CAT_EMOJI = { review:'🏛️', guide:'🗺️', events:'🎉', dj:'🎧', culture:'🇬🇭' };
 
-let db = null, currentUser = null, allPosts = [], selectedVenue = null;
+let db = null, currentUser = null, allPosts = [], allVideos = [], selectedVenue = null;
 let userFollowing = new Set(), userLiked = new Set();
-// These are loaded from Supabase platform_settings — admin controls them from dashboard
-let RATE_VIEW = 0.05, RATE_LIKE = 0.02, RATE_COMMENT = 0.10, MIN_PAYOUT = 50, MIN_FOLLOWERS = 50, MIN_WORDS = 150;
+let RATE_VIEW=0.05, RATE_LIKE=0.02, RATE_COMMENT=0.10, MIN_PAYOUT=50, MIN_FOLLOWERS=50, MIN_WORDS=150;
+let selectedVideoFile = null, currentVidFilter = 'none', currentFilterType = 'all';
 
 window.addEventListener('load', async () => {
   try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
   await checkSession();
   await loadSettings();
   await loadPosts();
+  await loadVideos();
   await loadStats();
   document.getElementById('minFollowersDisplay').textContent = MIN_FOLLOWERS;
   document.getElementById('postBody')?.addEventListener('input', function() {
@@ -310,138 +420,164 @@ async function loadSettings() {
     const { data } = await db.from('platform_settings').select('value').eq('key','creator_settings').single();
     if (data?.value) {
       const s = JSON.parse(data.value);
-      RATE_VIEW     = parseFloat(s.rate_view     || 0.05);
-      RATE_LIKE     = parseFloat(s.rate_like     || 0.02);
-      RATE_COMMENT  = parseFloat(s.rate_comment  || 0.10);
-      MIN_PAYOUT    = parseInt(s.min_payout      || 50);
-      MIN_FOLLOWERS = parseInt(s.min_followers   || 50);
-      MIN_WORDS     = parseInt(s.min_words       || 150);
-      // Update displayed values
-      const minEl = document.getElementById('minFollowersDisplay');
-      if (minEl) minEl.textContent = MIN_FOLLOWERS;
+      RATE_VIEW=parseFloat(s.rate_view||0.05); RATE_LIKE=parseFloat(s.rate_like||0.02);
+      RATE_COMMENT=parseFloat(s.rate_comment||0.10); MIN_PAYOUT=parseInt(s.min_payout||50);
+      MIN_FOLLOWERS=parseInt(s.min_followers||50); MIN_WORDS=parseInt(s.min_words||150);
+      const minEl=document.getElementById('minFollowersDisplay');
+      if(minEl)minEl.textContent=MIN_FOLLOWERS;
     }
-  } catch(e){} // Falls back to defaults if table not yet created
+  } catch(e){}
 }
 
 async function checkSession() {
   if (!db) return;
   try {
     const { data:{ session } } = await db.auth.getSession();
-    if (session) { currentUser = session.user; await loadUserData(); updateNav(); }
-    db.auth.onAuthStateChange(async (_, s) => {
-      currentUser = s?.user||null;
-      if (currentUser) await loadUserData();
-      updateNav();
-    });
+    if (session) { currentUser=session.user; await loadUserData(); updateNav(); }
+    db.auth.onAuthStateChange(async(_,s)=>{currentUser=s?.user||null;if(currentUser)await loadUserData();updateNav();});
   } catch(e){}
 }
 
 async function loadUserData() {
-  if (!db || !currentUser) return;
+  if (!db||!currentUser) return;
   try {
-    // Load who user is following
-    const { data:following } = await db.from('creator_follows').select('following_id').eq('follower_id', currentUser.id);
-    userFollowing = new Set((following||[]).map(f=>f.following_id));
-    // Load posts user has liked
-    const { data:liked } = await db.from('post_likes').select('post_id').eq('user_id', currentUser.id);
-    userLiked = new Set((liked||[]).map(l=>l.post_id));
+    const {data:following}=await db.from('creator_follows').select('following_id').eq('follower_id',currentUser.id);
+    userFollowing=new Set((following||[]).map(f=>f.following_id));
+    const {data:liked}=await db.from('post_likes').select('post_id').eq('user_id',currentUser.id);
+    userLiked=new Set((liked||[]).map(l=>l.post_id));
   } catch(e){}
 }
 
 function updateNav() {
-  const auth = document.getElementById('navAuthBtn');
-  const dash = document.getElementById('navDashBtn');
-  if (currentUser) {
-    auth.textContent = '✍️ Write'; auth.onclick = () => openWrite();
-    dash.style.display = 'block';
-  } else {
-    auth.textContent = 'Join as Creator'; auth.onclick = () => openAuthModal();
-    dash.style.display = 'none';
-  }
+  const auth=document.getElementById('navAuthBtn'),dash=document.getElementById('navDashBtn');
+  if(currentUser){auth.textContent='✍️ Write';auth.onclick=()=>openWrite();dash.style.display='block';}
+  else{auth.textContent='Join as Creator';auth.onclick=()=>openAuthModal();dash.style.display='none';}
 }
 
-// ── LOAD POSTS ────────────────────────────────────────
+// ── LOAD POSTS ──────────────────────────────────────
 async function loadPosts() {
-  if (!db) { renderPosts(getDemoPosts()); return; }
-  try {
-    const { data, error } = await db.from('creator_posts').select('*, post_likes(count), post_comments(count)').eq('status','approved').order('created_at',{ascending:false});
-    if (!error && data?.length) { allPosts = data; renderPosts(allPosts); }
-    else renderPosts(getDemoPosts());
-  } catch(e) { renderPosts(getDemoPosts()); }
+  if(!db){renderAll(getDemoPosts(),[]);return;}
+  try{
+    const {data,error}=await db.from('creator_posts').select('*,post_likes(count),post_comments(count)').eq('status','approved').order('created_at',{ascending:false});
+    if(!error&&data?.length){allPosts=data;}else{allPosts=getDemoPosts();}
+  }catch(e){allPosts=getDemoPosts();}
+  renderAll(allPosts,allVideos);
+}
+
+async function loadVideos() {
+  if(!db){renderAll(allPosts,allVideos);return;}
+  try{
+    const {data,error}=await db.from('venue_videos').select('*').eq('is_active',true).eq('uploader_type','blogger').order('created_at',{ascending:false}).limit(20);
+    if(!error&&data?.length)allVideos=data;
+  }catch(e){}
+  renderAll(allPosts,allVideos);
 }
 
 async function loadStats() {
-  if (!db) { document.getElementById('statCreators').textContent='12'; document.getElementById('statPosts').textContent='34'; document.getElementById('statViews').textContent='8.2K'; return; }
-  try {
-    const [pRes, vRes] = await Promise.all([
+  if(!db){document.getElementById('statCreators').textContent='12';document.getElementById('statPosts').textContent='34';document.getElementById('statViews').textContent='8.2K';return;}
+  try{
+    const [pRes,vRes]=await Promise.all([
       db.from('creator_posts').select('*',{count:'exact',head:true}).eq('status','approved'),
       db.from('creator_posts').select('views').eq('status','approved'),
     ]);
-    const total = (vRes.data||[]).reduce((s,p)=>s+(p.views||0),0);
-    document.getElementById('statPosts').textContent = pRes.count||0;
-    document.getElementById('statViews').textContent = total>=1000?(total/1000).toFixed(1)+'K':String(total);
-    const { data:c } = await db.from('creator_posts').select('author_id').eq('status','approved');
-    document.getElementById('statCreators').textContent = new Set((c||[]).map(x=>x.author_id)).size;
-  } catch(e){}
+    const total=(vRes.data||[]).reduce((s,p)=>s+(p.views||0),0);
+    document.getElementById('statPosts').textContent=pRes.count||0;
+    document.getElementById('statViews').textContent=total>=1000?(total/1000).toFixed(1)+'K':String(total);
+    const {data:c}=await db.from('creator_posts').select('author_id').eq('status','approved');
+    document.getElementById('statCreators').textContent=new Set((c||[]).map(x=>x.author_id)).size;
+  }catch(e){}
 }
 
-function getDemoPosts() {
+function getDemoPosts(){
   return [
-    { id:'d1', title:'Onyx Nightclub on a Friday: Full Honest Review', category:'review', author_name:'Kwame A.', author_id:'u1', excerpt:'If you haven\'t been to Onyx on a Friday night, have you really experienced Accra\'s nightlife? I went last week and here\'s my take...', body:'If you haven\'t been to Onyx on a Friday night, have you really experienced Accra\'s nightlife?\n\nThe moment you walk in, the energy hits you. Afrobeats is the language — Burna Boy, Stonebwoy, Wizkid. The DJ knows exactly what Accra wants.\n\nThe crowd is a mix of young professionals, students, and expats. Everyone comes dressed. Entry is GHS 50 on Fridays which includes one drink.\n\nExpect to pay GHS 30–50 for cocktails. Bar staff are fast despite the crowd.\n\nMy rating: 4.5/5. The only downside is parking. Come early or use a ride.\n\nOverall, Onyx delivers every time. It\'s the standard by which Accra nightlife should be judged.', views:1842, likes:156, comments:23, author_followers:234, featured:true, status:'approved', created_at:new Date(Date.now()-86400000*2).toISOString(), venue:'Onyx Nightclub' },
-    { id:'d2', title:'The Ultimate Airport Hills Rooftop Guide', category:'guide', author_name:'Abena K.', author_id:'u2', excerpt:'Airport Hills has become the go-to area for Accra\'s rooftop scene. Here\'s everything you need to know...', body:'Airport Hills has quietly become the rooftop capital of Accra.\n\nSky+ Rooftop Bar is the crown jewel — stunning views, great cocktails, and a relaxed R&B soundtrack. Best visited at sunset around 6–7pm before it fills up.\n\nThe area also has hidden spots that locals know but tourists don\'t.\n\nBest day: Thursday evenings have the best vibe with a more intimate crowd. Weekends get packed fast.\n\nDress code: smart casual minimum. They enforce it.\n\nBudget: GHS 30 entry, cocktails from GHS 45.', views:956, likes:89, comments:12, author_followers:156, featured:false, status:'approved', created_at:new Date(Date.now()-86400000*4).toISOString(), venue:'Sky+ Rooftop Bar' },
-    { id:'d3', title:'Highlife Legends Night at Twist Lounge', category:'events', author_name:'Kofi M.', author_id:'u3', excerpt:'Twist Lounge pulled off something special. A full live band, old school highlife, and an audience that knew every lyric...', body:'Twist Lounge pulled off something special last Saturday.\n\nA full live band — bass, percussion, horns, and vocals — playing classics from Osibisa, Amakye Dede, and Pat Thomas. Not a DJ pretending to be live. Actual musicians who love the music.\n\nThe crowd was multigenerational. People in their 50s dancing with people in their 20s. That doesn\'t happen often in Accra.\n\nEntry was free. The bar was doing great business because everyone stayed all night.\n\nTwist Lounge, you earned a regular customer.', views:723, likes:67, comments:9, author_followers:89, featured:false, status:'approved', created_at:new Date(Date.now()-86400000*6).toISOString(), venue:'Twist Lounge' },
+    {id:'d1',title:"Onyx Nightclub on a Friday: Full Honest Review",category:'review',author_name:'Kwame A.',author_id:'u1',excerpt:"If you haven't been to Onyx on a Friday night, have you really experienced Accra's nightlife?",body:"If you haven't been to Onyx on a Friday night, have you really experienced Accra's nightlife?\n\nThe moment you walk in, the energy hits you. Afrobeats is the language — Burna Boy, Stonebwoy, Wizkid. The DJ knows exactly what Accra wants.\n\nThe crowd is a mix of young professionals, students, and expats. Everyone comes dressed. Entry is GHS 50 on Fridays which includes one drink.\n\nExpect to pay GHS 30–50 for cocktails. Bar staff are fast despite the crowd.\n\nMy rating: 4.5/5. The only downside is parking. Come early or use a ride.\n\nOverall, Onyx delivers every time.",views:1842,likes:156,comments:23,author_followers:234,featured:true,status:'approved',created_at:new Date(Date.now()-86400000*2).toISOString(),venue:'Onyx Nightclub'},
+    {id:'d2',title:"The Ultimate Airport Hills Rooftop Guide",category:'guide',author_name:'Abena K.',author_id:'u2',excerpt:"Airport Hills has become the go-to area for Accra's rooftop scene.",body:"Airport Hills has quietly become the rooftop capital of Accra.\n\nSky+ Rooftop Bar is the crown jewel — stunning views, great cocktails, and a relaxed R&B soundtrack. Best visited at sunset around 6–7pm before it fills up.\n\nBest day: Thursday evenings have the best vibe. Weekends get packed fast.\n\nDress code: smart casual minimum. They enforce it.\n\nBudget: GHS 30 entry, cocktails from GHS 45.",views:956,likes:89,comments:12,author_followers:156,featured:false,status:'approved',created_at:new Date(Date.now()-86400000*4).toISOString(),venue:'Sky+ Rooftop Bar'},
   ];
 }
 
-// ── RENDER POSTS ─────────────────────────────────────
-function renderPosts(posts) {
+// ── RENDER ──────────────────────────────────────────
+function renderAll(posts, videos) {
   const wrap = document.getElementById('postsWrap');
-  if (!posts.length) { wrap.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No posts yet. Be the first!</div>'; return; }
-  wrap.innerHTML = posts.map(p => postHTML(p)).join('');
+  let html = '';
+
+  if (currentFilterType === 'videos') {
+    if (!videos.length) {
+      html = '<div style="text-align:center;padding:40px;color:var(--muted)">No video recaps yet. Be the first to upload one!</div>';
+    } else {
+      html = videos.map(v => videoCardHTML(v)).join('');
+    }
+  } else {
+    const filteredPosts = currentFilterType === 'all' ? posts : posts.filter(p=>p.category===currentFilterType);
+    if (!filteredPosts.length && !videos.length) {
+      html = '<div style="text-align:center;padding:40px;color:var(--muted)">No content yet.</div>';
+    } else {
+      // Show videos first if all, then posts
+      if (currentFilterType === 'all' && videos.length) {
+        html += `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:14px;color:var(--blue);">🎬 VIDEO RECAPS</div>`;
+        html += videos.slice(0,3).map(v => videoCardHTML(v)).join('');
+        if (filteredPosts.length) {
+          html += `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin:20px 0 14px;color:var(--gold);">✍️ WRITTEN POSTS</div>`;
+        }
+      }
+      html += filteredPosts.map(p => postHTML(p)).join('');
+    }
+  }
+
+  wrap.innerHTML = html || '<div style="text-align:center;padding:40px;color:var(--muted)">No posts yet. Be the first!</div>';
+}
+
+function videoCardHTML(v) {
+  const date = new Date(v.created_at).toLocaleDateString('en-GH',{day:'numeric',month:'short'});
+  return `<div class="video-recap-card">
+    <div class="video-recap-thumb" onclick="openVideoLightbox('${v.public_url}','${esc(v.title)}')">
+      <video src="${v.public_url}#t=1" preload="metadata" muted playsinline></video>
+      <div class="video-recap-play">
+        <div class="video-recap-play-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+      <span class="video-recap-badge">🎬 RECAP</span>
+    </div>
+    <div class="video-recap-body">
+      <div class="video-recap-title">${esc(v.title)}</div>
+      <div class="video-recap-meta">${v.venue_name?'📍 '+esc(v.venue_name)+' · ':''} ${date} · ${v.duration_sec?v.duration_sec+'s':'—'}</div>
+      ${v.caption?`<div style="font-size:12px;color:var(--muted);font-style:italic;">"${esc(v.caption)}"</div>`:''}
+    </div>
+  </div>`;
 }
 
 function postHTML(p) {
-  const initials = (p.author_name||'A').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-  const date = new Date(p.created_at).toLocaleDateString('en-GH',{day:'numeric',month:'short'});
-  const likes = p.likes || (p.post_likes?.[0]?.count) || 0;
-  const comments = p.comments || (p.post_comments?.[0]?.count) || 0;
-  const isLiked = userLiked.has(p.id);
-  const isFollowing = userFollowing.has(p.author_id);
+  const initials=(p.author_name||'A').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const date=new Date(p.created_at).toLocaleDateString('en-GH',{day:'numeric',month:'short'});
+  const likes=p.likes||(p.post_likes?.[0]?.count)||0;
+  const comments=p.comments||(p.post_comments?.[0]?.count)||0;
+  const isLiked=userLiked.has(p.id);
+  const isFollowing=userFollowing.has(p.author_id);
   return `<div class="post-card ${p.featured?'featured':''}" id="post-${p.id}">
-    <div class="post-thumb" onclick="openPost('${p.id}')">
-      ${CAT_EMOJI[p.category]||'📝'}
+    <div class="post-thumb" onclick="openPost('${p.id}')">${CAT_EMOJI[p.category]||'📝'}
       <span class="post-cat-badge ${CAT_CLASS[p.category]||'cat-review'}">${CAT[p.category]||p.category}</span>
       ${p.featured?'<span class="post-feat-badge">⭐ Featured</span>':''}
     </div>
     <div class="post-body">
       <div class="post-author-row">
         <div class="post-author-left">
-          <div class="post-avatar" onclick="viewProfile('${p.author_id}','${p.author_name}')">${initials}</div>
-          <div>
-            <div class="post-author-name" onclick="viewProfile('${p.author_id}','${p.author_name}')">${p.author_name||'Anonymous'}</div>
-            <div class="post-followers">${(p.author_followers||0).toLocaleString()} followers · ${date}</div>
-          </div>
+          <div class="post-avatar">${initials}</div>
+          <div><div class="post-author-name">${p.author_name||'Anonymous'}</div><div class="post-followers">${(p.author_followers||0).toLocaleString()} followers · ${date}</div></div>
         </div>
         <button class="btn-follow ${isFollowing?'following':''}" onclick="toggleFollow('${p.author_id}',this)">${isFollowing?'✓ Following':'+ Follow'}</button>
       </div>
       <div class="post-title" onclick="openPost('${p.id}')">${p.title}</div>
       <div class="post-excerpt">${p.excerpt||p.body?.substring(0,120)+'...'||''}</div>
-      ${p.venue?`<div class="venue-tag" onclick="showToast('Viewing ${p.venue} →')">📍 ${p.venue}</div>`:''}
+      ${p.venue?`<div class="venue-tag">📍 ${p.venue}</div>`:''}
       <div class="post-actions">
-        <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${p.id}',this)">
-          <span class="heart">${isLiked?'❤️':'🤍'}</span> <span class="like-count">${likes}</span>
-        </button>
-        <button class="action-btn" onclick="toggleComments('${p.id}')">
-          💬 <span>${comments}</span>
-        </button>
+        <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${p.id}',this)"><span class="heart">${isLiked?'❤️':'🤍'}</span> <span class="like-count">${likes}</span></button>
+        <button class="action-btn" onclick="toggleComments('${p.id}')">💬 <span>${comments}</span></button>
         <button class="action-btn" onclick="sharePost('${p.title}')">📤 Share</button>
         <button class="read-btn" onclick="openPost('${p.id}')">Read more →</button>
       </div>
     </div>
     <div class="comments-wrap" id="comments-${p.id}">
-      <div id="comments-list-${p.id}" style="margin-bottom:10px">
-        <div style="font-size:12px;color:var(--muted)">Loading comments...</div>
-      </div>
+      <div id="comments-list-${p.id}" style="margin-bottom:10px"><div style="font-size:12px;color:var(--muted)">Loading comments...</div></div>
       <div class="comment-input-row">
         <input class="comment-input" id="comment-input-${p.id}" placeholder="Add a comment..." type="text" onkeydown="if(event.key==='Enter')submitComment('${p.id}')">
         <button class="btn-comment-send" onclick="submitComment('${p.id}')">Post</button>
@@ -450,112 +586,231 @@ function postHTML(p) {
   </div>`;
 }
 
-function filterPosts(cat, btn) {
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function filterContent(type, btn) {
   document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  const filtered = cat==='all' ? allPosts : allPosts.filter(p=>p.category===cat);
-  renderPosts(filtered.length ? filtered : (cat==='all'?getDemoPosts():getDemoPosts().filter(p=>p.category===cat)));
+  currentFilterType = type;
+  renderAll(allPosts, allVideos);
 }
 
-// ── LIKES ─────────────────────────────────────────────
-async function toggleLike(postId, btn) {
+// ── VIDEO LIGHTBOX ──────────────────────────────────
+function openVideoLightbox(url, title) {
+  const lb = document.getElementById('vidLightbox');
+  document.getElementById('vidLightboxVideo').src = url;
+  document.getElementById('vidLightboxTitle').textContent = title;
+  lb.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  const v = document.getElementById('vidLightboxVideo');
+  v.pause(); v.src = '';
+  document.getElementById('vidLightbox').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// ── VIDEO UPLOAD ────────────────────────────────────
+function openVideoUpload() {
   if (!currentUser) { openAuthModal(); return; }
-  const isLiked = userLiked.has(postId);
-  const countEl = btn.querySelector('.like-count');
-  const heartEl = btn.querySelector('.heart');
-  if (isLiked) {
-    userLiked.delete(postId);
-    btn.classList.remove('liked');
-    if (heartEl) heartEl.textContent = '🤍';
-    if (countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent||'0')-1);
-    if (db) await db.from('post_likes').delete().eq('post_id',postId).eq('user_id',currentUser.id).catch(()=>{});
-  } else {
-    userLiked.add(postId);
-    btn.classList.add('liked');
-    if (heartEl) heartEl.textContent = '❤️';
-    if (countEl) countEl.textContent = parseInt(countEl.textContent||'0')+1;
-    if (db) await db.from('post_likes').insert({ post_id:postId, user_id:currentUser.id }).catch(()=>{});
+  resetVideoModal();
+  document.getElementById('videoUploadOverlay').classList.add('open');
+}
+
+function resetVideoModal() {
+  selectedVideoFile = null; currentVidFilter = 'none';
+  ['vidTitle','vidVenue','vidDesc','vidCaption'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('vidFileInfo').style.display='none';
+  document.getElementById('vidEditorWrap').style.display='none';
+  document.getElementById('vidUploadProgress').style.display='none';
+  document.getElementById('vidUploadStatus').style.display='none';
+  document.getElementById('vidFileInput').value='';
+  const fill=document.getElementById('vidProgressFill');if(fill)fill.style.width='0%';
+}
+
+function onVidFileSelected(input) {
+  const file = input.files[0]; if (!file) return;
+  if (file.size > 200*1024*1024) { showToast('⚠️ File too large. Max 200MB.'); return; }
+  selectedVideoFile = file;
+  const mb = (file.size/1024/1024).toFixed(1);
+  document.getElementById('vidFileName').textContent = file.name;
+  const preview = document.getElementById('vidPreviewEl');
+  preview.src = URL.createObjectURL(file);
+  const vid = document.createElement('video');
+  vid.preload='metadata';
+  vid.onloadedmetadata=()=>{ document.getElementById('vidFileMeta').textContent = `${mb}MB · ${Math.round(vid.duration)}s`; };
+  vid.src = URL.createObjectURL(file);
+  document.getElementById('vidFileInfo').style.display='block';
+  document.getElementById('vidEditorWrap').style.display='block';
+}
+
+function applyVidFilter() {
+  const b=document.getElementById('vBrightness').value;
+  const c=document.getElementById('vContrast').value;
+  document.getElementById('vBrightnessVal').textContent=parseFloat(b).toFixed(1);
+  document.getElementById('vContrastVal').textContent=parseFloat(c).toFixed(1);
+  const preview=document.getElementById('vidPreviewEl');
+  const base=`brightness(${b}) contrast(${c})`;
+  preview.style.filter=currentVidFilter!=='none'?base+' '+currentVidFilter:base;
+}
+
+function setVidColorFilter(btn, filter) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentVidFilter=filter;
+  applyVidFilter();
+}
+
+async function submitVideoRecap() {
+  if (!currentUser) { openAuthModal(); return; }
+  const title = document.getElementById('vidTitle').value.trim();
+  if (!title) { vidStatus('Please enter a video title.','error'); return; }
+  if (!selectedVideoFile) { vidStatus('Please select a video file.','error'); return; }
+
+  const btn = document.querySelector('#videoUploadSheet .btn-submit');
+  btn.disabled=true; btn.textContent='Uploading...';
+  document.getElementById('vidUploadProgress').style.display='block';
+  setVidProgress(15);
+
+  try {
+    const ext   = selectedVideoFile.name.split('.').pop().toLowerCase();
+    const safe  = title.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
+    const key   = `recaps/${Date.now()}-${safe}.${ext}`;
+
+    setVidProgress(35);
+
+    const { error: storageErr } = await db.storage
+      .from(VIDEO_BUCKET)
+      .upload(key, selectedVideoFile, { cacheControl:'3600', upsert:false, contentType:selectedVideoFile.type });
+    if (storageErr) throw storageErr;
+
+    setVidProgress(70);
+
+    const { data: urlData } = db.storage.from(VIDEO_BUCKET).getPublicUrl(key);
+    const publicUrl = urlData.publicUrl;
+
+    // Get author name
+    const {data:profile}=await db.from('user_profiles').select('first_name,last_name').eq('id',currentUser.id).single().catch(()=>({data:null}));
+    const authorName=profile?`${profile.first_name||''} ${profile.last_name||''}`.trim()||currentUser.email.split('@')[0]:currentUser.email.split('@')[0];
+
+    const {error:dbErr}=await db.from('venue_videos').insert({
+      venue_name: document.getElementById('vidVenue').value.trim()||'General',
+      title,
+      description: document.getElementById('vidDesc').value.trim(),
+      storage_path: key,
+      public_url: publicUrl,
+      file_size: selectedVideoFile.size,
+      uploader_type: 'blogger',
+      caption: document.getElementById('vidCaption').value.trim(),
+      edit_settings: JSON.stringify({brightness:document.getElementById('vBrightness').value,contrast:document.getElementById('vContrast').value,filter:currentVidFilter,muted:document.getElementById('vidMuteAudio').checked}),
+      storage_provider: 'supabase',
+      is_active: false, // requires admin approval
+    });
+    if(dbErr) throw dbErr;
+
+    setVidProgress(100);
+    vidStatus('✅ Video submitted! Admin will review and publish it.','success');
+    setTimeout(()=>{closeModal('videoUploadOverlay');loadVideos();},2000);
+
+  } catch(err) {
+    vidStatus('❌ Upload failed: '+err.message,'error');
+    btn.disabled=false; btn.textContent='🚀 Upload Recap Video';
   }
 }
 
-// ── COMMENTS ──────────────────────────────────────────
-async function toggleComments(postId) {
-  const wrap = document.getElementById(`comments-${postId}`);
-  if (!wrap) return;
-  const isOpen = wrap.style.display === 'block';
-  wrap.style.display = isOpen ? 'none' : 'block';
-  if (!isOpen) await loadComments(postId);
+function setVidProgress(pct){
+  document.getElementById('vidProgressFill').style.width=pct+'%';
+  document.getElementById('vidProgressPct').textContent=pct+'%';
+}
+function vidStatus(msg,type){
+  const el=document.getElementById('vidUploadStatus');
+  el.style.display='block';
+  el.style.background=type==='success'?'rgba(57,224,122,0.12)':'rgba(255,61,138,0.12)';
+  el.style.color=type==='success'?'var(--green)':'var(--pink)';
+  el.style.border=`1px solid ${type==='success'?'rgba(57,224,122,0.3)':'rgba(255,61,138,0.3)'}`;
+  el.textContent=msg;
 }
 
-async function loadComments(postId) {
-  const listEl = document.getElementById(`comments-list-${postId}`);
-  if (!listEl || !db) return;
-  try {
-    const { data } = await db.from('post_comments').select('*, user_profiles(first_name,last_name)').eq('post_id',postId).order('created_at',{ascending:true}).limit(20);
-    if (!data?.length) { listEl.innerHTML='<div style="font-size:12px;color:var(--muted)">No comments yet. Be the first!</div>'; return; }
-    listEl.innerHTML = data.map(c=>{
-      const name = c.user_profiles?`${c.user_profiles.first_name||''} ${c.user_profiles.last_name||''}`.trim()||'User':'User';
-      const init = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-      return `<div class="comment-row">
-        <div class="comment-avatar">${init}</div>
-        <div class="comment-body">
-          <div class="comment-name">${name}</div>
-          <div class="comment-text">${c.comment}</div>
-          <div class="comment-time">${new Date(c.created_at).toLocaleDateString('en-GH')}</div>
-        </div>
-      </div>`;
+// ── LIKES ──────────────────────────────────────────
+async function toggleLike(postId,btn){
+  if(!currentUser){openAuthModal();return;}
+  const isLiked=userLiked.has(postId);
+  const countEl=btn.querySelector('.like-count'),heartEl=btn.querySelector('.heart');
+  if(isLiked){
+    userLiked.delete(postId);btn.classList.remove('liked');
+    if(heartEl)heartEl.textContent='🤍';
+    if(countEl)countEl.textContent=Math.max(0,parseInt(countEl.textContent||'0')-1);
+    if(db)await db.from('post_likes').delete().eq('post_id',postId).eq('user_id',currentUser.id).catch(()=>{});
+  }else{
+    userLiked.add(postId);btn.classList.add('liked');
+    if(heartEl)heartEl.textContent='❤️';
+    if(countEl)countEl.textContent=parseInt(countEl.textContent||'0')+1;
+    if(db)await db.from('post_likes').insert({post_id:postId,user_id:currentUser.id}).catch(()=>{});
+  }
+}
+
+// ── COMMENTS ────────────────────────────────────────
+async function toggleComments(postId){
+  const wrap=document.getElementById(`comments-${postId}`);if(!wrap)return;
+  const isOpen=wrap.style.display==='block';
+  wrap.style.display=isOpen?'none':'block';
+  if(!isOpen)await loadComments(postId);
+}
+async function loadComments(postId){
+  const listEl=document.getElementById(`comments-list-${postId}`);
+  if(!listEl||!db)return;
+  try{
+    const {data}=await db.from('post_comments').select('*,user_profiles(first_name,last_name)').eq('post_id',postId).order('created_at',{ascending:true}).limit(20);
+    if(!data?.length){listEl.innerHTML='<div style="font-size:12px;color:var(--muted)">No comments yet.</div>';return;}
+    listEl.innerHTML=data.map(c=>{
+      const name=c.user_profiles?`${c.user_profiles.first_name||''} ${c.user_profiles.last_name||''}`.trim()||'User':'User';
+      const init=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return `<div class="comment-row"><div class="comment-avatar">${init}</div><div class="comment-body"><div class="comment-name">${name}</div><div class="comment-text">${c.comment}</div><div class="comment-time">${new Date(c.created_at).toLocaleDateString('en-GH')}</div></div></div>`;
     }).join('');
-  } catch(e) { listEl.innerHTML='<div style="font-size:12px;color:var(--muted)">Failed to load comments</div>'; }
+  }catch(e){}
+}
+async function submitComment(postId){
+  if(!currentUser){openAuthModal();return;}
+  const input=document.getElementById(`comment-input-${postId}`);
+  const text=input?.value?.trim();if(!text)return;
+  if(!db){showToast('⚠️ Service unavailable');return;}
+  try{
+    await db.from('post_comments').insert({post_id:postId,user_id:currentUser.id,comment:text});
+    input.value='';showToast('💬 Comment posted!');await loadComments(postId);
+  }catch(e){showToast('⚠️ Failed to post comment');}
 }
 
-async function submitComment(postId) {
-  if (!currentUser) { openAuthModal(); return; }
-  const input = document.getElementById(`comment-input-${postId}`);
-  const text = input?.value?.trim();
-  if (!text) return;
-  if (!db) { showToast('⚠️ Service unavailable'); return; }
-  try {
-    await db.from('post_comments').insert({ post_id:postId, user_id:currentUser.id, comment:text });
-    input.value = '';
-    showToast('💬 Comment posted!');
-    await loadComments(postId);
-  } catch(e) { showToast('⚠️ Failed to post comment'); }
-}
-
-// ── FOLLOW ────────────────────────────────────────────
-async function toggleFollow(authorId, btn) {
-  if (!currentUser) { openAuthModal(); return; }
-  if (authorId === currentUser.id) { showToast('You cannot follow yourself'); return; }
-  const isFollowing = userFollowing.has(authorId);
-  if (isFollowing) {
-    userFollowing.delete(authorId);
-    btn.textContent = '+ Follow'; btn.classList.remove('following');
-    if (db) await db.from('creator_follows').delete().eq('follower_id',currentUser.id).eq('following_id',authorId).catch(()=>{});
+// ── FOLLOW ──────────────────────────────────────────
+async function toggleFollow(authorId,btn){
+  if(!currentUser){openAuthModal();return;}
+  if(authorId===currentUser.id){showToast('You cannot follow yourself');return;}
+  const isFollowing=userFollowing.has(authorId);
+  if(isFollowing){
+    userFollowing.delete(authorId);btn.textContent='+ Follow';btn.classList.remove('following');
+    if(db)await db.from('creator_follows').delete().eq('follower_id',currentUser.id).eq('following_id',authorId).catch(()=>{});
     showToast('Unfollowed');
-  } else {
-    userFollowing.add(authorId);
-    btn.textContent = '✓ Following'; btn.classList.add('following');
-    if (db) await db.from('creator_follows').insert({ follower_id:currentUser.id, following_id:authorId }).catch(()=>{});
+  }else{
+    userFollowing.add(authorId);btn.textContent='✓ Following';btn.classList.add('following');
+    if(db)await db.from('creator_follows').insert({follower_id:currentUser.id,following_id:authorId}).catch(()=>{});
     showToast('✅ Following!');
   }
 }
 
-// ── READ POST ─────────────────────────────────────────
-async function openPost(id) {
-  const posts = allPosts.length ? allPosts : getDemoPosts();
-  const p = posts.find(x=>x.id===id);
-  if (!p) return;
-  if (db && !id.startsWith('d')) db.from('creator_posts').update({ views:(p.views||0)+1 }).eq('id',id).catch(()=>{});
-  const initials = (p.author_name||'A').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-  const likes = p.likes || 0;
-  const bodyHtml = (p.body||'').split('\n\n').map(para=>`<p>${para}</p>`).join('');
-  document.getElementById('readContent').innerHTML = `
+// ── READ POST ────────────────────────────────────────
+async function openPost(id){
+  const posts=allPosts.length?allPosts:getDemoPosts();
+  const p=posts.find(x=>x.id===id);if(!p)return;
+  if(db&&!id.startsWith('d'))db.from('creator_posts').update({views:(p.views||0)+1}).eq('id',id).catch(()=>{});
+  const initials=(p.author_name||'A').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const likes=p.likes||0;
+  const bodyHtml=(p.body||'').split('\n\n').map(para=>`<p>${para}</p>`).join('');
+  document.getElementById('readContent').innerHTML=`
     <span class="post-cat-badge ${CAT_CLASS[p.category]||'cat-review'}" style="position:relative;display:inline-block;margin-bottom:14px">${CAT[p.category]}</span>
     <div class="read-title">${p.title}</div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:8px">
         <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#000">${initials}</div>
-        <div><div style="font-size:14px;font-weight:600">${p.author_name||'Anonymous'}</div><div style="font-size:11px;color:var(--muted)">${(p.author_followers||0)} followers</div></div>
+        <div><div style="font-size:14px;font-weight:600">${p.author_name||'Anonymous'}</div><div style="font-size:11px;color:var(--muted)">${p.author_followers||0} followers</div></div>
       </div>
       <button class="btn-follow ${userFollowing.has(p.author_id)?'following':''}" onclick="toggleFollow('${p.author_id}',this)">${userFollowing.has(p.author_id)?'✓ Following':'+ Follow'}</button>
       <span style="color:var(--muted);font-size:12px">👁️ ${(p.views||0).toLocaleString()}</span>
@@ -570,152 +825,135 @@ async function openPost(id) {
   document.getElementById('readOverlay').classList.add('open');
 }
 
-function viewProfile(authorId, name) {
-  showToast(`Viewing ${name}'s profile`);
+function sharePost(title){
+  if(navigator.share)navigator.share({title,url:window.location.href});
+  else{navigator.clipboard.writeText(window.location.href);showToast('🔗 Link copied!');}
 }
 
-function sharePost(title) {
-  if (navigator.share) navigator.share({ title, url:window.location.href });
-  else { navigator.clipboard.writeText(window.location.href); showToast('🔗 Link copied!'); }
-}
-
-// ── WRITE ─────────────────────────────────────────────
-function selectVenue(el, name) {
+// ── WRITE ────────────────────────────────────────────
+function selectVenue(el,name){
   document.querySelectorAll('.venue-chip').forEach(c=>c.classList.remove('selected'));
-  if (selectedVenue === name) { selectedVenue = null; }
-  else { el.classList.add('selected'); selectedVenue = name; }
+  if(selectedVenue===name){selectedVenue=null;}else{el.classList.add('selected');selectedVenue=name;}
 }
 
-async function openWrite() {
-  if (!currentUser) { openAuthModal(); return; }
-  // Check follower count
-  if (db) {
-    try {
-      const { count } = await db.from('creator_follows').select('*',{count:'exact',head:true}).eq('following_id',currentUser.id);
-      if ((count||0) < MIN_FOLLOWERS) {
+async function openWrite(){
+  if(!currentUser){openAuthModal();return;}
+  if(db){
+    try{
+      const {count}=await db.from('creator_follows').select('*',{count:'exact',head:true}).eq('following_id',currentUser.id);
+      if((count||0)<MIN_FOLLOWERS){
         showToast(`📢 You need ${MIN_FOLLOWERS} followers to post. You have ${count||0}.`);
-        document.getElementById('authOverlay').classList.remove('open');
-        // Show follower count gate
-        document.getElementById('authContent').innerHTML = `
+        document.getElementById('authContent').innerHTML=`
           <div style="text-align:center;padding:20px 0">
             <div style="font-size:48px;margin-bottom:12px">📢</div>
             <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold);margin-bottom:8px">BUILD YOUR AUDIENCE FIRST</div>
-            <p style="color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:20px">You need <strong style="color:var(--text)">${MIN_FOLLOWERS} followers</strong> to publish posts. You currently have <strong style="color:var(--gold)">${count||0}</strong>.<br><br>Follow other creators, engage with posts, and build your presence on GhaNight first.</p>
-            <div style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:20px">
-              <div style="font-size:12px;color:var(--muted);margin-bottom:8px">YOUR PROGRESS</div>
-              <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:6px">
-                <div style="height:100%;width:${Math.min(100,((count||0)/MIN_FOLLOWERS)*100)}%;background:linear-gradient(90deg,var(--gold),var(--orange));border-radius:4px"></div>
-              </div>
-              <div style="font-size:12px;color:var(--muted)">${count||0} / ${MIN_FOLLOWERS} followers</div>
+            <p style="color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:20px">You need <strong>${MIN_FOLLOWERS} followers</strong> to publish posts. You have <strong style="color:var(--gold)">${count||0}</strong>.</p>
+            <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:20px">
+              <div style="height:100%;width:${Math.min(100,((count||0)/MIN_FOLLOWERS)*100)}%;background:linear-gradient(90deg,var(--gold),var(--orange));border-radius:4px"></div>
             </div>
-            <button style="background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;border-radius:12px;padding:13px 24px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer" onclick="closeModal('authOverlay')">Got It — I'll Build My Audience</button>
+            <button style="background:linear-gradient(135deg,var(--gold),var(--orange));color:#000;border:none;border-radius:12px;padding:13px 24px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer" onclick="closeModal('authOverlay')">Got It</button>
           </div>`;
         document.getElementById('authOverlay').classList.add('open');
         return;
       }
-    } catch(e){}
+    }catch(e){}
   }
   document.getElementById('writeOverlay').classList.add('open');
 }
 
-async function submitPost() {
-  if (!currentUser) { openAuthModal(); return; }
-  const title = document.getElementById('postTitle')?.value?.trim();
-  const body  = document.getElementById('postBody')?.value?.trim();
-  const cat   = document.getElementById('postCat')?.value;
-  const errEl = document.getElementById('writeErr');
-  errEl.style.display = 'none';
-  if (!title) { errEl.textContent='Please add a title'; errEl.style.display='block'; return; }
-  const wordCount = body.split(/\s+/).filter(Boolean).length;
-  if (wordCount < 150) { errEl.textContent=`Post needs at least 150 words. You have ${wordCount}.`; errEl.style.display='block'; return; }
-  if (!db) { errEl.textContent='Service unavailable'; errEl.style.display='block'; return; }
-  const btn = document.querySelector('#writeOverlay .btn-submit');
-  if (btn) { btn.textContent='Submitting...'; btn.disabled=true; }
-  try {
-    const { data:profile } = await db.from('user_profiles').select('first_name,last_name').eq('id',currentUser.id).single().catch(()=>({data:null}));
-    const authorName = profile?`${profile.first_name||''} ${profile.last_name||''}`.trim()||currentUser.email.split('@')[0]:currentUser.email.split('@')[0];
-    await db.from('creator_posts').insert({
-      title, body, category:cat, venue:selectedVenue||null,
-      author_id:currentUser.id, author_name:authorName,
-      excerpt:body.substring(0,200)+'...', status:'pending', views:0,
-      featured:false, created_at:new Date().toISOString()
-    });
-    document.querySelector('#writeOverlay .modal-sheet').innerHTML = `
+async function submitPost(){
+  if(!currentUser){openAuthModal();return;}
+  const title=document.getElementById('postTitle')?.value?.trim();
+  const body=document.getElementById('postBody')?.value?.trim();
+  const cat=document.getElementById('postCat')?.value;
+  const errEl=document.getElementById('writeErr');errEl.style.display='none';
+  if(!title){errEl.textContent='Please add a title';errEl.style.display='block';return;}
+  const wordCount=body.split(/\s+/).filter(Boolean).length;
+  if(wordCount<150){errEl.textContent=`Post needs at least 150 words. You have ${wordCount}.`;errEl.style.display='block';return;}
+  if(!db){errEl.textContent='Service unavailable';errEl.style.display='block';return;}
+  const btn=document.querySelector('#writeOverlay .btn-submit');
+  if(btn){btn.textContent='Submitting...';btn.disabled=true;}
+  try{
+    const {data:profile}=await db.from('user_profiles').select('first_name,last_name').eq('id',currentUser.id).single().catch(()=>({data:null}));
+    const authorName=profile?`${profile.first_name||''} ${profile.last_name||''}`.trim()||currentUser.email.split('@')[0]:currentUser.email.split('@')[0];
+    await db.from('creator_posts').insert({title,body,category:cat,venue:selectedVenue||null,author_id:currentUser.id,author_name:authorName,excerpt:body.substring(0,200)+'...',status:'pending',views:0,featured:false,created_at:new Date().toISOString()});
+    document.querySelector('#writeOverlay .modal-sheet').innerHTML=`
       <div class="modal-handle"></div>
       <div style="text-align:center;padding:30px 0">
         <div style="font-size:56px;margin-bottom:16px">🎉</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);margin-bottom:8px">POST SUBMITTED!</div>
-        <p style="color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:24px">Under review — approved within 24 hours. Once live, you earn GHS 0.05/view, GHS 0.02/like, GHS 0.10/comment.</p>
+        <p style="color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:24px">Under review — approved within 24 hours.</p>
         <button style="background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:12px;padding:14px 28px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;color:#000" onclick="closeModal('writeOverlay')">Back to Posts →</button>
       </div>`;
-  } catch(e) {
-    if (btn) { btn.textContent='Submit for Review →'; btn.disabled=false; }
-    errEl.textContent='Submission failed — please try again'; errEl.style.display='block';
+  }catch(e){
+    if(btn){btn.textContent='Submit for Review →';btn.disabled=false;}
+    errEl.textContent='Submission failed — please try again';errEl.style.display='block';
   }
 }
 
-// ── DASHBOARD ─────────────────────────────────────────
-async function openDashboard() {
-  if (!currentUser || !db) return;
+// ── DASHBOARD ────────────────────────────────────────
+async function openDashboard(){
+  if(!currentUser||!db)return;
   document.getElementById('dashOverlay').classList.add('open');
-  const el = document.getElementById('dashContent');
-  el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Loading...</div>';
-  try {
-    const [postsRes, followersRes, payoutsRes] = await Promise.all([
+  const el=document.getElementById('dashContent');
+  el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">Loading...</div>';
+  try{
+    const [postsRes,followersRes,videosRes]=await Promise.all([
       db.from('creator_posts').select('*').eq('author_id',currentUser.id).order('created_at',{ascending:false}),
       db.from('creator_follows').select('*',{count:'exact',head:true}).eq('following_id',currentUser.id),
-      db.from('creator_payouts').select('*').eq('author_id',currentUser.id).order('requested_at',{ascending:false}).limit(5),
+      db.from('venue_videos').select('*',{count:'exact',head:true}).eq('uploader_type','blogger'),
     ]);
-    const posts    = postsRes.data||[];
-    const approved = posts.filter(p=>p.status==='approved');
-    const pending  = posts.filter(p=>p.status==='pending');
-    const followers = followersRes.count||0;
-    const totalViews = approved.reduce((s,p)=>s+(p.views||0),0);
-    const viewEarn   = totalViews * RATE_VIEW;
-    const totalEarnings = viewEarn.toFixed(2);
-    const canPost = followers >= MIN_FOLLOWERS;
-    el.innerHTML = `
+    const posts=postsRes.data||[];
+    const approved=posts.filter(p=>p.status==='approved');
+    const pending=posts.filter(p=>p.status==='pending');
+    const followers=followersRes.count||0;
+    const videoCount=videosRes.count||0;
+    const totalViews=approved.reduce((s,p)=>s+(p.views||0),0);
+    const totalEarnings=(totalViews*RATE_VIEW).toFixed(2);
+    const canPost=followers>=MIN_FOLLOWERS;
+    el.innerHTML=`
       <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);margin-bottom:16px">MY CREATOR DASHBOARD</div>
       <div class="dash-stats">
         <div class="dash-stat"><div class="dash-stat-num">${followers}</div><div class="dash-stat-label">Followers</div></div>
         <div class="dash-stat"><div class="dash-stat-num">${approved.length}</div><div class="dash-stat-label">Published</div></div>
         <div class="dash-stat"><div class="dash-stat-num">GHS ${totalEarnings}</div><div class="dash-stat-label">Earned</div></div>
       </div>
+      <div class="dash-stats" style="margin-bottom:16px;">
+        <div class="dash-stat" style="border:1px solid rgba(79,163,255,0.2)"><div class="dash-stat-num" style="color:#4fa3ff">${videoCount}</div><div class="dash-stat-label">Video Recaps</div></div>
+        <div class="dash-stat"><div class="dash-stat-num">${pending.length}</div><div class="dash-stat-label">Pending Review</div></div>
+        <div class="dash-stat"><div class="dash-stat-num">${totalViews.toLocaleString()}</div><div class="dash-stat-label">Total Views</div></div>
+      </div>
       ${!canPost?`<div style="background:rgba(245,197,66,0.08);border:1px solid rgba(245,197,66,0.2);border-radius:12px;padding:14px;margin-bottom:14px;font-size:13px">
         📢 You need <strong>${MIN_FOLLOWERS} followers</strong> to publish posts. You have <strong style="color:var(--gold)">${followers}</strong>.
         <div style="height:6px;background:var(--border);border-radius:3px;margin-top:8px;overflow:hidden"><div style="height:100%;width:${Math.min(100,(followers/MIN_FOLLOWERS)*100)}%;background:linear-gradient(90deg,var(--gold),var(--orange));border-radius:3px"></div></div>
       </div>`:''}
       ${parseFloat(totalEarnings)>=MIN_PAYOUT?`<div style="background:rgba(57,224,122,0.08);border:1px solid rgba(57,224,122,0.2);border-radius:12px;padding:14px;margin-bottom:14px;font-size:13px;color:var(--green)">💰 You've reached GHS ${MIN_PAYOUT}! <span style="cursor:pointer;font-weight:700;text-decoration:underline" onclick="openPayoutForm(${totalEarnings})">Request payout →</span></div>`:`<div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:14px;font-size:13px;color:var(--muted)">📈 Earn GHS ${(MIN_PAYOUT-parseFloat(totalEarnings)).toFixed(2)} more to unlock Mobile Money payout</div>`}
-      ${pending.length?`<div style="margin-bottom:12px;padding:10px 12px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:10px;font-size:13px;color:#a855f7">⏳ ${pending.length} post${pending.length>1?'s':''} pending review</div>`:''}
       <div style="font-size:13px;font-weight:700;margin-bottom:10px">Your Posts</div>
       ${approved.map(p=>`<div style="background:var(--surface);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px">
         <div style="font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.title}</div>
         <div style="font-size:12px;color:var(--muted);white-space:nowrap">👁️ ${(p.views||0).toLocaleString()} · GHS ${((p.views||0)*RATE_VIEW).toFixed(2)}</div>
-      </div>`).join('')||'<div style="color:var(--muted);font-size:13px">No published posts yet.</div>'}
-      <button onclick="closeModal('dashOverlay');openWrite()" style="width:100%;margin-top:16px;background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:12px;padding:13px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:14px;cursor:pointer;color:#000">✍️ Write Another Post</button>`;
-  } catch(e) { el.innerHTML='<div style="color:var(--pink)">Failed to load dashboard</div>'; }
+      </div>`).join('')||'<div style="color:var(--muted);font-size:13px;margin-bottom:14px">No published posts yet.</div>'}
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button onclick="closeModal('dashOverlay');openWrite()" style="flex:1;background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:12px;padding:13px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:13px;cursor:pointer;color:#000">✍️ Write Post</button>
+        <button onclick="closeModal('dashOverlay');openVideoUpload()" style="flex:1;background:linear-gradient(135deg,#4fa3ff,#a855f7);border:none;border-radius:12px;padding:13px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:13px;cursor:pointer;color:#fff">🎬 Upload Video</button>
+      </div>`;
+  }catch(e){el.innerHTML='<div style="color:var(--pink)">Failed to load dashboard</div>';}
 }
 
-function openPayoutForm(amount) {
-  closeModal('dashOverlay');
-  window.location.href = `checkout.html?product=payout`;
-}
+function openPayoutForm(amount){closeModal('dashOverlay');window.location.href='checkout.html?product=payout';}
 
-// ── AUTH ──────────────────────────────────────────────
-function openAuthModal() {
-  showAuthForm('signup');
-  document.getElementById('authOverlay').classList.add('open');
-}
-function showAuthForm(tab) {
-  document.getElementById('authContent').innerHTML = `
+// ── AUTH ────────────────────────────────────────────
+function openAuthModal(){showAuthForm('signup');document.getElementById('authOverlay').classList.add('open');}
+function showAuthForm(tab){
+  document.getElementById('authContent').innerHTML=`
     <div style="text-align:center;margin-bottom:20px">
       <div style="font-size:32px;margin-bottom:8px">✍️</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold)">JOIN GHANIGHT CREATORS</div>
-      <div style="font-size:13px;color:var(--muted)">Write posts. Earn per view, like & comment.</div>
+      <div style="font-size:13px;color:var(--muted)">Write posts. Upload videos. Earn.</div>
     </div>
     <div style="display:flex;gap:4px;background:var(--surface);border-radius:12px;padding:4px;margin-bottom:20px">
-      <button id="tab-s" style="flex:1;padding:9px;border:none;border-radius:9px;background:${tab==='signup'?'var(--card)':'none'};color:${tab==='signup'?'var(--text)':'var(--muted)'};font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer" onclick="showAuthForm('signup')">Sign Up</button>
-      <button id="tab-l" style="flex:1;padding:9px;border:none;border-radius:9px;background:${tab==='login'?'var(--card)':'none'};color:${tab==='login'?'var(--text)':'var(--muted)'};font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer" onclick="showAuthForm('login')">Log In</button>
+      <button style="flex:1;padding:9px;border:none;border-radius:9px;background:${tab==='signup'?'var(--card)':'none'};color:${tab==='signup'?'var(--text)':'var(--muted)'};font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer" onclick="showAuthForm('signup')">Sign Up</button>
+      <button style="flex:1;padding:9px;border:none;border-radius:9px;background:${tab==='login'?'var(--card)':'none'};color:${tab==='login'?'var(--text)':'var(--muted)'};font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer" onclick="showAuthForm('login')">Log In</button>
     </div>
     ${tab==='signup'?`
       <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="sfirst" placeholder="Kofi" type="text"></div>
@@ -729,28 +967,28 @@ function showAuthForm(tab) {
     `}
     <div id="authErr" style="color:var(--pink);font-size:12px;text-align:center;margin-top:8px;display:none"></div>`;
 }
-function showAuthErr(m) { const e=document.getElementById('authErr'); if(e){e.textContent=m;e.style.display='block';} }
-async function doSignup() {
-  if (!db) { showAuthErr('Service unavailable'); return; }
-  const email=document.getElementById('semail')?.value?.trim(), pass=document.getElementById('spass')?.value, first=document.getElementById('sfirst')?.value?.trim();
-  if (!email||!pass) { showAuthErr('Please fill in email and password'); return; }
-  const {data,error} = await db.auth.signUp({email,password:pass,options:{data:{first_name:first}}});
-  if (error) { showAuthErr(error.message); return; }
-  currentUser = data.user; closeModal('authOverlay'); showToast('🎉 Welcome to GhaNight Creators!'); updateNav();
+function showAuthErr(m){const e=document.getElementById('authErr');if(e){e.textContent=m;e.style.display='block';}}
+async function doSignup(){
+  if(!db){showAuthErr('Service unavailable');return;}
+  const email=document.getElementById('semail')?.value?.trim(),pass=document.getElementById('spass')?.value,first=document.getElementById('sfirst')?.value?.trim();
+  if(!email||!pass){showAuthErr('Please fill in email and password');return;}
+  const {data,error}=await db.auth.signUp({email,password:pass,options:{data:{first_name:first}}});
+  if(error){showAuthErr(error.message);return;}
+  currentUser=data.user;closeModal('authOverlay');showToast('🎉 Welcome to GhaNight Creators!');updateNav();
 }
-async function doLogin() {
-  if (!db) { showAuthErr('Service unavailable'); return; }
-  const email=document.getElementById('lemail')?.value?.trim(), pass=document.getElementById('lpass')?.value;
-  if (!email||!pass) { showAuthErr('Please enter email and password'); return; }
-  const {data,error} = await db.auth.signInWithPassword({email,password:pass});
-  if (error) { showAuthErr('Incorrect email or password'); return; }
-  currentUser = data.user; await loadUserData(); closeModal('authOverlay'); showToast('🔓 Welcome back!'); updateNav();
+async function doLogin(){
+  if(!db){showAuthErr('Service unavailable');return;}
+  const email=document.getElementById('lemail')?.value?.trim(),pass=document.getElementById('lpass')?.value;
+  if(!email||!pass){showAuthErr('Please enter email and password');return;}
+  const {data,error}=await db.auth.signInWithPassword({email,password:pass});
+  if(error){showAuthErr('Incorrect email or password');return;}
+  currentUser=data.user;await loadUserData();closeModal('authOverlay');showToast('🔓 Welcome back!');updateNav();
 }
 
-// ── UTILS ─────────────────────────────────────────────
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-function closeOnOutside(e, id) { if(e.target.id===id) closeModal(id); }
-function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+// ── UTILS ────────────────────────────────────────────
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeOnOutside(e,id){if(e.target.id===id)closeModal(id);}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 </script>
 </body>
 </html>
