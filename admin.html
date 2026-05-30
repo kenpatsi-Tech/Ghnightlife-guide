@@ -153,12 +153,7 @@
       <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="loginPass" type="password" placeholder="Password" autocomplete="current-password"></div>
       <button class="btn btn-gold btn-lg" style="width:100%" onclick="adminLogin()">Log In →</button>
       <div id="loginErr" style="color:var(--pink);font-size:12px;text-align:center;display:none"></div>
-      <div style="text-align:center;margin-top:10px">
-        <span style="font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline"
-          onclick="clearLoginLock();document.getElementById('loginErr').style.display='none';this.textContent='✅ Reset done — try again'">
-          Locked out? Tap here to reset
-        </span>
-      </div>
+
     </div>
   </div>
 </div>
@@ -398,7 +393,7 @@
 
 <script>
 const SUPABASE_URL  = 'https://lkuprzwbscuaitktlhrp.supabase.co';
-const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrdXByendic2N1YWl0a3RsaHJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzcxNzgsImV4cCI6MjA5MzY1MzE3OH0.u4ptPk9lbFhAzw4HoHl5uyffgG9RMkev6ktUyu9VZfg';
+const SUPABASE_KEY  = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
 const VIDEO_BUCKET  = 'venue-media';
 
 
@@ -448,17 +443,36 @@ window.addEventListener('load', async () => {
 
 // ── AUTH ──────────────────────────────────────────────
 async function adminLogin() {
-  if (!checkLoginLock()) return;
   const email = document.getElementById('loginEmail').value.trim();
   const pass  = document.getElementById('loginPass').value;
   const err   = document.getElementById('loginErr');
   err.style.display = 'none';
-  const { data, error } = await db.auth.signInWithPassword({ email, password:pass });
-  if (error) {
-    recordFailedLogin();
-    err.textContent = 'Incorrect email or password'; err.style.display = 'block'; return;
+
+  if (!email || !pass) {
+    err.textContent = 'Please enter your email and password.';
+    err.style.display = 'block'; return;
   }
-  clearLoginLock();
+
+  const btn = document.querySelector('#loginBox .btn-gold');
+  if (btn) { btn.textContent = 'Logging in...'; btn.disabled = true; }
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+
+  if (btn) { btn.textContent = 'Log In →'; btn.disabled = false; }
+
+  if (error) {
+    err.textContent = 'Incorrect email or password.';
+    err.style.display = 'block'; return;
+  }
+
+  // Only this email can access admin
+  const ADMIN_WHITELIST = ['baninikwami9@gmail.com'];
+  if (!ADMIN_WHITELIST.includes(data.user.email)) {
+    await db.auth.signOut();
+    err.textContent = 'Access denied. Not an admin account.';
+    err.style.display = 'block'; return;
+  }
+
   adminUser = data.user;
   showAdmin();
 }
@@ -2117,37 +2131,7 @@ async function deleteGame(id, name) {
 // ── VENDOR TOKENS — FULLY EDITABLE ─────────────────────────────
 // ── UTILS ─────────────────────────────────────────────
 
-// ── SECURITY: Admin login brute force protection ─────────────
-function checkLoginLock() {
-  const lockUntil = parseInt(localStorage.getItem('gn_lock') || 0);
-  // Auto-clear expired lock
-  if (lockUntil && Date.now() >= lockUntil) {
-    localStorage.removeItem('gn_lock');
-    localStorage.removeItem('gn_attempts');
-    return true;
-  }
-  if (Date.now() < lockUntil) {
-    const mins = Math.ceil((lockUntil - Date.now()) / 60000);
-    const err = document.getElementById('loginErr');
-    err.textContent = `Too many failed attempts. Try again in ${mins} minute(s).`;
-    err.style.display = 'block';
-    return false;
-  }
-  return true;
-}
-function recordFailedLogin() {
-  const key = 'gn_attempts';
-  let attempts = parseInt(localStorage.getItem(key) || 0) + 1;
-  localStorage.setItem(key, attempts);
-  if (attempts >= 5) {
-    localStorage.setItem('gn_lock', Date.now() + 15 * 60000);
-    localStorage.setItem(key, 0);
-  }
-}
-function clearLoginLock() {
-  localStorage.removeItem('gn_attempts');
-  localStorage.removeItem('gn_lock');
-}
+// Login uses Supabase Auth + whitelist only
 
 function g(id) { return document.getElementById(id)?.value||''; }
 function openModal() { document.getElementById('modal').classList.add('open'); }
