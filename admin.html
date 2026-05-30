@@ -6,6 +6,7 @@
 <title>GhaNight Admin — Control Panel</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="ghanight-cache.js"></script>
 <style>
   :root{--bg:#080810;--surface:#10101e;--card:#14142a;--gold:#f5c542;--orange:#ff6b35;--pink:#ff3d8a;--green:#39e07a;--blue:#4fa3ff;--purple:#a855f7;--text:#f0f0f8;--muted:#7070a0;--border:rgba(255,255,255,0.08);}
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -179,6 +180,11 @@
       <button class="sidebar-item" onclick="show('venues',this)"><span class="icon">🏛️</span>Venues</button>
       <button class="sidebar-item" onclick="show('events',this)"><span class="icon">🎉</span>Events</button>
       <button class="sidebar-item" onclick="show('videos',this)"><span class="icon">🎬</span>Videos</button>
+      <button class="sidebar-item" onclick="show('tickets',this)"><span class="icon">🎫</span>Tickets<span class="count" id="ticketBadge" style="display:none">0</span></button>
+
+      <div class="sidebar-section">Advertising</div>
+      <button class="sidebar-item" onclick="show('ads',this)"><span class="icon">📢</span>Live Ads</button>
+      <button class="sidebar-item" onclick="show('adPricing',this)"><span class="icon">💰</span>Ad Pricing</button>
 
       <div class="sidebar-section">Creators</div>
       <button class="sidebar-item" onclick="show('posts',this)"><span class="icon">✍️</span>Blog Posts<span class="count" id="pendingPostsBadge" style="display:none">0</span></button>
@@ -186,6 +192,7 @@
       <button class="sidebar-item" onclick="show('creatorSettings',this)"><span class="icon">⚙️</span>Creator Settings</button>
 
       <div class="sidebar-section">Gaming</div>
+      <button class="sidebar-item" onclick="show('games',this)"><span class="icon">🎮</span>Manage Games</button>
       <button class="sidebar-item" onclick="show('predictions',this)"><span class="icon">🔮</span>Predictions</button>
       <button class="sidebar-item" onclick="show('leaderboard',this)"><span class="icon">🏆</span>Leaderboard</button>
       <button class="sidebar-item" onclick="show('rewards',this)"><span class="icon">🎁</span>Reward Claims</button>
@@ -435,12 +442,17 @@ window.addEventListener('load', async () => {
 
 // ── AUTH ──────────────────────────────────────────────
 async function adminLogin() {
+  if (!checkLoginLock()) return;
   const email = document.getElementById('loginEmail').value.trim();
   const pass  = document.getElementById('loginPass').value;
   const err   = document.getElementById('loginErr');
   err.style.display = 'none';
   const { data, error } = await db.auth.signInWithPassword({ email, password:pass });
-  if (error) { err.textContent='Incorrect email or password'; err.style.display='block'; return; }
+  if (error) {
+    recordFailedLogin();
+    err.textContent = 'Incorrect email or password'; err.style.display = 'block'; return;
+  }
+  clearLoginLock();
   adminUser = data.user;
   showAdmin();
 }
@@ -488,7 +500,9 @@ function show(section, btn) {
   if (btn) btn.classList.add('active');
   const map = {
     overview:renderOverview, venues:renderVenues, events:renderEvents,
-    videos:renderVideos,
+    videos:renderVideos, tickets:renderTickets,
+    ads:renderAds, adPricing:renderAdPricing,
+    games:renderGames,
     posts:renderPosts, payouts:renderPayouts, creatorSettings:renderCreatorSettings,
     predictions:renderPredictions, leaderboard:renderLeaderboard,
     rewards:renderRewards, tokens:renderTokens, subscriptions:renderSubscriptions,
@@ -834,6 +848,7 @@ function previewVideo(url, title) {
 
 async function toggleVideo(id, currentState) {
   await db.from('venue_videos').update({ is_active: !currentState }).eq('id', id);
+  if(typeof GNCache!=='undefined'){GNCache.invalidate('videos_all');GNCache.invalidate('videos_blogger');}
   toast(currentState ? '👁️ Video hidden' : '✅ Video now visible');
   renderVideos();
 }
@@ -921,7 +936,7 @@ function openVenueForm(v) {
 }
 
 async function saveVenue() {
-  const name = document.getElementById('vname').value.trim();
+  const name = sanitize(document.getElementById('vname').value, 100);
   if (!name) { document.getElementById('formErr').textContent='Venue name required'; document.getElementById('formErr').style.display='block'; return; }
   const tags = document.getElementById('vtags').value ? document.getElementById('vtags').value.split(',').map(t=>t.trim()).filter(Boolean) : [];
   const payload = {
@@ -933,6 +948,7 @@ async function saveVenue() {
   };
   const { error } = editId ? await db.from('venues').update(payload).eq('id',editId) : await db.from('venues').insert(payload);
   if (error) { document.getElementById('formErr').textContent=error.message; document.getElementById('formErr').style.display='block'; return; }
+  if(typeof GNCache!=='undefined')GNCache.invalidate('venues');
   closeModal(); toast(editId?'✅ Venue updated':'✅ Venue added'); renderVenues();
 }
 
@@ -985,6 +1001,26 @@ function openEventForm(e) {
       <div class="form-group"><label class="form-label">Active</label>
         <select class="form-select" id="eactive"><option value="true" ${e.active!==false?'selected':''}>Yes</option><option value="false" ${e.active===false?'selected':''}>No</option></select>
       </div>
+      <div class="form-group"><label class="form-label">Ticket Price (GHS)</label><input class="form-input" id="eticketprice" type="number" min="0" step="0.01" value="${e.ticket_price||''}" placeholder="0 = free / leave blank if no ticketing"></div>
+      <div class="form-group"><label class="form-label">Capacity</label><input class="form-input" id="ecapacity" type="number" min="0" value="${e.capacity||''}" placeholder="Leave blank for unlimited"></div>
+      <div class="form-group"><label class="form-label">Enable Ticketing</label>
+        <select class="form-select" id="eticketingon"><option value="false" ${!e.ticketing_on?'selected':''}>No</option><option value="true" ${e.ticketing_on?'selected':''}>Yes</option></select>
+      </div>
+    </div>
+    <div class="form-group full" style="margin-top:8px;">
+      <label class="form-label">Event Flyer (optional)</label>
+      ${e.flyer_url?`<div style="margin-bottom:8px"><img src="${e.flyer_url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"></div>`:''}
+      <div id="flyerDropZone" onclick="document.getElementById('flyerInput').click()"
+        style="border:2px dashed rgba(245,197,66,0.3);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:background 0.2s;"
+        onmouseover="this.style.background='rgba(245,197,66,0.05)'" onmouseout="this.style.background='transparent'">
+        <div style="font-size:24px;">🖼️</div>
+        <p style="color:var(--muted);font-size:12px;margin:4px 0 0;">Tap to upload flyer · JPG/PNG/WebP · Max 5MB</p>
+      </div>
+      <input id="flyerInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;" onchange="previewFlyer(this)">
+      <div id="flyerPreview" style="display:none;margin-top:8px;">
+        <img id="flyerPreviewImg" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--gold);">
+        <span style="font-size:11px;color:var(--muted);margin-left:8px;" id="flyerFileName"></span>
+      </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:16px">
       <button class="btn btn-gold btn-lg" style="flex:1" onclick="saveEvent()">Save Event</button>
@@ -998,10 +1034,53 @@ async function saveEvent() {
   const name=g('ename').trim(), venue=g('evenue').trim();
   if(!name||!venue){document.getElementById('formErr').textContent='Name and venue required';document.getElementById('formErr').style.display='block';return;}
   const tags=g('etags')?g('etags').split(',').map(t=>t.trim()).filter(Boolean):[];
-  const payload={name,venue,event_day:g('eday').padStart(2,'0'),event_month:g('emonth'),event_time:g('etime'),tags,sponsored:g('esponsored')==='true',active:g('eactive')==='true'};
+
+  // Handle flyer upload first if a new file was selected
+  let flyerUrl = null;
+  let flyerPath = null;
+  const flyerFile = document.getElementById('flyerInput')?.files?.[0];
+  if (flyerFile) {
+    const ext = flyerFile.name.split('.').pop().toLowerCase();
+    flyerPath = `flyers/${Date.now()}-${name.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase()}.${ext}`;
+    const { error: storageErr } = await db.storage.from('event-flyers').upload(flyerPath, flyerFile, {
+      cacheControl: '3600', upsert: false, contentType: flyerFile.type
+    });
+    if (!storageErr) {
+      const { data } = db.storage.from('event-flyers').getPublicUrl(flyerPath);
+      flyerUrl = data.publicUrl;
+    }
+  }
+
+  const payload = {
+    name, venue,
+    event_day:    g('eday').padStart(2,'0'),
+    event_month:  g('emonth'),
+    event_time:   g('etime'),
+    tags,
+    sponsored:    g('esponsored')==='true',
+    active:       g('eactive')==='true',
+    ticketing_on: g('eticketingon')==='true',
+    ticket_price: parseFloat(g('eticketprice'))||null,
+    capacity:     parseInt(g('ecapacity'))||null,
+  };
+  if (flyerUrl) { payload.flyer_url = flyerUrl; payload.flyer_storage_path = flyerPath; }
+
   const {error}=editId?await db.from('events').update(payload).eq('id',editId):await db.from('events').insert(payload);
   if(error){document.getElementById('formErr').textContent=error.message;document.getElementById('formErr').style.display='block';return;}
+  if(typeof GNCache!=='undefined')GNCache.invalidate('events');
   closeModal();toast(editId?'✅ Event updated':'✅ Event added');renderEvents();
+}
+
+function previewFlyer(input) {
+  const file = input.files[0]; if (!file) return;
+  if (file.size > 5*1024*1024) { toast('⚠️ Flyer too large. Max 5MB.'); input.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('flyerPreviewImg').src = e.target.result;
+    document.getElementById('flyerFileName').textContent = file.name;
+    document.getElementById('flyerPreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
 }
 
 // ── BLOG POSTS ────────────────────────────────────────
@@ -1054,6 +1133,7 @@ function postCard(p) {
 async function updatePost(id, status) {
   const update = status === 'featured' ? { featured:true } : status === 'unfeatured' ? { featured:false } : { status };
   await db.from('creator_posts').update(update).eq('id',id);
+  if(typeof GNCache!=='undefined')GNCache.invalidate('posts');
   toast(`✅ Post ${status}`); renderPosts();
 }
 async function previewPost(id) {
@@ -1312,7 +1392,7 @@ async function renderTokens() {
   const { data } = await db.from('vendor_tokens').select('*').order('created_at',{ascending:false});
   el.innerHTML = `
     <div class="page-title">Vendor Tokens</div>
-    <div class="page-sub">Generate tokens for vendors to give to their clients.</div>
+    <div class="page-sub">Generate, edit and revoke vendor tokens. Each token gives a client a discounted subscription.</div>
     <div class="panel" style="border-color:rgba(57,224,122,0.2)">
       <div class="panel-title">Generate New Token</div>
       <div class="form-grid">
@@ -1321,11 +1401,15 @@ async function renderTokens() {
         <div class="form-group"><label class="form-label">Plan</label>
           <select class="form-select" id="tplan"><option>Starter</option><option>Business</option><option>Enterprise</option></select>
         </div>
-        <div class="form-group"><label class="form-label">Discount %</label>
-          <select class="form-select" id="tdisc"><option value="15">15%</option><option value="25">25%</option><option value="35">35%</option></select>
+        <div class="form-group"><label class="form-label">Custom Discount %</label>
+          <input class="form-input" id="tdisc" type="number" min="1" max="100" value="25" placeholder="e.g. 25">
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">Set any % — not locked to fixed options</div>
         </div>
         <div class="form-group"><label class="form-label">Valid For (days)</label>
-          <select class="form-select" id="tdays"><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select>
+          <input class="form-input" id="tdays" type="number" min="1" value="30" placeholder="e.g. 30">
+        </div>
+        <div class="form-group"><label class="form-label">Notes (internal)</label>
+          <input class="form-input" id="tnotes" placeholder="e.g. Agreed at networking event May 2026">
         </div>
       </div>
       <button class="btn btn-green btn-lg" style="margin-top:12px" onclick="generateToken()">🎫 Generate Token</button>
@@ -1334,17 +1418,77 @@ async function renderTokens() {
     <div class="panel">
       <div class="panel-title">All Tokens (${(data||[]).length})</div>
       <div class="table-wrap"><table class="data-table">
-        <thead><tr><th>Token</th><th>Vendor</th><th>Plan</th><th>Expires</th><th>Status</th></tr></thead>
+        <thead><tr><th>Token</th><th>Vendor</th><th>Plan</th><th>Discount</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
           ${(data||[]).map(t=>`<tr>
-            <td><code style="font-family:monospace;color:var(--green);letter-spacing:1px">${t.token}</code></td>
-            <td>${t.vendor_name}</td><td><span class="badge bo">${t.plan}</span></td>
-            <td>${new Date(t.expires_at).toLocaleDateString()}</td>
+            <td><code style="font-family:monospace;color:var(--green);letter-spacing:1px;font-size:12px">${t.token}</code>
+              <button class="btn btn-muted" style="padding:2px 6px;font-size:10px;margin-left:4px" onclick="navigator.clipboard.writeText('${t.token}');toast('📋 Copied!')">📋</button>
+            </td>
+            <td>${t.vendor_name}${t.org_name?`<br><span style="font-size:11px;color:var(--muted)">${t.org_name}</span>`:''}
+              ${t.notes?`<br><span style="font-size:10px;color:var(--muted);font-style:italic">${t.notes}</span>`:''}
+            </td>
+            <td><span class="badge bo">${t.plan}</span></td>
+            <td><strong style="color:var(--green)">${t.discount_pct}%</strong></td>
+            <td>${new Date(t.expires_at).toLocaleDateString('en-GH')}</td>
             <td><span class="badge ${t.used?'bp':'bg'}">${t.used?'Used':'Available'}</span></td>
-          </tr>`).join('')}
+            <td style="display:flex;gap:4px;flex-wrap:wrap">
+              ${!t.used?`<button class="btn btn-muted" onclick='openEditToken(${JSON.stringify(t)})'>Edit</button>`:''}
+              ${!t.used?`<button class="btn btn-danger" onclick="revokeToken('${t.id}','${t.token}')">Revoke</button>`:''}
+            </td>
+          </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:16px">No tokens yet.</td></tr>'}
         </tbody>
       </table></div>
     </div>`;
+}
+
+function openEditToken(t) {
+  editId = t.id;
+  document.getElementById('modalTitle').textContent = 'Edit Token: '+t.token;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Vendor Name</label><input class="form-input" id="et_vendor" value="${t.vendor_name||''}"></div>
+      <div class="form-group"><label class="form-label">Organisation</label><input class="form-input" id="et_org" value="${t.org_name||''}"></div>
+      <div class="form-group"><label class="form-label">Plan</label>
+        <select class="form-select" id="et_plan">
+          ${['Starter','Business','Enterprise'].map(p=>`<option ${t.plan===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Discount %</label>
+        <input class="form-input" id="et_disc" type="number" min="1" max="100" value="${t.discount_pct||25}">
+      </div>
+      <div class="form-group"><label class="form-label">Expires At</label>
+        <input class="form-input" id="et_expires" type="date" value="${t.expires_at?t.expires_at.substring(0,10):''}">
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label>
+        <input class="form-input" id="et_notes" value="${t.notes||''}">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-gold btn-lg" style="flex:1" onclick="saveEditToken()">Save Changes</button>
+      <button class="btn btn-muted btn-lg" onclick="closeModal()">Cancel</button>
+    </div>`;
+  openModal();
+}
+
+async function saveEditToken() {
+  const payload = {
+    vendor_name:  g('et_vendor').trim(),
+    org_name:     g('et_org').trim()||null,
+    plan:         g('et_plan'),
+    discount_pct: parseInt(g('et_disc'))||25,
+    expires_at:   g('et_expires')||null,
+    notes:        g('et_notes').trim()||null,
+    updated_at:   new Date().toISOString(),
+  };
+  const {error} = await db.from('vendor_tokens').update(payload).eq('id',editId);
+  if(error){toast('⚠️ '+error.message);return;}
+  closeModal(); toast('✅ Token updated'); renderTokens();
+}
+
+async function revokeToken(id, token) {
+  if(!confirm(`Revoke token ${token}? It can no longer be used.`)) return;
+  await db.from('vendor_tokens').delete().eq('id',id);
+  toast('🗑️ Token revoked'); renderTokens();
 }
 
 async function generateToken() {
@@ -1355,7 +1499,8 @@ async function generateToken() {
   const token = `GHN-${rand(5)}-${rand(3)}`;
   const days = parseInt(document.getElementById('tdays')?.value||'30');
   const expires = new Date(); expires.setDate(expires.getDate()+days);
-  const payload = { token, vendor_name:vendor, org_name:document.getElementById('torg')?.value?.trim()||null, plan:document.getElementById('tplan')?.value||'Business', discount_pct:parseInt(document.getElementById('tdisc')?.value||'25'), used:false, expires_at:expires.toISOString() };
+  const notes = document.getElementById('tnotes')?.value?.trim()||null;
+  const payload = { token, vendor_name:vendor, org_name:document.getElementById('torg')?.value?.trim()||null, plan:document.getElementById('tplan')?.value||'Business', discount_pct:parseInt(document.getElementById('tdisc')?.value||'25'), used:false, expires_at:expires.toISOString(), notes };
   const { error } = await db.from('vendor_tokens').insert(payload);
   if (error) { toast('⚠️ Failed: '+error.message); return; }
   const el = document.getElementById('generatedToken');
@@ -1368,11 +1513,87 @@ async function generateToken() {
 async function renderSubscriptions() {
   const el = document.getElementById('mainContent');
   const { data } = await db.from('corporate_subscriptions').select('*').order('activated_at',{ascending:false});
-  el.innerHTML = `<div class="page-title">Corporate Subscriptions</div><div class="page-sub">Organisations with active subscriptions.</div>
+  el.innerHTML = `
+    <div class="page-title">Corporate Subscriptions</div>
+    <div class="page-sub">Manage each organisation's subscription individually. Override discount per org.</div>
     <div class="panel"><div class="table-wrap"><table class="data-table">
-      <thead><tr><th>Organisation</th><th>Plan</th><th>Discount</th><th>Vendor</th><th>Expires</th><th>Status</th></tr></thead>
-      <tbody>${(data||[]).map(s=>`<tr><td><strong>${s.org_name}</strong></td><td><span class="badge bo">${s.plan}</span></td><td><span style="color:var(--green);font-weight:700">${s.discount_pct}% off</span></td><td>${s.vendor_name||'—'}</td><td>${new Date(s.expires_at).toLocaleDateString('en-GH')}</td><td><span class="badge ${s.status==='active'?'bg':'bp'}">${s.status}</span></td></tr>`).join('')}</tbody>
+      <thead><tr><th>Organisation</th><th>Plan</th><th>Discount</th><th>Vendor</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${(data||[]).map(s=>`<tr>
+        <td><strong>${s.org_name}</strong>${s.notes?`<br><span style="font-size:10px;color:var(--muted)">${s.notes}</span>`:''}</td>
+        <td><span class="badge bo">${s.plan}</span></td>
+        <td>
+          <strong style="color:var(--green)">${s.custom_discount_pct!=null?s.custom_discount_pct:s.discount_pct}% off</strong>
+          ${s.custom_discount_pct!=null?'<span class="badge bb" style="font-size:10px;margin-left:4px">custom</span>':''}
+        </td>
+        <td>${s.vendor_name||'—'}</td>
+        <td>${s.expires_at?new Date(s.expires_at).toLocaleDateString('en-GH'):'—'}</td>
+        <td><span class="badge ${s.status==='active'?'bg':'bp'}">${s.status}</span></td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-muted" onclick='openEditSub(${JSON.stringify(s)})'>Edit</button>
+          ${s.status==='active'?`<button class="btn btn-danger" onclick="updateSubStatus('${s.id}','suspended')">Suspend</button>`:''}
+          ${s.status!=='active'?`<button class="btn btn-green" onclick="updateSubStatus('${s.id}','active')">Activate</button>`:''}
+        </td>
+      </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:16px">No subscriptions yet.</td></tr>'}
+      </tbody>
     </table></div></div>`;
+}
+
+function openEditSub(s) {
+  editId = s.id;
+  document.getElementById('modalTitle').textContent = 'Edit Subscription: '+s.org_name;
+  document.getElementById('modalBody').innerHTML = `
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+      Token discount: <strong>${s.discount_pct}%</strong> — override this per organisation below.
+    </p>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Plan</label>
+        <select class="form-select" id="ss_plan">
+          ${['Starter','Business','Enterprise'].map(p=>`<option ${s.plan===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Custom Discount % (overrides token)</label>
+        <input class="form-input" id="ss_custom_disc" type="number" min="0" max="100"
+          value="${s.custom_discount_pct!=null?s.custom_discount_pct:''}"
+          placeholder="Leave blank to use token discount (${s.discount_pct}%)">
+      </div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="form-select" id="ss_status">
+          ${['active','suspended','expired'].map(st=>`<option ${s.status===st?'selected':''}>${st}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Expires At</label>
+        <input class="form-input" id="ss_expires" type="date"
+          value="${s.expires_at?s.expires_at.substring(0,10):''}">
+      </div>
+      <div class="form-group full"><label class="form-label">Internal Notes</label>
+        <input class="form-input" id="ss_notes" value="${s.notes||''}" placeholder="e.g. Negotiated rate for partner org">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-gold btn-lg" style="flex:1" onclick="saveEditSub()">Save Changes</button>
+      <button class="btn btn-muted btn-lg" onclick="closeModal()">Cancel</button>
+    </div>`;
+  openModal();
+}
+
+async function saveEditSub() {
+  const customDisc = g('ss_custom_disc');
+  const payload = {
+    plan:                g('ss_plan'),
+    custom_discount_pct: customDisc!==''?parseInt(customDisc):null,
+    status:              g('ss_status'),
+    expires_at:          g('ss_expires')||null,
+    notes:               g('ss_notes').trim()||null,
+    updated_at:          new Date().toISOString(),
+  };
+  const {error} = await db.from('corporate_subscriptions').update(payload).eq('id',editId);
+  if(error){toast('⚠️ '+error.message);return;}
+  closeModal(); toast('✅ Subscription updated'); renderSubscriptions();
+}
+
+async function updateSubStatus(id, status) {
+  await db.from('corporate_subscriptions').update({status,updated_at:new Date().toISOString()}).eq('id',id);
+  toast(`✅ Subscription ${status}`); renderSubscriptions();
 }
 
 // ── VENDOR APPLICATIONS ───────────────────────────────
@@ -1498,12 +1719,463 @@ async function renderAuditLog() {
   }
 }
 
+
+// ── TICKETS ───────────────────────────────────────────────────
+async function renderTickets() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  const { data } = await db.from('ticket_orders')
+    .select('*, events(name,event_day,event_month)')
+    .order('created_at',{ascending:false})
+    .limit(200);
+  const pending  = (data||[]).filter(t=>t.status==='pending');
+  const paid     = (data||[]).filter(t=>t.status==='paid');
+  const revenue  = paid.reduce((s,t)=>s+parseFloat(t.total_price||0),0);
+  el.innerHTML = `
+    <div class="page-title">🎫 Ticket Management</div>
+    <div class="page-sub">All ticket orders across every event. Verify, cancel, and mark as used.</div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num">${(data||[]).length}</div><div class="stat-label">Total Orders</div></div>
+      <div class="stat-card" style="border-color:rgba(245,197,66,0.3)"><div class="stat-num" style="color:var(--gold)">${pending.length}</div><div class="stat-label">Pending Payment</div></div>
+      <div class="stat-card" style="border-color:rgba(57,224,122,0.3)"><div class="stat-num" style="color:var(--green)">${paid.length}</div><div class="stat-label">Confirmed</div></div>
+      <div class="stat-card"><div class="stat-num">GHS ${revenue.toFixed(2)}</div><div class="stat-label">Total Revenue</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">All Ticket Orders</div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Ref</th><th>Event</th><th>Buyer</th><th>Qty</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${(data||[]).map(t=>`<tr>
+            <td><code style="font-size:11px;color:var(--muted)">${(t.payment_ref||'—').substring(0,12)}</code></td>
+            <td style="font-size:12px">${t.events?.name||'—'} <span style="color:var(--muted)">${t.events?.event_day||''} ${t.events?.event_month||''}</span></td>
+            <td style="font-size:12px">${t.user_email}</td>
+            <td>${t.quantity}</td>
+            <td style="color:var(--green);font-weight:700">GHS ${parseFloat(t.total_price||0).toFixed(2)}</td>
+            <td><span class="badge ${t.status==='paid'?'bg':t.status==='pending'?'bo':t.status==='used'?'bb':'bp'}">${t.status}</span></td>
+            <td style="font-size:11px;color:var(--muted)">${new Date(t.created_at).toLocaleDateString('en-GH')}</td>
+            <td style="display:flex;gap:4px;flex-wrap:wrap">
+              ${t.status==='paid'?`<button class="btn btn-blue" onclick="markTicketUsed('${t.id}')">✅ Mark Used</button>`:''}
+              ${t.status==='pending'?`<button class="btn btn-green" onclick="confirmTicket('${t.id}')">Confirm</button>`:''}
+              ${t.status!=='cancelled'&&t.status!=='used'?`<button class="btn btn-danger" onclick="cancelTicket('${t.id}')">Cancel</button>`:''}
+            </td>
+          </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No ticket orders yet.</td></tr>'}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+async function markTicketUsed(id) {
+  await db.from('ticket_orders').update({status:'used',updated_at:new Date().toISOString()}).eq('id',id);
+  toast('✅ Ticket marked as used'); renderTickets();
+}
+async function confirmTicket(id) {
+  await db.from('ticket_orders').update({status:'paid',updated_at:new Date().toISOString()}).eq('id',id);
+  toast('✅ Ticket confirmed'); renderTickets();
+}
+async function cancelTicket(id) {
+  if(!confirm('Cancel this ticket? This cannot be undone.')) return;
+  await db.from('ticket_orders').update({status:'cancelled',updated_at:new Date().toISOString()}).eq('id',id);
+  toast('🗑️ Ticket cancelled'); renderTickets();
+}
+
+// ── ADS ────────────────────────────────────────────────────────
+async function renderAds() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  const { data } = await db.from('advertisements').select('*').order('created_at',{ascending:false});
+  const active  = (data||[]).filter(a=>a.status==='active');
+  const pending = (data||[]).filter(a=>a.status==='pending');
+  el.innerHTML = `
+    <div class="page-title">📢 Advertisements</div>
+    <div class="page-sub">Manage all live and pending ads. Control banners and redirect ads separately.</div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num">${active.length}</div><div class="stat-label">Live Ads</div></div>
+      <div class="stat-card" style="border-color:rgba(255,61,138,0.3)"><div class="stat-num" style="color:var(--pink)">${pending.length}</div><div class="stat-label">Pending Approval</div></div>
+      <div class="stat-card"><div class="stat-num">${(data||[]).filter(a=>a.ad_type==='banner').length}</div><div class="stat-label">Banner Ads</div></div>
+      <div class="stat-card"><div class="stat-num">${(data||[]).filter(a=>a.ad_type==='redirect').length}</div><div class="stat-label">Redirect Ads</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><span>All Ads (${(data||[]).length})</span>
+        <button class="btn btn-gold" onclick="openAdForm({})">+ Add Ad</button>
+      </div>
+      ${(data||[]).map(a=>`
+        <div class="card-row" style="border-color:${a.ad_type==='redirect'?'rgba(79,163,255,0.2)':'rgba(245,197,66,0.2)'}">
+          <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+            ${a.ad_image_url?`<img src="${a.ad_image_url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0;">`:'<div style="width:60px;height:60px;background:var(--surface);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px">📢</div>'}
+            <div style="flex:1">
+              <div class="card-row-title">${a.ad_title}
+                <span class="badge ${a.ad_type==='redirect'?'bb':'bo'}">${a.ad_type==='redirect'?'🔗 Redirect':'🖼️ Banner'}</span>
+                <span class="badge ${a.status==='active'?'bg':a.status==='pending'?'bo':'bp'}">${a.status}</span>
+              </div>
+              <div class="card-row-meta">
+                ${a.company_name} · GHS ${parseFloat(a.price_ghs).toFixed(2)}/${a.billing_type}
+                ${a.redirect_url?`· <a href="${a.redirect_url}" target="_blank" style="color:var(--blue);font-size:11px">↗ ${a.redirect_url.substring(0,40)}</a>`:''}
+                <br>👁️ ${a.impressions||0} impressions · 🖱️ ${a.clicks||0} clicks
+                ${a.expires_at?` · Expires ${new Date(a.expires_at).toLocaleDateString('en-GH')}`:''}
+              </div>
+              <div class="card-row-actions">
+                ${a.status==='pending'?`<button class="btn btn-green" onclick="updateAd('${a.id}','active')">✅ Activate</button>`:''}
+                ${a.status==='active'?`<button class="btn btn-muted" onclick="updateAd('${a.id}','paused')">⏸ Pause</button>`:''}
+                ${a.status==='paused'?`<button class="btn btn-green" onclick="updateAd('${a.id}','active')">▶ Resume</button>`:''}
+                <button class="btn btn-muted" onclick='openAdForm(${JSON.stringify(a)})'>Edit</button>
+                <button class="btn btn-danger" onclick="deleteAd('${a.id}')">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>`).join('')||'<div style="color:var(--muted);padding:20px;text-align:center">No ads yet. Add one above.</div>'}
+    </div>`;
+}
+
+function openAdForm(a) {
+  editId = a.id||null;
+  document.getElementById('modalTitle').textContent = a.id ? 'Edit Ad' : 'Add New Ad';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Ad Title *</label><input class="form-input" id="atitle" value="${a.ad_title||''}" placeholder="e.g. Accra Brews — Taste the Night"></div>
+      <div class="form-group full"><label class="form-label">Company Name *</label><input class="form-input" id="acompany" value="${a.company_name||''}" placeholder="Company or brand name"></div>
+      <div class="form-group"><label class="form-label">Ad Type *</label>
+        <select class="form-select" id="atype" onchange="toggleRedirectField()">
+          <option value="banner" ${(a.ad_type||'banner')==='banner'?'selected':''}>🖼️ Display Banner</option>
+          <option value="redirect" ${a.ad_type==='redirect'?'selected':''}>🔗 Redirect Ad</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="form-select" id="astatus">
+          <option value="pending" ${(a.status||'pending')==='pending'?'selected':''}>Pending</option>
+          <option value="active" ${a.status==='active'?'selected':''}>Active</option>
+          <option value="paused" ${a.status==='paused'?'selected':''}>Paused</option>
+          <option value="expired" ${a.status==='expired'?'selected':''}>Expired</option>
+        </select>
+      </div>
+      <div class="form-group" id="redirectUrlGroup" style="${(a.ad_type||'banner')==='redirect'?'':'display:none'}">
+        <label class="form-label">Redirect URL</label>
+        <input class="form-input" id="aredirecturl" value="${a.redirect_url||''}" placeholder="https://yourwebsite.com">
+      </div>
+      <div class="form-group"><label class="form-label">Image URL (optional)</label><input class="form-input" id="aimageurl" value="${a.ad_image_url||''}" placeholder="https://..."></div>
+      <div class="form-group"><label class="form-label">Subtitle</label><input class="form-input" id="asubtitle" value="${a.ad_subtitle||''}" placeholder="Short tagline"></div>
+      <div class="form-group"><label class="form-label">Price (GHS) *</label><input class="form-input" id="aprice" type="number" step="0.01" min="0" value="${a.price_ghs||''}"></div>
+      <div class="form-group"><label class="form-label">Billing Type</label>
+        <select class="form-select" id="abillingtype">
+          <option value="one_time" ${a.billing_type==='one_time'?'selected':''}>One-time</option>
+          <option value="monthly" ${(a.billing_type||'monthly')==='monthly'?'selected':''}>Monthly</option>
+          <option value="yearly" ${a.billing_type==='yearly'?'selected':''}>Yearly</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Contact Email</label><input class="form-input" id="acontactemail" value="${a.contact_email||''}" type="email"></div>
+      <div class="form-group"><label class="form-label">Starts At</label><input class="form-input" id="astarts" type="date" value="${a.starts_at?a.starts_at.substring(0,10):''}"></div>
+      <div class="form-group"><label class="form-label">Expires At</label><input class="form-input" id="aexpires" type="date" value="${a.expires_at?a.expires_at.substring(0,10):''}"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-gold btn-lg" style="flex:1" onclick="saveAd()">Save Ad</button>
+      <button class="btn btn-muted btn-lg" onclick="closeModal()">Cancel</button>
+    </div>
+    <div id="formErr" style="color:var(--pink);font-size:12px;margin-top:8px;display:none"></div>`;
+  openModal();
+}
+
+function toggleRedirectField() {
+  const isRedirect = document.getElementById('atype').value === 'redirect';
+  document.getElementById('redirectUrlGroup').style.display = isRedirect ? '' : 'none';
+}
+
+async function saveAd() {
+  const title   = g('atitle').trim();
+  const company = g('acompany').trim();
+  const price   = parseFloat(g('aprice'));
+  if (!title||!company||isNaN(price)) {
+    document.getElementById('formErr').textContent='Title, company and price are required';
+    document.getElementById('formErr').style.display='block'; return;
+  }
+  const payload = {
+    ad_title:     title,
+    company_name: company,
+    ad_type:      g('atype'),
+    status:       g('astatus'),
+    redirect_url: g('aredirecturl').trim()||null,
+    ad_image_url: g('aimageurl').trim()||null,
+    ad_subtitle:  g('asubtitle').trim()||null,
+    price_ghs:    price,
+    billing_type: g('abillingtype'),
+    contact_email:g('acontactemail').trim()||null,
+    starts_at:    g('astarts')||null,
+    expires_at:   g('aexpires')||null,
+    updated_at:   new Date().toISOString(),
+  };
+  const {error} = editId
+    ? await db.from('advertisements').update(payload).eq('id',editId)
+    : await db.from('advertisements').insert(payload);
+  if (error) { document.getElementById('formErr').textContent=error.message; document.getElementById('formErr').style.display='block'; return; }
+  closeModal(); toast(editId?'✅ Ad updated':'✅ Ad created'); renderAds();
+}
+
+async function updateAd(id, status) {
+  await db.from('advertisements').update({status,updated_at:new Date().toISOString()}).eq('id',id);
+  toast(`✅ Ad ${status}`); renderAds();
+}
+
+async function deleteAd(id) {
+  if(!confirm('Delete this ad permanently?')) return;
+  await db.from('advertisements').delete().eq('id',id);
+  toast('🗑️ Ad deleted'); renderAds();
+}
+
+// ── AD PRICING ─────────────────────────────────────────────────
+async function renderAdPricing() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  const { data } = await db.from('ad_pricing').select('*').order('ad_type');
+  el.innerHTML = `
+    <div class="page-title">💰 Ad Pricing</div>
+    <div class="page-sub">Control the price of banner and redirect advertisements. Changes take effect immediately for new enquiries.</div>
+    ${(data||[]).map(p=>`
+      <div class="panel" style="border-color:${p.ad_type==='redirect'?'rgba(79,163,255,0.3)':'rgba(245,197,66,0.3)'}">
+        <div class="panel-title">${p.ad_type==='redirect'?'🔗 Redirect Ad Pricing':'🖼️ Banner Ad Pricing'}</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">${p.description||''}</p>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Monthly Price (GHS)</label>
+            <input class="form-input" id="price_monthly_${p.ad_type}" type="number" step="0.01" min="0" value="${p.price_monthly}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Yearly Price (GHS)</label>
+            <input class="form-input" id="price_yearly_${p.ad_type}" type="number" step="0.01" min="0" value="${p.price_yearly}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">One-time Price (GHS)</label>
+            <input class="form-input" id="price_onetime_${p.ad_type}" type="number" step="0.01" min="0" value="${p.price_one_time||''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Active</label>
+            <select class="form-select" id="price_active_${p.ad_type}">
+              <option value="true" ${p.is_active?'selected':''}>Yes</option>
+              <option value="false" ${!p.is_active?'selected':''}>No</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-gold" onclick="saveAdPricing('${p.ad_type}','${p.id}')">💾 Save ${p.ad_type==='redirect'?'Redirect':'Banner'} Pricing</button>
+        <div id="pricing_msg_${p.ad_type}" style="font-size:12px;margin-top:8px;display:none"></div>
+      </div>`).join('')||'<div style="color:var(--muted)">No pricing records. Run platform-complete.sql first.</div>'}`;
+}
+
+async function saveAdPricing(adType, id) {
+  const payload = {
+    price_monthly:  parseFloat(document.getElementById(`price_monthly_${adType}`)?.value)||0,
+    price_yearly:   parseFloat(document.getElementById(`price_yearly_${adType}`)?.value)||0,
+    price_one_time: parseFloat(document.getElementById(`price_onetime_${adType}`)?.value)||null,
+    is_active:      document.getElementById(`price_active_${adType}`)?.value === 'true',
+    updated_at:     new Date().toISOString(),
+  };
+  const msg = document.getElementById(`pricing_msg_${adType}`);
+  const {error} = await db.from('ad_pricing').update(payload).eq('id',id);
+  if (error) { msg.textContent='⚠️ '+error.message; msg.style.color='var(--pink)'; }
+  else { msg.textContent='✅ Pricing saved!'; msg.style.color='var(--green)'; toast('✅ Ad pricing updated'); }
+  msg.style.display='block';
+  setTimeout(()=>msg.style.display='none', 3000);
+}
+
+// ── GAMES MANAGEMENT ────────────────────────────────────────────
+async function renderGames() {
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+  const { data } = await db.from('prediction_games').select('*').order('created_at',{ascending:false});
+  el.innerHTML = `
+    <div class="page-title">🎮 Prediction Games</div>
+    <div class="page-sub">Create, edit, close and resolve prediction games. Award points to correct predictors.</div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num">${(data||[]).filter(g=>g.status==='open').length}</div><div class="stat-label">Open</div></div>
+      <div class="stat-card"><div class="stat-num">${(data||[]).filter(g=>g.status==='closed').length}</div><div class="stat-label">Closed</div></div>
+      <div class="stat-card"><div class="stat-num">${(data||[]).filter(g=>g.status==='resolved').length}</div><div class="stat-label">Resolved</div></div>
+      <div class="stat-card"><div class="stat-num">${(data||[]).length}</div><div class="stat-label">Total</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><span>All Games</span><button class="btn btn-gold" onclick="openGameForm({})">+ New Game</button></div>
+      ${(data||[]).map(game=>`
+        <div class="card-row">
+          <div class="card-row-title">${game.title}
+            <span class="badge ${game.status==='open'?'bg':game.status==='closed'?'bo':game.status==='resolved'?'bb':'bp'}">${game.status}</span>
+            <span class="badge bm">${game.category}</span>
+          </div>
+          <div class="card-row-meta">
+            Options: ${(game.options||[]).join(' · ')}
+            ${game.correct_index!=null?` · ✅ Answer: Option ${game.correct_index+1}`:''}
+            ${game.closes_at?` · Closes: ${new Date(game.closes_at).toLocaleDateString('en-GH')}`:''}
+            · ${game.pts_per_correct} pts per correct answer
+          </div>
+          <div class="card-row-actions">
+            <button class="btn btn-muted" onclick='openGameForm(${JSON.stringify(game).replace(/'/g,"&#39;")})'>Edit</button>
+            ${game.status==='open'?`<button class="btn btn-muted" onclick="updateGameStatus('${game.id}','closed')">Close</button>`:''}
+            ${game.status==='closed'?`<button class="btn btn-green" onclick="openResolveGame('${game.id}','${game.title.replace(/'/g,"\'")}',${game.options?.length||2})">Resolve & Award</button>`:''}
+            ${game.status==='open'?`<button class="btn btn-green" onclick="updateGameStatus('${game.id}','open')">Reopen</button>`:''}
+            <button class="btn btn-danger" onclick="deleteGame('${game.id}','${game.title.replace(/'/g,"\'")}')">Delete</button>
+          </div>
+        </div>`).join('')||'<div style="color:var(--muted);padding:20px;text-align:center">No games yet. Create one above.</div>'}
+    </div>`;
+}
+
+function openGameForm(game) {
+  editId = game.id||null;
+  document.getElementById('modalTitle').textContent = game.id ? 'Edit Game' : 'New Prediction Game';
+  const opts = game.options||['',''];
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-group"><label class="form-label">Game Title *</label><input class="form-input" id="gtitle" value="${game.title||''}" placeholder="e.g. Which DJ will headline Onyx this Friday?"></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="gdesc" style="min-height:60px" placeholder="Optional context for players">${game.description||''}</textarea></div>
+    <div class="form-group"><label class="form-label">Category</label>
+      <select class="form-select" id="gcategory">
+        ${['nightlife','events','dj','culture','sports'].map(c=>`<option value="${c}" ${(game.category||'nightlife')===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Options (one per line, min 2) *</label>
+      <textarea class="form-textarea" id="goptions" style="min-height:80px" placeholder="Option 1&#10;Option 2&#10;Option 3">${opts.join('
+')}</textarea>
+    </div>
+    <div class="form-group"><label class="form-label">Points per Correct Answer</label><input class="form-input" id="gpts" type="number" min="1" value="${game.pts_per_correct||50}"></div>
+    <div class="form-group"><label class="form-label">Closes At (optional)</label><input class="form-input" id="gcloses" type="datetime-local" value="${game.closes_at?game.closes_at.substring(0,16):''}"></div>
+    <div class="form-group"><label class="form-label">Status</label>
+      <select class="form-select" id="gstatus">
+        ${['open','closed','cancelled'].map(s=>`<option value="${s}" ${(game.status||'open')===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-gold btn-lg" style="flex:1" onclick="saveGame()">Save Game</button>
+      <button class="btn btn-muted btn-lg" onclick="closeModal()">Cancel</button>
+    </div>
+    <div id="formErr" style="color:var(--pink);font-size:12px;margin-top:8px;display:none"></div>`;
+  openModal();
+}
+
+async function saveGame() {
+  const title = g('gtitle').trim();
+  const optsRaw = g('goptions').split('
+').map(o=>o.trim()).filter(Boolean);
+  if (!title) { document.getElementById('formErr').textContent='Title required'; document.getElementById('formErr').style.display='block'; return; }
+  if (optsRaw.length < 2) { document.getElementById('formErr').textContent='At least 2 options required'; document.getElementById('formErr').style.display='block'; return; }
+  const payload = {
+    title, description:g('gdesc').trim()||null,
+    category:g('gcategory'), options:optsRaw,
+    pts_per_correct:parseInt(g('gpts'))||50,
+    closes_at:g('gcloses')||null,
+    status:g('gstatus'),
+    updated_at:new Date().toISOString(),
+  };
+  const {error} = editId
+    ? await db.from('prediction_games').update(payload).eq('id',editId)
+    : await db.from('prediction_games').insert(payload);
+  if(error){document.getElementById('formErr').textContent=error.message;document.getElementById('formErr').style.display='block';return;}
+  closeModal(); toast(editId?'✅ Game updated':'✅ Game created'); renderGames();
+}
+
+async function updateGameStatus(id, status) {
+  await db.from('prediction_games').update({status,updated_at:new Date().toISOString()}).eq('id',id);
+  toast(`✅ Game ${status}`); renderGames();
+}
+
+function openResolveGame(id, title, optCount) {
+  document.getElementById('modalTitle').textContent = 'Resolve: '+title;
+  const opts = Array.from({length:optCount},(_,i)=>`<option value="${i}">Option ${i+1}</option>`).join('');
+  document.getElementById('modalBody').innerHTML = `
+    <p style="color:var(--muted);margin-bottom:14px">Select the winning option. Points will be awarded to all correct predictors.</p>
+    <div class="form-group"><label class="form-label">Winning Option</label><select class="form-select" id="resolveWinner">${opts}</select></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-gold btn-lg" style="flex:1" onclick="resolveGame('${id}')">Award Points & Resolve</button>
+      <button class="btn btn-muted btn-lg" onclick="closeModal()">Cancel</button>
+    </div>`;
+  openModal();
+}
+
+async function resolveGame(gameId) {
+  const winner = parseInt(document.getElementById('resolveWinner').value);
+  // Get all predictions for this game
+  const {data:preds} = await db.from('predictions').select('*').eq('prediction_id', gameId);
+  if (!preds?.length) { toast('No predictions found for this game'); return; }
+  let awarded = 0;
+  for (const p of preds) {
+    const isCorrect = p.choice_index === winner;
+    const pts = isCorrect ? 50 : 0;
+    await db.from('predictions').update({correct:isCorrect, pts_awarded:pts}).eq('id',p.id);
+    if (isCorrect && pts > 0) {
+      const {data:existing} = await db.from('user_points').select('points').eq('user_id',p.user_id).single().catch(()=>({data:null}));
+      await db.from('user_points').upsert({user_id:p.user_id, points:(existing?.points||0)+pts, updated_at:new Date().toISOString()});
+      awarded++;
+    }
+  }
+  await db.from('prediction_games').update({status:'resolved',correct_index:winner,updated_at:new Date().toISOString()}).eq('id',gameId);
+  closeModal(); toast(`✅ Resolved! ${awarded} player(s) awarded points.`); renderGames();
+}
+
+async function deleteGame(id, name) {
+  if(!confirm(`Delete "${name}"? All predictions for this game will also be deleted.`)) return;
+  await db.from('predictions').delete().eq('prediction_id', id);
+  await db.from('prediction_games').delete().eq('id', id);
+  toast('🗑️ Game deleted'); renderGames();
+}
+
+// ── VENDOR TOKENS — FULLY EDITABLE ─────────────────────────────
 // ── UTILS ─────────────────────────────────────────────
+
+// ── SECURITY: Admin login brute force protection ─────────────
+function checkLoginLock() {
+  const lockUntil = parseInt(localStorage.getItem('gn_lock') || 0);
+  if (Date.now() < lockUntil) {
+    const mins = Math.ceil((lockUntil - Date.now()) / 60000);
+    const err = document.getElementById('loginErr');
+    err.textContent = `Too many failed attempts. Try again in ${mins} minute(s).`;
+    err.style.display = 'block';
+    return false;
+  }
+  return true;
+}
+function recordFailedLogin() {
+  const key = 'gn_attempts';
+  let attempts = parseInt(localStorage.getItem(key) || 0) + 1;
+  localStorage.setItem(key, attempts);
+  if (attempts >= 5) {
+    localStorage.setItem('gn_lock', Date.now() + 15 * 60000);
+    localStorage.setItem(key, 0);
+  }
+}
+function clearLoginLock() {
+  localStorage.removeItem('gn_attempts');
+  localStorage.removeItem('gn_lock');
+}
+
 function g(id) { return document.getElementById(id)?.value||''; }
 function openModal() { document.getElementById('modal').classList.add('open'); }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 function copyEmail(email) { navigator.clipboard.writeText(email); toast('📋 '+email+' copied'); }
 function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+
+
+// ── SECURITY: Input sanitisation ─────────────────────────────
+function sanitize(str, maxLen) {
+  return String(str || '')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+    .replace(/javascript:/gi, '').replace(/on\w+\s*=/gi, '')
+    .trim().substring(0, maxLen || 5000);
+}
+
+// ── SECURITY: Global error handler ───────────────────────────
+window.addEventListener('error', function(e) {
+  if (typeof db !== 'undefined' && db) {
+    db.from('error_log').insert({
+      message:    (e.message || '').substring(0, 500),
+      source:     (e.filename || '').substring(0, 200),
+      line:       e.lineno || 0,
+      page:       window.location.pathname,
+      created_at: new Date().toISOString()
+    }).catch(() => {});
+  }
+});
+window.addEventListener('unhandledrejection', function(e) {
+  if (typeof db !== 'undefined' && db) {
+    db.from('error_log').insert({
+      message:    String(e.reason || 'Unhandled rejection').substring(0, 500),
+      source:     'promise',
+      line:       0,
+      page:       window.location.pathname,
+      created_at: new Date().toISOString()
+    }).catch(() => {});
+  }
+});
 
 async function toggleRow(table, id, active) {
   await db.from(table).update({ active, updated_at:new Date().toISOString() }).eq('id',id);
