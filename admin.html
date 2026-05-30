@@ -153,6 +153,12 @@
       <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="loginPass" type="password" placeholder="Password" autocomplete="current-password"></div>
       <button class="btn btn-gold btn-lg" style="width:100%" onclick="adminLogin()">Log In →</button>
       <div id="loginErr" style="color:var(--pink);font-size:12px;text-align:center;display:none"></div>
+      <div style="text-align:center;margin-top:10px">
+        <span style="font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline"
+          onclick="clearLoginLock();document.getElementById('loginErr').style.display='none';this.textContent='✅ Reset done — try again'">
+          Locked out? Tap here to reset
+        </span>
+      </div>
     </div>
   </div>
 </div>
@@ -2114,6 +2120,12 @@ async function deleteGame(id, name) {
 // ── SECURITY: Admin login brute force protection ─────────────
 function checkLoginLock() {
   const lockUntil = parseInt(localStorage.getItem('gn_lock') || 0);
+  // Auto-clear expired lock
+  if (lockUntil && Date.now() >= lockUntil) {
+    localStorage.removeItem('gn_lock');
+    localStorage.removeItem('gn_attempts');
+    return true;
+  }
   if (Date.now() < lockUntil) {
     const mins = Math.ceil((lockUntil - Date.now()) / 60000);
     const err = document.getElementById('loginErr');
