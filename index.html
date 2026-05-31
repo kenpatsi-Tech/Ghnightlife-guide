@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="ghanight-cache.js"></script>
 <style>
   :root{--bg:#080810;--surface:#10101e;--card:#14142a;--gold:#f5c542;--orange:#ff6b35;--pink:#ff3d8a;--green:#39e07a;--blue:#4fa3ff;--text:#f0f0f8;--muted:#7070a0;--border:rgba(255,255,255,0.06);}
   *{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
@@ -339,11 +340,7 @@ const SUPABASE_KEY = 'sb_publishable_fA03kKrp9WRnU0xqH2fl_A_J8pmLVtU';
 const RIDE_PARTNER_ACTIVE = false;
 const RIDE_PARTNER_NAME   = 'Ride Partner';
 const CHECKIN_RADIUS_KM   = 0.5;
-function canCheckIn() {
-  const key = 'gn_checkins';const now = Date.now();const raw = localStorage.getItem(key);
-  const log = raw ? JSON.parse(raw).filter(t => now - t < 3600000) : [];
-  if (log.length >= 5) return false;log.push(now);localStorage.setItem(key, JSON.stringify(log));return true;
-}
+// Check-in rate limiting removed
 const VENUE_COORDS = {
   'Onyx Nightclub':   { lat:5.6361, lng:-0.1569 },'Sky+ Rooftop Bar': { lat:5.6050, lng:-0.1717 },
   'Twist Lounge':     { lat:5.5560, lng:-0.1969 },'La Palm Beach Bar':{ lat:5.5490, lng:-0.1340 },
@@ -429,7 +426,6 @@ function renderMapMarkers() {
 function bookRide(name) { if (!RIDE_PARTNER_ACTIVE) { showToast('🚗 Ride partner coming soon!'); return; } }
 function distanceKm(a,b,c,d){ const R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
 async function checkInAtVenue(idx) {
-  if (!canCheckIn()) { showToast('⏳ Too many check-ins — try again in an hour'); return; }
   const v = venues[idx];if (!v) return;
   const c = VENUE_COORDS[v.name] || (v.lat && v.lng ? {lat:v.lat,lng:v.lng} : null);
   if (!c) { showToast('📍 Check-in not mapped for this venue yet'); return; }
@@ -458,30 +454,66 @@ const nE = r => ({ id:r.id, day:r.event_day, month:r.event_month, name:r.name, v
 async function loadData() {
   if (db) {
     try {
-      const {data:vr, error:ve} = await db.from('venues').select('*').eq('active',true).order('premium',{ascending:false}).order('heat',{ascending:false});
-      if (!ve && vr?.length) venues = vr.map(nV);
-      const {data:er, error:ee} = await db.from('events').select('*').eq('active',true).order('sponsored',{ascending:false});
-      if (!ee && er?.length) events = er.map(nE);
+      // Single RPC call returns venues + events + crowd in one round trip
+      // This is the viral moment optimisation — 1 DB call instead of 3
+      const cached = await GNCache.fetchCached('homepage', 60000, async () => {
+        const { data, error } = await db.rpc('get_homepage_data');
+        if (error) throw error;
+        return data;
+      });
+
+      if (cached?.venues?.length) venues = cached.venues.map(nV);
+      if (cached?.events?.length) events  = cached.events.map(nE);
+      if (cached?.crowd != null) {
+        document.getElementById('crowdCount').textContent =
+          cached.crowd >= 1000 ? (cached.crowd/1000).toFixed(1)+'K' : String(cached.crowd);
+      }
+
+      // Real-time venue updates (live crowd changes)
       db.channel('vrt').on('postgres_changes',{event:'UPDATE',schema:'public',table:'venues'}, p => {
         const i = venues.findIndex(v=>v.id===p.new.id);
-        if(i!==-1){venues[i]=nV(p.new);renderVenues(venues);renderMapMarkers();showToast('🔴 Live: '+p.new.name+' updated');}
+        if(i!==-1){
+          venues[i]=nV(p.new);
+          GNCache.invalidate('homepage'); // bust cache on live update
+          renderVenues(venues);renderMapMarkers();
+          showToast('🔴 Live: '+p.new.name+' updated');
+        }
       }).subscribe();
-      await updateOutTonightCount();
-    } catch(e) {}
+
+    } catch(e) {
+      // RPC failed — fall back to individual cached queries
+      try {
+        const vr = await GNCache.fetchCached('venues', GNCache.TTL.venues, async () => {
+          const {data,error}=await db.from('venues').select('*').eq('active',true).order('premium',{ascending:false}).order('heat',{ascending:false});
+          if(error) throw error; return data||[];
+        });
+        if (vr?.length) venues = vr.map(nV);
+        const er = await GNCache.fetchCached('events', GNCache.TTL.events, async () => {
+          const {data,error}=await db.from('events').select('*').eq('active',true).order('sponsored',{ascending:false});
+          if(error) throw error; return data||[];
+        });
+        if (er?.length) events = er.map(nE);
+        await updateOutTonightCount();
+      } catch(e2) {}
+    }
   }
+
   if (!venues.length) venues = FALLBACK_VENUES;
-  if (!events.length) events = FALLBACK_EVENTS;
+  if (!events.length) events  = FALLBACK_EVENTS;
   document.getElementById('venueCount').textContent = venues.length;
   document.getElementById('eventCount').textContent = events.length;
-  renderVenues(venues);renderEvents();
+  renderVenues(venues); renderEvents();
   if (leafletMap) renderMapMarkers();
 }
 async function refreshData() {
   if (!db) return;
   try {
-    const {data:vr} = await db.from('venues').select('*').eq('active',true).order('premium',{ascending:false}).order('heat',{ascending:false});
+    // Invalidate cache so refresh actually fetches fresh data
+    GNCache.invalidate('venues');
+    GNCache.invalidate('events');
+    const vr = await cachedVenues(db).catch(()=>[]);
     if (vr?.length) { venues=vr.map(nV); renderVenues(venues); renderMapMarkers(); }
-    const {data:er} = await db.from('events').select('*').eq('active',true).order('sponsored',{ascending:false});
+    const er = await cachedEvents(db).catch(()=>[]);
     if (er?.length) { events=er.map(nE); renderEvents(); }
     await updateOutTonightCount();
   } catch(e) {}
@@ -532,6 +564,7 @@ function filterVenues(type, btn) {
   renderVenues(type==='all'?venues:venues.filter(v=>v.type===type));
 }
 function handleSearch(q) {
+  q = sanitize(q, 100);
   if(!q){renderVenues(venues);return;}const lq=q.toLowerCase();
   renderVenues(venues.filter(v=>v.name.toLowerCase().includes(lq)||v.area.toLowerCase().includes(lq)||(v.tags||[]).some(t=>t.toLowerCase().includes(lq))));
 }
@@ -703,6 +736,32 @@ async function signOut() { if (db) await db.auth.signOut();currentUser = null;cl
 function selectPlan(el, plan) { document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedPlan=plan; }
 function showToast(msg) { const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000); }
 function scrollToSection(id) { document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'}); }
+
+
+// ── SECURITY: Input sanitisation & error handler ─────────────
+function sanitize(str, maxLen) {
+  return String(str || '')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+    .replace(/javascript:/gi, '').replace(/on\w+\s*=/gi, '')
+    .trim().substring(0, maxLen || 5000);
+}
+window.addEventListener('error', function(e) {
+  if (typeof db !== 'undefined' && db) {
+    db.from('error_log').insert({
+      message:(e.message||'').substring(0,500),source:(e.filename||'').substring(0,200),
+      line:e.lineno||0,page:window.location.pathname,created_at:new Date().toISOString()
+    }).catch(()=>{});
+  }
+});
+window.addEventListener('unhandledrejection', function(e) {
+  if (typeof db !== 'undefined' && db) {
+    db.from('error_log').insert({
+      message:String(e.reason||'Unhandled rejection').substring(0,500),
+      source:'promise',line:0,page:window.location.pathname,created_at:new Date().toISOString()
+    }).catch(()=>{});
+  }
+});
 
 // ── VIDEO PLAYER ──────────────────────────────────────
 (function(){
