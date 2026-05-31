@@ -466,7 +466,7 @@ async function adminLogin() {
   }
 
   // Only this email can access admin
-  const ADMIN_WHITELIST = ['baninikwami9@gmail.com'];
+  const ADMIN_WHITELIST = ['baninikwami3@gmail.com'];
   if (!ADMIN_WHITELIST.includes(data.user.email)) {
     await db.auth.signOut();
     err.textContent = 'Access denied. Not an admin account.';
