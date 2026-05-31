@@ -443,9 +443,19 @@ window.addEventListener('load', async () => {
 
 // ── AUTH ──────────────────────────────────────────────
 async function adminLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass  = document.getElementById('loginPass').value;
-  const err   = document.getElementById('loginErr');
+  const emailEl = document.getElementById('loginEmail');
+  const passEl  = document.getElementById('loginPass');
+  const err     = document.getElementById('loginErr');
+  const btn     = document.querySelector('.login-box .btn-gold');
+
+  if (!emailEl || !passEl || !err) {
+    alert('Login form not found. Please refresh the page.');
+    return;
+  }
+
+  const email = emailEl.value.trim();
+  const pass  = passEl.value;
+
   err.style.display = 'none';
 
   if (!email || !pass) {
@@ -453,28 +463,49 @@ async function adminLogin() {
     err.style.display = 'block'; return;
   }
 
-  const btn = document.querySelector('#loginBox .btn-gold');
+  // Ensure db is ready
+  if (!db) {
+    try {
+      db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } catch(e) {
+      err.textContent = 'Service unavailable. Please refresh.';
+      err.style.display = 'block'; return;
+    }
+  }
+
   if (btn) { btn.textContent = 'Logging in...'; btn.disabled = true; }
 
-  const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+  try {
+    const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
 
-  if (btn) { btn.textContent = 'Log In →'; btn.disabled = false; }
+    if (btn) { btn.textContent = 'Log In →'; btn.disabled = false; }
 
-  if (error) {
-    err.textContent = 'Incorrect email or password.';
-    err.style.display = 'block'; return;
+    if (error) {
+      err.textContent = 'Incorrect email or password. (' + error.message + ')';
+      err.style.display = 'block'; return;
+    }
+
+    if (!data || !data.user) {
+      err.textContent = 'Login failed. Please try again.';
+      err.style.display = 'block'; return;
+    }
+
+    // Only this email can access admin
+    const ADMIN_WHITELIST = ['baninikwami9@gmail.com'];
+    if (!ADMIN_WHITELIST.includes(data.user.email)) {
+      await db.auth.signOut();
+      err.textContent = 'Access denied. Not an admin account.';
+      err.style.display = 'block'; return;
+    }
+
+    adminUser = data.user;
+    showAdmin();
+
+  } catch(e) {
+    if (btn) { btn.textContent = 'Log In →'; btn.disabled = false; }
+    err.textContent = 'Error: ' + e.message;
+    err.style.display = 'block';
   }
-
-  // Only this email can access admin
-  const ADMIN_WHITELIST = ['baninikwami9@gmail.com'];
-  if (!ADMIN_WHITELIST.includes(data.user.email)) {
-    await db.auth.signOut();
-    err.textContent = 'Access denied. Not an admin account.';
-    err.style.display = 'block'; return;
-  }
-
-  adminUser = data.user;
-  showAdmin();
 }
 async function adminLogout() {
   await db.auth.signOut();
