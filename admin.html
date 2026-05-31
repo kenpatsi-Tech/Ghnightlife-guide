@@ -6,7 +6,21 @@
 <title>GhaNight Admin — Control Panel</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="ghanight-cache.js"></script>
+<script>
+// Inline cache stub — admin invalidates cache on saves
+const GNCache = {
+  invalidate: function(key) {
+    try {
+      Object.keys(localStorage).filter(k=>k.startsWith('gnc_'+key)).forEach(k=>localStorage.removeItem(k));
+      // Also clear the homepage RPC cache
+      ['gnc_homepage','gnc_venues','gnc_events','gnc_posts','gnc_videos_all','gnc_videos_blogger'].forEach(k=>localStorage.removeItem(k));
+    } catch(e) {}
+  },
+  invalidateAll: function() {
+    try { Object.keys(localStorage).filter(k=>k.startsWith('gnc_')).forEach(k=>localStorage.removeItem(k)); } catch(e) {}
+  }
+};
+</script>
 <style>
   :root{--bg:#080810;--surface:#10101e;--card:#14142a;--gold:#f5c542;--orange:#ff6b35;--pink:#ff3d8a;--green:#39e07a;--blue:#4fa3ff;--purple:#a855f7;--text:#f0f0f8;--muted:#7070a0;--border:rgba(255,255,255,0.08);}
   *{margin:0;padding:0;box-sizing:border-box;}
