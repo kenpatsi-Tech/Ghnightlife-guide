@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GhaNight Creators — Write. Get Paid.</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="ghanight-cache.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#080810;--surface:#10101e;--card:#14142a;--gold:#f5c542;--orange:#ff6b35;--pink:#ff3d8a;--green:#39e07a;--blue:#4fa3ff;--text:#f0f0f8;--muted:#7070a0;--border:rgba(255,255,255,0.06);}
@@ -458,8 +459,11 @@ function updateNav() {
 async function loadPosts() {
   if(!db){renderAll(getDemoPosts(),[]);return;}
   try{
-    const {data,error}=await db.from('creator_posts').select('*,post_likes(count),post_comments(count)').eq('status','approved').order('created_at',{ascending:false});
-    if(!error&&data?.length){allPosts=data;}else{allPosts=getDemoPosts();}
+    const data = await GNCache.fetchCached('posts', GNCache.TTL.posts, async () => {
+      const {data,error}=await db.from('creator_posts').select('*,post_likes(count),post_comments(count)').eq('status','approved').order('created_at',{ascending:false});
+      if(error) throw error; return data || [];
+    });
+    allPosts = data.length ? data : getDemoPosts();
   }catch(e){allPosts=getDemoPosts();}
   renderAll(allPosts,allVideos);
 }
@@ -467,8 +471,11 @@ async function loadPosts() {
 async function loadVideos() {
   if(!db){renderAll(allPosts,allVideos);return;}
   try{
-    const {data,error}=await db.from('venue_videos').select('*').eq('is_active',true).eq('uploader_type','blogger').order('created_at',{ascending:false}).limit(20);
-    if(!error&&data?.length)allVideos=data;
+    const data = await GNCache.fetchCached('videos_blogger', GNCache.TTL.videos, async () => {
+      const {data,error}=await db.from('venue_videos').select('*').eq('is_active',true).eq('uploader_type','blogger').order('created_at',{ascending:false}).limit(20);
+      if(error) throw error; return data || [];
+    });
+    allVideos = data;
   }catch(e){}
   renderAll(allPosts,allVideos);
 }
@@ -663,7 +670,7 @@ function setVidColorFilter(btn, filter) {
 
 async function submitVideoRecap() {
   if (!currentUser) { openAuthModal(); return; }
-  const title = document.getElementById('vidTitle').value.trim();
+  const title = sanitize(document.getElementById('vidTitle').value, 200);
   if (!title) { vidStatus('Please enter a video title.','error'); return; }
   if (!selectedVideoFile) { vidStatus('Please select a video file.','error'); return; }
 
@@ -877,6 +884,7 @@ async function submitPost(){
     const {data:profile}=await db.from('user_profiles').select('first_name,last_name').eq('id',currentUser.id).single().catch(()=>({data:null}));
     const authorName=profile?`${profile.first_name||''} ${profile.last_name||''}`.trim()||currentUser.email.split('@')[0]:currentUser.email.split('@')[0];
     await db.from('creator_posts').insert({title,body,category:cat,venue:selectedVenue||null,author_id:currentUser.id,author_name:authorName,excerpt:body.substring(0,200)+'...',status:'pending',views:0,featured:false,created_at:new Date().toISOString()});
+    GNCache.invalidate('posts'); // Invalidate so next load fetches fresh
     document.querySelector('#writeOverlay .modal-sheet').innerHTML=`
       <div class="modal-handle"></div>
       <div style="text-align:center;padding:30px 0">
@@ -986,6 +994,28 @@ async function doLogin(){
 }
 
 // ── UTILS ────────────────────────────────────────────
+
+// ── SECURITY: Global error handler ───────────────────────────
+window.addEventListener('error', function(e) {
+  if (typeof db !== 'undefined' && db) {
+    db.from('error_log').insert({
+      message:(e.message||'').substring(0,500),
+      source:(e.filename||'').substring(0,200),
+      line:e.lineno||0,page:window.location.pathname,
+      created_at:new Date().toISOString()
+    }).catch(()=>{});
+  }
+});
+window.addEventListener('unhandledrejection', function(e) {
+  if (typeof db !== 'undefined' && db) {
+    db.from('error_log').insert({
+      message:String(e.reason||'Unhandled rejection').substring(0,500),
+      source:'promise',line:0,page:window.location.pathname,
+      created_at:new Date().toISOString()
+    }).catch(()=>{});
+  }
+});
+
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function closeOnOutside(e,id){if(e.target.id===id)closeModal(id);}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
